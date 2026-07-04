@@ -338,6 +338,36 @@ class SlideshowCard(models.Model):
         return bool(self.video_url or self.video_file)
 
 
+# ===== البطاقة الشفافة في الهيرو (مستقلة عن السلايدشو) =====
+class HeroCard(models.Model):
+    """بطاقة شفافة واحدة تظهر على يسار الهيرو في الصفحة الرئيسية"""
+    is_enabled = models.BooleanField(default=False, verbose_name="إظهار البطاقة الشفافة في الهيرو؟")
+    heading = models.CharField(max_length=300, blank=True, default='', verbose_name="عنوان البطاقة")
+    body_text = models.TextField(blank=True, default='', verbose_name="نص البطاقة")
+    card_bg_color = models.CharField(max_length=7, default='#0a1632', verbose_name="لون خلفية البطاقة")
+    card_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=0.55, verbose_name="شفافية البطاقة (0=شفاف 1=معتم)")
+    font_color = models.CharField(max_length=7, default='#ffffff', verbose_name="لون النص")
+    font_size = models.CharField(max_length=6, default='1.1rem', verbose_name="حجم الخط")
+    font_weight = models.CharField(max_length=3, default='600', verbose_name="وزن الخط (300/400/600/700/900)")
+    border_radius = models.CharField(max_length=6, default='0px', verbose_name="استدارة الزوايا")
+
+    class Meta:
+        verbose_name = "البطاقة الشفافة في الهيرو"
+        verbose_name_plural = "البطاقة الشفافة في الهيرو"
+
+    def __str__(self):
+        return "البطاقة الشفافة"
+
+    def bg_rgb(self):
+        hex_color = self.card_bg_color.replace('#', '')
+        if len(hex_color) == 6:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            return f"{r},{g},{b}"
+        return "10,22,50"
+
+
 class TickerSetting(models.Model):
     is_enabled = models.BooleanField(default=True, verbose_name="تشغيل الشريط؟")
     font_color = models.CharField(max_length=7, default='#c5a059')
