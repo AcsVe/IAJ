@@ -60,8 +60,8 @@ section#{{ sid }} .timeline-date {
     <div class="hero-card-left-wrapper">
         <div class="hero-transparent-card"
              style="margin:0 !important;align-self:unset !important;width:500px;height:auto;min-height:180px;background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};text-align:right;">
-            {% if hero_card.heading %}<h3 style="margin-bottom:15px;line-height:1.6;">{{ hero_card.heading }}</h3>{% endif %}
-            {% if hero_card.body_text %}<p style="margin:0;line-height:1.9;opacity:0.93;">{{ hero_card.body_text }}</p>{% endif %}
+            {% if hero_card.heading %}<h3 style="margin-bottom:15px;line-height:1.6;color:{{ hero_card.font_color }} !important;">{{ hero_card.heading }}</h3>{% endif %}
+            {% if hero_card.body_text %}<p style="margin:0;line-height:1.9;opacity:0.93;color:{{ hero_card.font_color }} !important;">{{ hero_card.body_text }}</p>{% endif %}
         </div>
     </div>
     {% endif %}
