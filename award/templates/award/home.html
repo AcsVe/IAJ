@@ -37,103 +37,36 @@ section#{{ sid }} .timeline-date {
 {% endfor %}
 </style>
 
-<!-- ========== Hero = Slideshow بالبطاقات الشفافة ========== -->
-{% if slideshow_cards %}
-<section id="home" class="hero-slideshow">
-    <div class="swiper heroSlideshow">
-        <div class="swiper-wrapper">
-            {% for card in slideshow_cards %}
-            <div class="swiper-slide">
-                <!-- صورة/فيديو الخلفية -->
-                <div class="hero-slide-bg">
-                    {% if card.card_type == 'video' or card.card_type == 'video_text' %}
-                        {% if card.video_url %}
-                            <iframe src="{{ card.video_url }}" allowfullscreen title="{{ card.heading }}"></iframe>
-                        {% elif card.video_file %}
-                            <video autoplay muted loop playsinline><source src="{{ card.video_file.url }}" type="video/mp4"></video>
-                        {% else %}
-                            {% if slides %}
-                                {% with slide=slides|first %}
-                                    {% if slide.media_type == 'video' %}
-                                        <video autoplay muted loop playsinline><source src="{{ slide.media_file.url }}" type="video/mp4"></video>
-                                    {% else %}
-                                        <img src="{{ slide.media_file.url }}" alt="Hero">
-                                    {% endif %}
-                                {% endwith %}
-                            {% else %}
-                                <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop" alt="Default">
-                            {% endif %}
-                        {% endif %}
-                    {% else %}
-                        {% if card.image %}
-                            <img src="{{ card.image.url }}" alt="{{ card.heading }}">
-                        {% elif slides %}
-                            {% with slide=slides|first %}
-                                {% if slide.media_type == 'video' %}
-                                    <video autoplay muted loop playsinline><source src="{{ slide.media_file.url }}" type="video/mp4"></video>
-                                {% else %}
-                                    <img src="{{ slide.media_file.url }}" alt="Hero">
-                                {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop" alt="Default">
-                        {% endif %}
-                    {% endif %}
-                </div>
-                <!-- طبقة غامقة فوق الخلفية -->
-                <div class="hero-slide-overlay" style="background: linear-gradient(rgba(10, 22, 50, 0.35), rgba(10, 22, 50, 0.5));"></div>
+<!-- ========== Hero: صورة ثابتة + شارة أفلام (يمين) + بطاقة شفافة (يسار) ========== -->
+<section id="home" class="hero-slideshow" style="
+    position: relative; width: 100%; height: 100vh; min-height: 600px; max-height: 900px; overflow: hidden; color: white;
+    {% if section_bgs.home and section_bgs.home.bg_image %}
+        background-image: url('{{ section_bgs.home.bg_image.url }}');
+        background-size: cover; background-position: center;
+        background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};
+    {% elif section_bgs.home and section_bgs.home.bg_color %}
+        background-color: {{ section_bgs.home.bg_color }};
+    {% endif %}
+">
+    <!-- طبقة غامقة فوق الخلفية -->
+    {% if section_bgs.home and section_bgs.home.enable_overlay %}
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.home.overlay_color }};opacity:{{ section_bgs.home.overlay_opacity }};z-index:1;"></div>
+    {% else %}
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(10,22,50,0.2),rgba(10,22,50,0.35));z-index:1;"></div>
+    {% endif %}
 
-                <!-- محتوى السلايد: البطاقة الشفافة -->
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 80px 30px 150px;">
-                    {% if card.card_type == 'text' %}
-                        <!-- نص فقط -->
-                        <div class="hero-transparent-card"
-                             style="background-color: rgba({{ card.bg_rgb }}, {{ card.card_opacity }}); border-radius: {{ card.border_radius }}; text-align: {{ card.text_align }}; font-size: {{ card.font_size }}; color: {{ card.font_color }}; font-weight: {{ card.font_weight }};">
-                            {% if card.heading %}<h3>{{ card.heading }}</h3>{% endif %}
-                            {% if card.body_text %}<p>{{ card.body_text }}</p>{% endif %}
-                        </div>
-                    {% elif card.card_type == 'image' %}
-                        <!-- صورة فقط — لا بطاقة -->
-                        <div></div>
-                    {% elif card.card_type == 'video' %}
-                        <!-- فيديو فقط — لا بطاقة -->
-                        <div></div>
-                    {% elif card.card_type == 'image_text' %}
-                        <!-- صورة + نص (تخطيط جانبي) -->
-                        <div class="hero-card-split hero-transparent-card"
-                             style="background-color: rgba({{ card.bg_rgb }}, {{ card.card_opacity }}); border-radius: {{ card.border_radius }};">
-                            <div class="hero-card-img">
-                                {% if card.image %}<img src="{{ card.image.url }}" alt="{{ card.heading }}">{% endif %}
-                            </div>
-                            <div class="hero-card-text" style="font-size: {{ card.font_size }}; color: {{ card.font_color }}; font-weight: {{ card.font_weight }}; text-align: {{ card.text_align }};">
-                                {% if card.heading %}<h3>{{ card.heading }}</h3>{% endif %}
-                                {% if card.body_text %}<p>{{ card.body_text }}</p>{% endif %}
-                            </div>
-                        </div>
-                    {% elif card.card_type == 'video_text' %}
-                        <!-- فيديو + نص -->
-                        <div class="hero-card-split hero-transparent-card"
-                             style="background-color: rgba({{ card.bg_rgb }}, {{ card.card_opacity }}); border-radius: {{ card.border_radius }};">
-                            <div class="hero-card-img" style="background-color: #000;">
-                                {% if card.video_url %}
-                                    <iframe src="{{ card.video_url }}" allowfullscreen loading="lazy" title="{{ card.heading }}"></iframe>
-                                {% elif card.video_file %}
-                                    <video autoplay muted loop playsinline><source src="{{ card.video_file.url }}" type="video/mp4"></video>
-                                {% endif %}
-                            </div>
-                            <div class="hero-card-text" style="font-size: {{ card.font_size }}; color: {{ card.font_color }}; font-weight: {{ card.font_weight }}; text-align: {{ card.text_align }};">
-                                {% if card.heading %}<h3>{{ card.heading }}</h3>{% endif %}
-                                {% if card.body_text %}<p>{{ card.body_text }}</p>{% endif %}
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
+    <!-- البطاقة الشفافة على اليسار -->
+    {% if hero_card and hero_card.is_enabled and hero_card.heading %}
+    <div class="hero-card-left-wrapper">
+        <div class="hero-transparent-card"
+             style="margin:0 !important;align-self:unset !important;width:500px;height:auto;min-height:180px;background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};text-align:right;">
+            {% if hero_card.heading %}<h3 style="margin-bottom:15px;line-height:1.6;">{{ hero_card.heading }}</h3>{% endif %}
+            {% if hero_card.body_text %}<p style="margin:0;line-height:1.9;opacity:0.93;">{{ hero_card.body_text }}</p>{% endif %}
         </div>
-        <div class="swiper-pagination"></div>
     </div>
-    <!-- نص متحرك على اليمين — خارج الـ swiper لضمان ظهوره فوراً -->
+    {% endif %}
+
+    <!-- شارة الأفلام المتحركة على اليمين -->
     <div class="side-credits">
         <div class="side-credits-scroll">
             <h3 class="sc-heading">{{ content.hero_title }}</h3>
@@ -145,7 +78,7 @@ section#{{ sid }} .timeline-date {
 </section>
 
 <style>
-/* ===== نص متحرك جانبي - شارة أفلام ===== */
+/* ===== شارة أفلام متحركة (يمين الهيرو) ===== */
 .side-credits {
     position: absolute;
     top: 50%; right: 4%;
@@ -153,25 +86,11 @@ section#{{ sid }} .timeline-date {
     z-index: 3;
     overflow: hidden;
     transform: translateY(-50%);
-    /* ✅ Fade تلاشي من الأطراف العلوي والسفلي */
-    -webkit-mask-image: linear-gradient(
-        to bottom,
-        transparent 0%,
-        black 18%,
-        black 82%,
-        transparent 100%
-    );
-    mask-image: linear-gradient(
-        to bottom,
-        transparent 0%,
-        black 18%,
-        black 82%,
-        transparent 100%
-    );
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
 }
 .side-credits-scroll {
     width: 100%;
-    /* ✅ السرعة: غيّر 22s لتتحكم — أكبر = أبطأ، أصغر = أسرع */
     animation: creditsRise 120s linear infinite;
 }
 .side-credits:hover .side-credits-scroll { animation-play-state: paused; }
@@ -187,43 +106,31 @@ section#{{ sid }} .timeline-date {
     text-shadow: 0 2px 10px rgba(0,0,0,0.4);
     padding: 6px 0;
 }
-/* ✅ الأنيميشن: تمرير مستمر من أسفل لأعلى */
 @keyframes creditsRise {
-    0%   { transform: translateY(0%);   }
+    0%   { transform: translateY(0%); }
     100% { transform: translateY(-50%); }
 }
 @media (max-width: 991px) { .side-credits { display: none; } }
-</style>
 
-{% else %}
-<!-- Hero عادي بدون بطاقات slideshow -->
-<section id="home" class="d-flex align-items-center justify-content-center text-center" style="position: relative; min-height: 100vh; color: white; {% if section_bgs.home and section_bgs.home.bg_image %}background-image: url('{{ section_bgs.home.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};{% elif section_bgs.home and section_bgs.home.bg_color %}background-color: {{ section_bgs.home.bg_color }};{% endif %}">
-    {% if section_bgs.home and section_bgs.home.bg_image and section_bgs.home.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.home.overlay_color }};opacity:{{ section_bgs.home.overlay_opacity }};z-index:-1;"></div>{% endif %}
-    <div class="swiper hero-swiper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;">
-        <div class="swiper-wrapper">
-            {% for slide in slides %}
-                <div class="swiper-slide">
-                    {% if slide.media_type == 'video' %}
-                        <video autoplay muted loop playsinline style="width: 100%; height: 100%; object-fit: cover;"><source src="{{ slide.media_file.url }}" type="video/mp4"></video>
-                    {% else %}
-                        <img src="{{ slide.media_file.url }}" alt="Hero" style="width: 100%; height: 100%; object-fit: cover;">
-                    {% endif %}
-                </div>
-            {% empty %}
-                <div class="swiper-slide">
-                    <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop" alt="Default" style="width: 100%; height: 100%; object-fit: cover;">
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(10, 22, 50, 0.2), rgba(10, 22, 50, 0.3)); z-index: -1;"></div>
-    <div class="container" data-aos="fade-up" style="z-index: 1;">
-        <h1 class="display-3 fw-bold mb-3">{{ content.hero_title }}</h1>
-        <h4 class="mb-3" style="color: #e0e0e0; letter-spacing: 2px;">{{ content.hero_subtitle }}</h4>
-        <a href="{% url 'submit_project' %}" class="btn btn-gold btn-lg px-5 mt-2">{{ content.btn_hero }}</a>
-    </div>
-</section>
-{% endif %}
+/* ===== موقع البطاقة الشفافة (يسار الهيرو) ===== */
+.hero-card-left-wrapper {
+    position: absolute;
+    top: 50%; left: 60px;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+@media (max-width: 767px) {
+    .hero-card-left-wrapper {
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90vw;
+    }
+    .hero-card-left-wrapper .hero-transparent-card {
+        width: 100% !important;
+        min-height: unset !important;
+    }
+}
+</style>
 <!-- ========== نهاية Hero ========== -->
 
 <!-- آخر الأخبار -->
@@ -631,32 +538,6 @@ section#{{ sid }} .timeline-date {
 </div>
 
 <script>
-    // Hero Slideshow Swiper (بطاقات شفافة)
-    try {
-        const heroSlideshowEl = document.querySelector('.heroSlideshow');
-        if (heroSlideshowEl) {
-            new Swiper('.heroSlideshow', {
-                loop: true,
-                autoplay: {
-                    delay: 5000,
-                    disableOnInteraction: false,
-                    pauseOnMouseEnter: true,
-                },
-                effect: 'fade',
-                fadeEffect: { crossFade: true },
-                speed: 1200,
-                pagination: {
-                    el: '.hero-slideshow .swiper-pagination',
-                    clickable: true,
-                },
-
-            });
-        }
-    } catch(e) { console.error("Hero Slideshow Error:", e); }
-
-    // Hero Swiper عادي (بدون بطاقات)
-    try { const heroSwiper = document.querySelector('.hero-swiper'); if (heroSwiper) { new Swiper('.hero-swiper', { loop: true, autoplay: { delay: 5000, disableOnInteraction: false }, effect: 'fade', fadeEffect: { crossFade: true }, speed: 1500 }); } } catch(e) { console.error("Hero Swiper Error:", e); }
-
     // Countdown
     const countdownElement = document.getElementById("countdownNav");
     {% if settings and settings.registration_deadline %}
