@@ -4,7 +4,7 @@ from .models import (
     Judge, ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
     SectionBackground, Sponsor, FAQ, Winner, WinnerCategory, MediaGallery,
     ContactMessage, TickerItem, SlideshowCard, TickerSetting, News,
-    Photo, Video, SuccessStory
+    Photo, Video, SuccessStory, HeroCard
 )
 
 
@@ -127,7 +127,7 @@ class SuccessPageContentAdmin(admin.ModelAdmin):
 
 @admin.register(SectionBackground)
 class SectionBackgroundAdmin(admin.ModelAdmin):
-    list_display = ('section_id', 'bg_color', 'is_parallax')
+    list_display = ('section_id', 'bg_color', 'heading_color', 'text_color', 'is_parallax')
     list_editable = ('is_parallax',)
     list_display_links = ('section_id',)
 
@@ -234,6 +234,31 @@ class SlideshowCardAdmin(admin.ModelAdmin):
     list_filter = ('card_type', 'is_active')
     list_editable = ('order', 'is_active')
     list_display_links = ('card_type',)
+
+
+@admin.register(HeroCard)
+class HeroCardAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('تفعيل / إيقاف', {
+            'fields': ('is_enabled',),
+            'description': 'فعّل لإظهار بطاقة شفافة على يسار الهيرو في الصفحة الرئيسية',
+        }),
+        ('محتوى البطاقة', {
+            'fields': ('heading', 'body_text'),
+            'classes': ('wide',),
+        }),
+        ('تصميم البطاقة', {
+            'fields': ('card_bg_color', 'card_opacity', 'font_color', 'font_size', 'font_weight', 'border_radius'),
+            'classes': ('collapse',),
+            'description': 'تحكم بمظهر البطاقة الشفافة (اللون، الشفافية، الخط، الاستدارة)',
+        }),
+    )
+
+    def has_add_permission(self, request):
+        return not HeroCard.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(TickerSetting)
