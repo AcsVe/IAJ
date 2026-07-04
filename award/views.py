@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import (
     Field, SiteSetting, HeroSlide, TimelineEvent, Judge, Submission,
     ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
-    SectionBackground, Sponsor, SlideshowCard, News, Winner, MediaGallery
+    SectionBackground, Sponsor, SlideshowCard, News, Video, SuccessStory,
+    HeroCard
 )
 from .forms import SubmissionForm
 
@@ -24,8 +25,8 @@ def home(request):
     timeline = TimelineEvent.objects.all()
     judges = Judge.objects.all()
     sponsors = Sponsor.objects.all()
-    latest_news = News.objects.filter(is_published=True).order_by('-date')[:3]
     slideshow_cards = SlideshowCard.objects.filter(is_active=True)
+    hero_card = get_or_none(HeroCard)
 
     # بناء قاموس خلفيات الأقسام
     section_bgs = {}
@@ -43,13 +44,14 @@ def home(request):
         'judges': judges,
         'sponsors': sponsors,
         'slideshow_cards': slideshow_cards,
-        'latest_news': latest_news,
+        'hero_card': hero_card,
         'section_bgs': section_bgs,
         'total_submissions': total_submissions,
         'accepted_submissions': accepted_submissions,
         'theme': theme,      
         'content': content,  
-        'footer': footer,   
+        'footer': footer,  
+        'latest_news': News.objects.filter(is_published=True)[:3],        
     }
     return render(request, 'award/home.html', context)
 
@@ -83,71 +85,51 @@ def submit_project(request):
         'footer': footer
     })
 
-
-def get_base_context():
-    """context مشترك بين كل الصفحات"""
-    return {
-        'settings': get_or_none(SiteSetting),
-        'theme': get_or_none(ThemeSetting),
-        'footer': get_or_none(FooterContent),
-        'content': get_or_none(HomeContent),
-    }
-
+# ====================================================
+# أضف هذه الـ Views في award/views.py
+# تأكد من استيراد: News, Video, SuccessStory, MediaGallery
+# ====================================================
 
 def news_list(request):
-    news = News.objects.filter(is_published=True).order_by('-date')
-    ctx = get_base_context()
-    ctx['news_list'] = news
-    return render(request, 'award/news_list.html', ctx)
-
+    """صفحة قائمة الأخبار"""
+    all_news = News.objects.filter(is_published=True).order_by('-date')
+    return render(request, 'award/news_list.html', {
+        'all_news': all_news,
+    })
 
 def news_detail(request, pk):
-    from django.shortcuts import get_object_or_404
-    article = get_object_or_404(News, pk=pk, is_published=True)
-    ctx = get_base_context()
-    ctx['article'] = article
-    return render(request, 'award/news_detail.html', ctx)
+    """صفحة تفاصيل الخبر"""
+    news = get_object_or_404(News, pk=pk, is_published=True)
+    return render(request, 'award/news_detail.html', {
+        'news': news,
+    })
 
-
-# ==================== صفحة الفائزين ====================
-def winners_page(request):
-    winners = Winner.objects.all()
-    ctx = get_base_context()
-    ctx['winners'] = winners
-    return render(request, 'award/winners.html', ctx)
-
-
-# ==================== صفحة الصور ====================
 def photos_page(request):
-    photos = MediaGallery.objects.filter(media_type='image')
-    ctx = get_base_context()
-    ctx['photos'] = photos
-    return render(request, 'award/photos.html', ctx)
+    """صفحة الصور"""
+    photos = MediaGallery.objects.filter(media_type='image', is_active=True).order_by('-created_at')
+    return render(request, 'award/photos.html', {
+        'photos': photos,
+    })
 
-
-# ==================== صفحة الفيديو ====================
 def videos_page(request):
-    videos = MediaGallery.objects.filter(media_type='video')
-    ctx = get_base_context()
-    ctx['videos'] = videos
-    return render(request, 'award/videos.html', ctx)
+    """مكتبة الفيديو"""
+    videos = Video.objects.filter(is_active=True).order_by('order')
+    return render(request, 'award/videos.html', {
+        'videos': videos,
+    })
 
-
-# ==================== قصص النجاح ====================
 def success_stories_page(request):
-    winners = Winner.objects.all()
-    ctx = get_base_context()
-    ctx['winners'] = winners
-    return render(request, 'award/success_stories.html', ctx)
+    """قصص النجاح"""
+    stories = SuccessStory.objects.filter(is_active=True).order_by('-date')
+    return render(request, 'award/success_stories.html', {
+        'stories': stories,
+    })
 
-
-# ==================== الإحصائيات ====================
 def statistics_page(request):
-    ctx = get_base_context()
-    ctx['stat_items'] = [
-        {'icon': 'fas fa-file-alt',  'value': Submission.objects.count(),                          'label': 'إجمالي المشاركات'},
-        {'icon': 'fas fa-check-circle','value': Submission.objects.filter(status='accepted').count(),'label': 'المشاركات المقبولة'},
-        {'icon': 'fas fa-trophy',    'value': Winner.objects.count(),                               'label': 'الفائزون'},
-        {'icon': 'fas fa-newspaper', 'value': News.objects.filter(is_published=True).count(),       'label': 'الأخبار المنشورة'},
-    ]
-    return render(request, 'award/statistics.html', ctx)
+    """صفحة الإحصائيات"""
+    total_submissions = Submission.objects.count()
+    accepted_submissions = Submission.objects.filter(status='accepted').count()
+    return render(request, 'award/statistics.html', {
+        'total_submissions': total_submissions,
+        'accepted_submissions': accepted_submissions,
+    })
