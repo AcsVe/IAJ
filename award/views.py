@@ -125,6 +125,18 @@ def success_stories_page(request):
         'stories': stories,
     })
 
+def winners_page(request):
+    """صفحة الفائزون"""
+    from .models import Winner, WinnerCategory
+    categories = WinnerCategory.objects.filter(is_active=True)
+    winners = Winner.objects.filter(is_active=True).select_related('category')
+    years = winners.values_list('year', flat=True).distinct().order_by('-year')
+    return render(request, 'award/winners.html', {
+        'categories': categories,
+        'winners': winners,
+        'years': years,
+    })
+
 def statistics_page(request):
     """صفحة الإحصائيات"""
     total_submissions = Submission.objects.count()
