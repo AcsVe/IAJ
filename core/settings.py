@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',  # 🔥 رجعناها
     'award',
-    'quill',
+    'django_quill',
 ]
 
 MIDDLEWARE = [
