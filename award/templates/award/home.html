@@ -131,6 +131,15 @@ section#{{ sid }} .timeline-date {
     .sc-text { font-size: 12px; }
 }
 
+/* ===== صورة الهيرو تظهر كاملة على الموبايل بدون اقتصاص ===== */
+@media (max-width: 767px) {
+    #home.hero-slideshow {
+        background-size: contain !important;
+        background-position: center top !important;
+        background-repeat: no-repeat !important;
+    }
+}
+
 /* ===== موقع البطاقة الشفافة (يسار الهيرو) ===== */
 .hero-card-left-wrapper {
     position: absolute;
@@ -171,10 +180,10 @@ section#{{ sid }} .timeline-date {
 .news-card-item p { color: #666; font-size: 0.9rem; line-height: 1.8; flex: 1; }
 @media (max-width: 767px) {
     .news-section-wrapper { flex-direction: column; }
-    .news-sidebar { flex: 0 0 auto; flex-direction: row; padding: 15px 20px; }
+    .news-sidebar { flex: 0 0 auto; flex-direction: row; padding: 15px 20px; width: 100%; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2; }
     .news-sidebar .sidebar-line { width: 3px; height: 30px; }
-    .news-cards-row { grid-template-columns: 1fr; }
-    .news-card-item { border-left: none; border-bottom: 1px solid #eee; }
+    .news-cards-row { grid-template-columns: 1fr; position: relative; z-index: 1; }
+    .news-card-item { border-left: none; border-bottom: 1px solid #eee; padding: 20px 15px; }
 }
 </style>
 <section class="news-section-wrapper" data-aos="fade-up">
