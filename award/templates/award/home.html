@@ -130,14 +130,15 @@ section#{{ sid }} .timeline-date {
     .sc-text { font-size: 12px; }
 }
 
-/* ===== الصورة الرئيسية: portrait كاملة (بدون letterbox) ومعكوسة يمين↔يسار على الموبايل ===== */
+/* ===== الموبايل: خلفية مموّهة فقط (بدون عرض الصورة الحقيقية) + شارة الأفلام فوقها ===== */
 .hero-mirror-bg { display: none; }
 @media (max-width: 767px) {
     .hero-mirror-bg {
         display: block;
         position: absolute; inset: 0; z-index: 0;
         background-repeat: no-repeat; background-position: center; background-size: cover;
-        transform: scaleX(-1);
+        filter: blur(25px) brightness(0.55);
+        transform: scale(1.15);
     }
 }
 
