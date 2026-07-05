@@ -22,7 +22,8 @@
             --text-dark: #1a1a1a;
             font-size: {{ theme.font_size|default:"16px" }};
         }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-light); color: var(--text-dark); overflow-x: hidden; }
+        html, body { max-width: 100%; overflow-x: hidden; }
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-light); color: var(--text-dark); }
         .navbar-royal { background-color: transparent; padding: 20px 0; transition: all 0.4s ease; z-index: 1000; }
         .navbar-royal.scrolled { background-color: var(--primary); padding: 10px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         .navbar-royal .nav-link { color: #ffffff !important; font-weight: 600; margin: 0 15px; font-size: 0.95rem; position: relative; }
@@ -277,10 +278,20 @@
         .hero-title-overlay h4 { color: rgba(255,255,255,0.85); text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
 
         @media (max-width: 767px) {
-            .hero-transparent-card { width: 90vw; height: auto; max-width: 550px; margin: 30px auto 0 0 !important; padding: 25px 25px; }
-            .hero-card-split { flex-direction: column; width: 90vw; max-width: 550px; margin: 30px auto 0 0 !important; }
+            /* hero cards */
+            .hero-transparent-card { width: 90vw; height: auto; max-width: 550px; margin: 30px auto 0 auto !important; padding: 20px; }
+            .hero-card-split { flex-direction: column; width: 90vw; max-width: 550px; margin: 30px auto 0 auto !important; }
             .hero-card-split .hero-card-img { flex: 0 0 auto; min-height: 180px; width: 100%; }
-            .hero-card-split .hero-card-text { padding: 20px 25px; }
+            .hero-card-split .hero-card-text { padding: 20px; }
+            /* hero slideshow */
+            .hero-slideshow { height: 100svh !important; max-height: none !important; }
+            /* navbar */
+            .navbar-royal { top: 40px !important; padding: 8px 0 !important; }
+            .navbar-toggler { border-color: rgba(255,255,255,0.5) !important; }
+            /* إخفاء scrollDown على الموبايل */
+            #scrollDown { display: none !important; }
+            /* منع background-attachment fixed */
+            * { background-attachment: scroll !important; }
         }
 
         /* ===== Flip Cards للمجالات ===== */
