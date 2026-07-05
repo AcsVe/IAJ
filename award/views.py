@@ -3,7 +3,7 @@ from .models import (
     Field, SiteSetting, HeroSlide, TimelineEvent, Judge, Submission,
     ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
     SectionBackground, Sponsor, SlideshowCard, News, Video, SuccessStory,
-    HeroCard, MediaGallery, Photo, Winner, WinnerCategory
+    HeroCard, Winner, WinnerCategory, MediaGallery, Photo
 )
 from .forms import SubmissionForm
 
@@ -127,7 +127,6 @@ def success_stories_page(request):
 
 def winners_page(request):
     """صفحة الفائزون"""
-    from .models import Winner, WinnerCategory
     categories = WinnerCategory.objects.filter(is_active=True)
     winners = Winner.objects.filter(is_active=True).select_related('category')
     years = winners.values_list('year', flat=True).distinct().order_by('-year')
