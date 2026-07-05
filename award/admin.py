@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from .models import (
     Field, Track, Submission, SiteSetting, HeroSlide, TimelineEvent,
     Judge, ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
@@ -207,8 +208,33 @@ class PhotoAdmin(admin.ModelAdmin):
     search_fields = ('title',)
 
 
+class QuillEditorWidget(forms.Textarea):
+    """محرر Quill يُحمّل من CDN — لا يحتاج أي باكدج"""
+    template_name = 'award/quill_editor_widget.html'
+
+    class Media:
+        css = {
+            'all': (
+                'https://cdn.quilljs.com/1.3.7/quill.snow.css',
+            )
+        }
+        js = (
+            'https://cdn.quilljs.com/1.3.7/quill.min.js',
+        )
+
+
+class NewsAdminForm(forms.ModelForm):
+    class Meta:
+        model = News
+        fields = '__all__'
+        widgets = {
+            'content': QuillEditorWidget(attrs={'rows': 10, 'style': 'width:100%'}),
+        }
+
+
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
+    form = NewsAdminForm
     list_display = ('title', 'date', 'is_published')
     list_editable = ('is_published',)
     list_display_links = ('title',)
@@ -217,6 +243,9 @@ class NewsAdmin(admin.ModelAdmin):
             'fields': ('title', 'image', 'content', 'date', 'is_published')
         }),
     )
+
+    class Media:
+        js = ('award/js/quill_init.js',)
 
 
 @admin.register(ContactMessage)
