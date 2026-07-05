@@ -1,0 +1,5 @@
+{% load i18n %}
+<div class="quill-wrapper" style="position:relative;">
+    <div id="{{ widget.attrs.id }}_editor" style="min-height:300px;background:#fff;border:1px solid #ccc;border-radius:4px;font-family:Cairo,sans-serif;"></div>
+    <textarea name="{{ widget.name }}" id="{{ widget.attrs.id }}" style="display:none;">{{ widget.value|default:"" }}</textarea>
+</div>
