@@ -1,5 +1,4 @@
 from django.db import models
-from django_quill.fields import QuillField
 
 
 class Field(models.Model):
@@ -326,7 +325,7 @@ class SuccessStory(models.Model):
 class News(models.Model):
     title = models.CharField(max_length=300, verbose_name="العنوان")
     image = models.ImageField(upload_to='news/', blank=True, null=True, verbose_name="الصورة")
-    content = QuillField(verbose_name="المحتوى")
+    content = models.TextField(verbose_name="المحتوى")
     date = models.DateField(verbose_name="التاريخ")
     is_published = models.BooleanField(default=True, verbose_name="منشور؟")
     class Meta: verbose_name = "خبر"; verbose_name_plural = "الأخبار"; ordering = ['-date']
