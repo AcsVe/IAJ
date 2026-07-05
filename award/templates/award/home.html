@@ -116,34 +116,24 @@ section#{{ sid }} .timeline-date {
 @media (max-width: 991px) {
     .side-credits {
         display: block;
-        left: 4%; right: auto;
         width: 50%; height: 200px;
     }
-    .sc-heading, .sc-text { text-align: left; }
     .sc-heading { font-size: 16px; }
     .sc-text { font-size: 14px; }
 }
 @media (max-width: 576px) {
-    .side-credits { left: 2%; width: 70%; height: 160px; }
+    .side-credits { width: 70%; height: 160px; }
     .sc-heading { font-size: 14px; }
     .sc-text { font-size: 12px; }
 }
 
-/* ===== الصورة الرئيسية: تظهر كاملة (بدون قص) ومعكوسة يمين↔يسار على الموبايل ===== */
+/* ===== الصورة الرئيسية: portrait كاملة (بدون letterbox) ومعكوسة يمين↔يسار على الموبايل ===== */
 @media (max-width: 767px) {
-    #home.hero-slideshow::before,
     #home.hero-slideshow::after {
         content: ''; position: absolute; inset: 0; z-index: 0;
         background-image: var(--hero-bg-url);
         background-repeat: no-repeat; background-position: center;
-    }
-    #home.hero-slideshow::before {
         background-size: cover;
-        filter: blur(25px) brightness(0.55);
-        transform: scale(1.15) scaleX(-1);
-    }
-    #home.hero-slideshow::after {
-        background-size: contain;
         transform: scaleX(-1);
     }
 }
