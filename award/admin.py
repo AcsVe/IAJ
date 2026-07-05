@@ -212,6 +212,11 @@ class NewsAdmin(admin.ModelAdmin):
     list_display = ('title', 'date', 'is_published')
     list_editable = ('is_published',)
     list_display_links = ('title',)
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'image', 'content', 'date', 'is_published')
+        }),
+    )
 
 
 @admin.register(ContactMessage)
