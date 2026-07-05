@@ -1,66 +1,44 @@
 {% extends 'award/base.html' %}
 
 {% block content %}
-<style>
-    .nd-inner-header { background-color: var(--primary); padding: 50px 0 40px; }
-    .nd-inner-header .container { max-width: 900px; }
-    .nd-inner-header h1 { color: #fff; font-weight: 800; font-size: 1.8rem; line-height: 1.8; margin: 0; }
-    .nd-inner-header .breadcrumb { background: transparent; margin: 18px 0 0; padding: 0; }
-    .nd-inner-header .breadcrumb-item a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.88rem; }
-    .nd-inner-header .breadcrumb-item a:hover { color: var(--gold); }
-    .nd-inner-header .breadcrumb-item.active { color: rgba(255,255,255,0.4); font-size: 0.88rem; }
-    .nd-inner-header .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,0.3); }
-    .nd-body-content { padding: 0 0 60px; }
-    .nd-body-content .container { max-width: 900px; }
-    .nd-date { color: var(--gold); font-weight: 700; font-size: 1rem; margin: 30px 0 25px; }
-    .nd-date i { margin-left: 8px; }
-    .nd-text { text-align: right; color: #444; font-size: 1.05rem; line-height: 2.2; }
-    .nd-text p { margin-bottom: 18px; }
-    .nd-text img { max-width: 100%; height: auto; margin: 15px 10px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-    .nd-text img:first-child { margin-right: 0; }
-    .nd-back-section { text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
-    .nd-back-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 35px; background-color: var(--primary); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: all 0.3s; }
-    .nd-back-btn:hover { background-color: var(--gold); color: #fff; }
-    @media (max-width: 768px) {
-        .nd-inner-header { padding: 35px 0 25px; }
-        .nd-inner-header h1 { font-size: 1.3rem; }
-        .nd-text img { width: 100% !important; margin: 10px 0; }
-    }
-</style>
-
-<div class="innerbody">
-    <!-- Inner Header -->
-    <div class="nd-inner-header">
-        <div class="container">
-            <h1>{{ article.title }}</h1>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'home' %}">الرئيسية</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'news_list' %}">الأخبار</a></li>
-                    <li class="breadcrumb-item active">{{ article.title|truncatewords:6 }}</li>
-                </ol>
-            </nav>
-        </div>
+<!-- تفاصيل الخبر -->
+<section class="media-page-header" style="background-color: var(--primary); padding: 80px 0 50px; text-align: center;">
+    <div class="container">
+        <h1 style="color: var(--gold); font-weight: 900; font-size: 2.5rem;">الأخبار</h1>
     </div>
+</section>
 
-    <!-- Body Content -->
-    <div class="nd-body-content">
-        <div class="container">
-            <h5 class="nd-date"><i class="fas fa-calendar-alt"></i> {{ article.date|date:"d-m-Y" }}</h5>
-            <div class="row">
-                <div class="col-lg-12 col-md-12 col-12">
-                    <div class="nd-text">
-                        {{ article.content|linebreaks }}
+<section class="py-5" style="background-color: var(--bg-gray);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div style="background: #fff; padding: 40px; box-shadow: 0 2px 15px rgba(0,0,0,0.08);">
+                    <!-- التاريخ -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                        <i class="fas fa-calendar-alt" style="color: var(--gold);"></i>
+                        <span style="color: #c0392b; font-weight: 600;">{{ news.date|date:"d-m-Y" }}</span>
+                    </div>
+                    <!-- العنوان -->
+                    <h1 style="color: var(--primary); font-weight: 900; font-size: 2rem; margin-bottom: 25px; line-height: 1.6;">{{ news.title }}</h1>
+                    <!-- الصورة -->
+                    {% if news.image %}
+                    <div style="margin-bottom: 30px; border-radius: 0; overflow: hidden;">
+                        <img src="{{ news.image.url }}" alt="{{ news.title }}" style="width: 100%; max-height: 450px; object-fit: cover;">
+                    </div>
+                    {% endif %}
+                    <!-- المحتوى -->
+                    <div style="color: #333; font-size: 1.1rem; line-height: 2.2;">
+                        {{ news.content.html|safe }}
+                    </div>
+                    <!-- زر العودة -->
+                    <div style="margin-top: 40px; text-align: center;">
+                        <a href="{% url 'news_list' %}" class="btn btn-gold">
+                            <i class="fas fa-arrow-right ms-2"></i> العودة للأخبار
+                        </a>
                     </div>
                 </div>
             </div>
-            <div class="nd-back-section">
-                <a href="{% url 'news_list' %}" class="nd-back-btn">
-                    <i class="fas fa-arrow-right"></i>
-                    العودة للأخبار
-                </a>
-            </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
