@@ -112,7 +112,24 @@ section#{{ sid }} .timeline-date {
     0%   { transform: translateY(0%); }
     100% { transform: translateY(-50%); }
 }
-@media (max-width: 991px) { .side-credits { display: none; } }
+@media (max-width: 991px) {
+    .side-credits {
+        width: 50%;
+        right: 2%;
+        height: 200px;
+    }
+    .sc-heading { font-size: 16px; }
+    .sc-text { font-size: 14px; }
+}
+@media (max-width: 576px) {
+    .side-credits {
+        width: 70%;
+        right: 2%;
+        height: 160px;
+    }
+    .sc-heading { font-size: 14px; }
+    .sc-text { font-size: 12px; }
+}
 
 /* ===== موقع البطاقة الشفافة (يسار الهيرو) ===== */
 .hero-card-left-wrapper {
