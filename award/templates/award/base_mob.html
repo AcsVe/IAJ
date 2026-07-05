@@ -174,11 +174,11 @@
         .section-header h2 { font-weight: 900; color: var(--primary); font-size: 2.2rem; margin-bottom: 15px; }
         .section-header .gold-line { width: 80px; height: 3px; background-color: var(--gold); margin: 0 auto; }
         .section-header-white h2 { color: #fff; }
-        #scrollToTop { position: fixed; bottom: 80px; left: 20px; z-index: 9999; display: none; width: 44px; height: 44px; border-radius: 50%; background-color: var(--gold); color: #fff; border: none; font-size: 1rem; box-shadow: 0 4px 12px rgba(197, 160, 89, 0.5); transition: all 0.3s; align-items: center; justify-content: center; cursor: pointer; }
+        #scrollToTop { position: fixed; bottom: 30px; left: 30px; z-index: 9999; display: none; width: 50px; height: 50px; border-radius: 0; background-color: var(--gold); color: #fff; border: none; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(197, 160, 89, 0.5); transition: all 0.3s; }
         #scrollToTop:hover { background-color: var(--primary); }
-        #scrollDown { position: fixed; bottom: 25px; left: 20px; z-index: 9999; display: none; width: 44px; height: 44px; border-radius: 50%; background-color: var(--primary); color: #fff; border: none; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; }
-        #scrollDown:hover { background-color: var(--gold); }
-        @keyframes breathe { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+        #scrollDown { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; display: none; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 1.2rem; text-decoration: none; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: breathe 2s ease-in-out infinite; transition: background-color 0.3s; }
+        #scrollDown:hover { background-color: rgba(255,255,255,0.3); color: #fff; }
+        @keyframes breathe { 0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.12); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ===== Non-home pages: navbar always dark ===== */
@@ -271,12 +271,17 @@
             .hero-card-split .hero-card-img { flex: 0 0 auto; min-height: 180px; width: 100%; }
             .hero-card-split .hero-card-text { padding: 20px 25px; }
 
-            /* ✅ الصورة في النصف العلوي فقط — وجه السيدة ظاهر بالكامل */
-            .hero-slide-bg { height: 55% !important; }
-            .hero-slide-bg img { object-fit: contain !important; background: transparent; height: 100% !important; width: 100% !important; }
-            .hero-card-split .hero-card-img img { object-fit: contain !important; background: transparent; }
-            /* خلفية داكنة للمنطقة الفارغة أسفل الصورة */
-            .hero-slideshow .swiper-slide { background-color: var(--primary); }
+            /* ✅ الصورة الرئيسية (خلفية الهيرو) تظهر كاملة على الموبايل بدون قص الوجه */
+            /* خلفية مموّهة (نفس الصورة) تملأ الفراغ خلفها، والصورة الحقيقية كاملة فوقها */
+            .hero-slide-bg::before,
+            .hero-card-split .hero-card-img::before {
+                content: ''; position: absolute; inset: 0; z-index: 0;
+                background-image: inherit; background-size: cover; background-position: center;
+                filter: blur(25px) brightness(0.6); transform: scale(1.15);
+            }
+            .hero-card-split .hero-card-img { position: relative; overflow: hidden; }
+            .hero-slide-bg img { position: relative; z-index: 1; object-fit: contain !important; background: transparent; }
+            .hero-card-split .hero-card-img img { position: relative; z-index: 1; object-fit: contain !important; background: transparent; }
 
             /* ✅ إصلاحات الموبايل الشاملة */
             /* منع background-attachment:fixed على iOS */
@@ -295,9 +300,7 @@
             body { overflow-x: hidden !important; }
             /* navbar على الموبايل */
             .navbar-royal { top: 40px !important; }
-            /* ✅ إظهار أزرار السكرول على الموبايل */
-            #scrollToTop { bottom: 100px !important; left: 15px !important; z-index: 99999 !important; width: 50px !important; height: 50px !important; font-size: 1.1rem !important; }
-            #scrollDown { bottom: 40px !important; left: 15px !important; z-index: 99999 !important; width: 50px !important; height: 50px !important; font-size: 1.1rem !important; }
+            /* scrollDown يبقى شغّال على الموبايل — الـ JS بيتحكم بظهوره/اختفاءه */
         }
 
         /* ===== Flip Cards للمجالات ===== */
@@ -520,43 +523,9 @@
     const scrollDownBtn = document.getElementById('scrollDown');
     const navbar = document.querySelector('.navbar-royal');
     const sections = document.querySelectorAll('section[id]');
-
-    function getScrollOffset() {
-        var ticker = document.getElementById('tickerWrapper');
-        var nav = document.querySelector('.navbar-royal');
-        var off = 0;
-        if (ticker) off += ticker.offsetHeight;
-        if (nav) off += nav.offsetHeight;
-        return off > 0 ? off : 80;
-    }
-
-    if (scrollDownBtn) {
-        scrollDownBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            var offset = getScrollOffset();
-            var currentScroll = window.scrollY + (window.innerHeight / 3);
-            for (var i = 0; i < sections.length; i++) {
-                var secTop = sections[i].getBoundingClientRect().top + window.scrollY;
-                if (secTop > currentScroll) {
-                    window.scrollTo({ top: secTop - offset, behavior: 'smooth' });
-                    return;
-                }
-            }
-        });
-    }
-    if (scrollUpBtn) {
-        scrollUpBtn.addEventListener('click', function(e) {
-            e.preventDefault(); e.stopPropagation();
-            var offset = getScrollOffset();
-            var target = 0;
-            for (var i = 0; i < sections.length; i++) {
-                var secTop = sections[i].getBoundingClientRect().top + window.scrollY;
-                if (secTop < window.scrollY - 10) { target = secTop - offset; }
-                else { break; }
-            }
-            window.scrollTo({ top: target, behavior: 'smooth' });
-        });
-    }
+    const offset = 80;
+    if (scrollDownBtn) { scrollDownBtn.addEventListener('click', function(e) { e.preventDefault(); let currentScroll = window.scrollY + offset; for (let i = 0; i < sections.length; i++) { if (sections[i].offsetTop > currentScroll) { window.scrollTo({ top: sections[i].offsetTop - offset, behavior: 'smooth' }); return; } } }); }
+    if (scrollUpBtn) { scrollUpBtn.addEventListener('click', function(e) { e.preventDefault(); let currentScroll = window.scrollY + offset; let target = 0; for (let i = 0; i < sections.length; i++) { if (sections[i].offsetTop < currentScroll) { target = sections[i].offsetTop - offset; } else { break; } } window.scrollTo({ top: target, behavior: 'smooth' }); }); }
 
     function closeAllDropdowns() {
         var openDropdowns = document.querySelectorAll('.navbar-royal .dropdown-menu.show');
