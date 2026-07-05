@@ -41,14 +41,17 @@ section#{{ sid }} .timeline-date {
 <section id="home" class="hero-slideshow" style="
     position: relative; width: 100%; height: 100vh; min-height: 600px; max-height: 900px; overflow: hidden; color: white;
     {% if section_bgs.home and section_bgs.home.bg_image %}
-        --hero-bg-url: url('{{ section_bgs.home.bg_image.url }}');
-        background-image: var(--hero-bg-url);
+        background-image: url('{{ section_bgs.home.bg_image.url }}');
         background-size: cover; background-position: center;
         background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};
     {% elif section_bgs.home and section_bgs.home.bg_color %}
         background-color: {{ section_bgs.home.bg_color }};
     {% endif %}
 ">
+    {% if section_bgs.home and section_bgs.home.bg_image %}
+    <!-- طبقة معكوسة تُستخدم فقط على الموبايل -->
+    <div class="hero-mirror-bg" style="background-image: url('{{ section_bgs.home.bg_image.url }}');"></div>
+    {% endif %}
     <!-- طبقة غامقة فوق الخلفية -->
     {% if section_bgs.home and section_bgs.home.enable_overlay %}
     <div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.home.overlay_color }};opacity:{{ section_bgs.home.overlay_opacity }};z-index:1;"></div>
@@ -128,12 +131,12 @@ section#{{ sid }} .timeline-date {
 }
 
 /* ===== الصورة الرئيسية: portrait كاملة (بدون letterbox) ومعكوسة يمين↔يسار على الموبايل ===== */
+.hero-mirror-bg { display: none; }
 @media (max-width: 767px) {
-    #home.hero-slideshow::after {
-        content: ''; position: absolute; inset: 0; z-index: 0;
-        background-image: var(--hero-bg-url);
-        background-repeat: no-repeat; background-position: center;
-        background-size: cover;
+    .hero-mirror-bg {
+        display: block;
+        position: absolute; inset: 0; z-index: 0;
+        background-repeat: no-repeat; background-position: center; background-size: cover;
         transform: scaleX(-1);
     }
 }
