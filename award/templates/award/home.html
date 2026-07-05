@@ -1,0 +1,589 @@
+{% extends 'award/base.html' %}
+
+{% block content %}
+
+<!-- ✅ ألوان العناوين والنصوص لكل قسم — تُقرأ من الإدمن (SectionBackground) -->
+<!-- إذا الحقول فاضية (افتراضي) لن يتغير أي شيء -->
+<style>
+{% for sid, sb in section_bgs.items %}
+{% if sb.heading_color or sb.heading_size %}
+section#{{ sid }} .section-header h2 {
+    {% if sb.heading_color %}color: {{ sb.heading_color }} !important;{% endif %}
+    {% if sb.heading_size %}font-size: {{ sb.heading_size }} !important;{% endif %}
+}
+{% endif %}
+{% if sb.gold_line_color %}
+section#{{ sid }} .gold-line { background-color: {{ sb.gold_line_color }} !important; }
+{% endif %}
+{% if sb.sub_heading_color or sb.sub_heading_size %}
+section#{{ sid }} h3,
+section#{{ sid }} h4,
+section#{{ sid }} h5,
+section#{{ sid }} h6,
+section#{{ sid }} .timeline-title {
+    {% if sb.sub_heading_color %}color: {{ sb.sub_heading_color }} !important;{% endif %}
+    {% if sb.sub_heading_size %}font-size: {{ sb.sub_heading_size }} !important;{% endif %}
+}
+{% endif %}
+{% if sb.text_color or sb.text_size %}
+section#{{ sid }} p,
+section#{{ sid }} li,
+section#{{ sid }} .text-dark,
+section#{{ sid }} .timeline-date {
+    {% if sb.text_color %}color: {{ sb.text_color }} !important;{% endif %}
+    {% if sb.text_size %}font-size: {{ sb.text_size }} !important;{% endif %}
+}
+{% endif %}
+{% endfor %}
+</style>
+
+<!-- ========== Hero: صورة ثابتة + شارة أفلام (يمين) + بطاقة شفافة (يسار) ========== -->
+<section id="home" class="hero-slideshow" style="
+    position: relative; width: 100%; height: 100vh; min-height: 600px; max-height: 900px; overflow: hidden; color: white;
+    {% if section_bgs.home and section_bgs.home.bg_image %}
+        background-image: url('{{ section_bgs.home.bg_image.url }}');
+        background-size: cover; background-position: center;
+        background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};
+    {% elif section_bgs.home and section_bgs.home.bg_color %}
+        background-color: {{ section_bgs.home.bg_color }};
+    {% endif %}
+">
+    <!-- طبقة غامقة فوق الخلفية -->
+    {% if section_bgs.home and section_bgs.home.enable_overlay %}
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.home.overlay_color }};opacity:{{ section_bgs.home.overlay_opacity }};z-index:1;"></div>
+    {% else %}
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(10,22,50,0.2),rgba(10,22,50,0.35));z-index:1;"></div>
+    {% endif %}
+
+    <!-- البطاقة الشفافة على اليسار -->
+    {% if hero_card and hero_card.is_enabled %}
+    {% if hero_card.heading or hero_card.body_text %}
+    <div class="hero-card-left-wrapper">
+        <div class="hero-transparent-card"
+             style="margin:0 !important;align-self:unset !important;width:500px;height:auto;min-height:180px;background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};text-align:right;">
+            {% if hero_card.heading %}<h3 style="margin-bottom:15px;line-height:1.6;color:{{ hero_card.font_color }} !important;">{{ hero_card.heading }}</h3>{% endif %}
+            {% if hero_card.body_text %}<p style="margin:0;line-height:1.9;opacity:0.93;color:{{ hero_card.font_color }} !important;">{{ hero_card.body_text }}</p>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- شارة الأفلام المتحركة على اليمين -->
+    <div class="side-credits">
+        <div class="side-credits-scroll">
+            <h3 class="sc-heading">{{ content.hero_title }}</h3>
+            <p class="sc-text">{{ content.hero_subtitle }}</p>
+            <h3 class="sc-heading">{{ content.hero_title }}</h3>
+            <p class="sc-text">{{ content.hero_subtitle }}</p>
+        </div>
+    </div>
+</section>
+
+<style>
+/* ===== شارة أفلام متحركة (يمين الهيرو) ===== */
+.side-credits {
+    position: absolute;
+    top: 50%; right: 4%;
+    width: 28%; height: 260px;
+    z-index: 3;
+    overflow: hidden;
+    transform: translateY(-50%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+.side-credits-scroll {
+    width: 100%;
+    animation: creditsRise 120s linear infinite;
+}
+.side-credits:hover .side-credits-scroll { animation-play-state: paused; }
+.sc-heading {
+    font-size: 24px; font-weight: 900; color: #fff;
+    text-align: right; line-height: 1.8;
+    text-shadow: 0 3px 15px rgba(0,0,0,0.5);
+    padding: 8px 0;
+}
+.sc-text {
+    font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.9);
+    text-align: right; line-height: 1.9;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    padding: 6px 0;
+}
+@keyframes creditsRise {
+    0%   { transform: translateY(0%); }
+    100% { transform: translateY(-50%); }
+}
+@media (max-width: 991px) {
+    .side-credits {
+        width: 50%;
+        right: 2%;
+        height: 200px;
+    }
+    .sc-heading { font-size: 16px; }
+    .sc-text { font-size: 14px; }
+}
+@media (max-width: 576px) {
+    .side-credits {
+        width: 70%;
+        right: 2%;
+        height: 160px;
+    }
+    .sc-heading { font-size: 14px; }
+    .sc-text { font-size: 12px; }
+}
+
+/* ===== موقع البطاقة الشفافة (يسار الهيرو) ===== */
+.hero-card-left-wrapper {
+    position: absolute;
+    top: 50%; left: 60px;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+@media (max-width: 767px) {
+    .hero-card-left-wrapper {
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 90vw;
+    }
+    .hero-card-left-wrapper .hero-transparent-card {
+        width: 100% !important;
+        min-height: unset !important;
+    }
+}
+</style>
+<!-- ========== نهاية Hero ========== -->
+
+<!-- آخر الأخبار -->
+{% if latest_news %}
+<style>
+.news-section-wrapper { display: flex; min-height: 260px; background-color: #f8f9fa; }
+.news-sidebar { flex: 0 0 200px; background-color: #8b7355; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; gap: 20px; }
+.news-sidebar h3 { color: var(--gold); font-weight: 900; font-size: 1.4rem; }
+.news-sidebar .sidebar-line { width: 50px; height: 3px; background-color: var(--gold); }
+.news-sidebar a { color: var(--gold); font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+.news-sidebar a:hover { opacity: 0.8; transform: translateX(-3px); }
+.news-cards-row { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+.news-card-item { background: #fff; padding: 28px 22px; border-left: 1px solid #eee; display: flex; flex-direction: column; transition: all 0.3s; }
+.news-card-item:last-child { border-left: none; }
+.news-card-item:hover { background-color: #fefefe; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+.news-card-date { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; color: var(--gold); font-weight: 700; font-size: 0.85rem; }
+.news-card-date i { font-size: 1rem; }
+.news-card-item h4 { font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 10px; line-height: 1.6; }
+.news-card-item p { color: #666; font-size: 0.9rem; line-height: 1.8; flex: 1; }
+@media (max-width: 767px) {
+    .news-section-wrapper { flex-direction: column; }
+    .news-sidebar { flex: 0 0 auto; flex-direction: row; padding: 15px 20px; }
+    .news-sidebar .sidebar-line { width: 3px; height: 30px; }
+    .news-cards-row { grid-template-columns: 1fr; }
+    .news-card-item { border-left: none; border-bottom: 1px solid #eee; }
+}
+</style>
+<section class="news-section-wrapper" data-aos="fade-up">
+    <div class="news-sidebar">
+        <h3>آخر الأخبار</h3>
+        <div class="sidebar-line"></div>
+        <a href="{% url 'news_list' %}"><span>عرض الكل</span> <i class="fas fa-arrow-left"></i></a>
+    </div>
+    <div class="news-cards-row">
+        {% for news in latest_news %}
+        <a href="{% url 'news_detail' news.pk %}" class="news-card-item text-decoration-none">
+            <div class="news-card-date">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ news.date|date:"d-m-Y" }}</span>
+            </div>
+            <h4>{{ news.title }}</h4>
+            <p>{{ news.content|striptags|truncatewords:30 }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- 3. عن الجائزة والمبادئ -->
+{% if section_bgs.about and section_bgs.about.bg_image %}
+<section id="about" class="py-5" style="background-image: url('{{ section_bgs.about.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.about.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.about.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.about.overlay_color }};opacity:{{ section_bgs.about.overlay_opacity }};z-index:0;"></div>{% endif %}
+    <div class="container" style="position:relative;z-index:1;">
+{% elif section_bgs.about and section_bgs.about.bg_color %}
+<section id="about" class="py-5" style="background-color: {{ section_bgs.about.bg_color }};">
+    <div class="container">
+{% else %}
+<section id="about" class="py-5 bg-white">
+    <div class="container">
+{% endif %}
+        <div class="section-header" data-aos="fade-down"><h2>{{ content.title_about }}</h2><div class="gold-line"></div></div>
+        <div class="row align-items-start">
+            <div class="col-md-6 mb-4" data-aos="fade-left">
+                <p class="text-dark" style="font-size: 1.1rem; line-height: 2;">{{ content.about_text }}</p>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-3 p-3" style="background-color: var(--bg-gray); border-right: 4px solid var(--gold);"><i class="fas fa-eye fa-2x ms-3" style="color: var(--gold);"></i><div><strong style="color: var(--primary);">الرؤية:</strong> {{ content.vision_text }}</div></div>
+                    <div class="d-flex align-items-center p-3" style="background-color: var(--bg-gray); border-right: 4px solid var(--primary);"><i class="fas fa-bullseye fa-2x ms-3" style="color: var(--gold);"></i><div><strong style="color: var(--primary);">الرسالة:</strong> {{ content.mission_text }}</div></div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4" data-aos="fade-right">
+                <h5 class="fw-bold mb-3" style="color: var(--primary);">المبادئ العامة للجائزة</h5>
+                <div class="row">
+                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-hand-holding-heart fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_1 }}</h6></div>
+                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-lightbulb fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_2 }}</h6></div>
+                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-recycle fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_3 }}</h6></div>
+                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-chart-line fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_4 }}</h6></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4. مجالات العمل التطوعي — Flip Cards -->
+{% if section_bgs.fields and section_bgs.fields.bg_image %}
+<section id="fields" class="py-5" style="background-image: url('{{ section_bgs.fields.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.fields.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.fields.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.fields.overlay_color }};opacity:{{ section_bgs.fields.overlay_opacity }};z-index:0;"></div>{% endif %}
+    <div class="container" style="position:relative;z-index:1;">
+{% elif section_bgs.fields and section_bgs.fields.bg_color %}
+<section id="fields" class="py-5" style="background-color: {{ section_bgs.fields.bg_color }};">
+    <div class="container">
+{% else %}
+<section id="fields" class="py-5" style="background-color: var(--primary);">
+    <div class="container">
+{% endif %}
+        <div class="section-header section-header-white" data-aos="fade-down"><h2>{{ content.title_fields }}</h2><div class="gold-line"></div></div>
+        <div class="row g-4">
+            {% for field in fields %}
+            <div class="col-12 col-lg-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <i class="fas fa-star"></i>
+                            <h4>{{ field.name_ar }}</h4>
+                            <small>{{ field.name_en }}</small>
+                        </div>
+                        <div class="flip-card-back">
+                            <h5>{{ field.name_ar }}</h5>
+                            {% for track in field.track_set.all %}
+                                <p><i class="fas fa-check ms-1" style="color: var(--gold); font-size: 0.75rem;"></i> {{ track.name_ar }}</p>
+                            {% empty %}
+                                <p style="color: rgba(255,255,255,0.5);">لم تتم إضافة مسارات بعد</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}<p class="text-center text-muted">لم تتم إضافة مجالات بعد.</p>{% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- 5. الإطار الزمني -->
+{% if section_bgs.timeline and section_bgs.timeline.bg_image %}
+<section id="timeline" class="py-5" style="background-image: url('{{ section_bgs.timeline.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.timeline.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.timeline.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.timeline.overlay_color }};opacity:{{ section_bgs.timeline.overlay_opacity }};z-index:0;"></div>{% endif %}
+    <div class="container" style="position:relative;z-index:1;">
+{% elif section_bgs.timeline and section_bgs.timeline.bg_color %}
+<section id="timeline" class="py-5" style="background-color: {{ section_bgs.timeline.bg_color }};">
+    <div class="container">
+{% else %}
+<section id="timeline" class="py-5 bg-white">
+    <div class="container">
+{% endif %}
+        <div class="section-header" data-aos="fade-down"><h2>{{ content.title_timeline }}</h2><div class="gold-line"></div></div>
+        <div class="premium-timeline">
+            <div class="timeline-h-track">
+            {% for event in timeline %}
+                <!-- عنصر -->
+                <div class="timeline-h-item" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                    <div class="timeline-h-node"
+                         data-bs-toggle="modal" data-bs-target="#timelineModal"
+                         data-title="{{ event.title }}"
+                         data-desc="{{ event.description }}"
+                         data-img="{% if event.modal_image %}{{ event.modal_image.url }}{% endif %}">
+                        <i class="fas {{ event.icon|default:'fa-star' }}"></i>
+                    </div>
+                    <div class="timeline-h-node-dot"></div>
+                    <a href="#" class="text-decoration-none"
+                       data-bs-toggle="modal" data-bs-target="#timelineModal"
+                       data-title="{{ event.title }}"
+                       data-desc="{{ event.description }}"
+                       data-img="{% if event.modal_image %}{{ event.modal_image.url }}{% endif %}">
+                        <div class="timeline-h-content">
+                            {% if event.date_text %}<div class="timeline-date">{{ event.date_text }}</div>{% endif %}
+                            <div class="timeline-title">{{ event.title }}</div>
+                        </div>
+                    </a>
+                </div>
+                {% if not forloop.last %}
+                <div class="timeline-h-connector">
+                    <div class="timeline-mobile-line"></div>
+                    {% if forloop.counter|divisibleby:2 %}
+                    <svg viewBox="0 0 60 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="30" cy="220" r="4" fill="#c8b49a"/>
+                        <path d="M30,220 C30,190 -10,180 -10,120 C-10,60 30,50 30,20" stroke="#c8b49a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                        <circle cx="30" cy="20" r="4" fill="#c8b49a"/>
+                    </svg>
+                    {% else %}
+                    <svg viewBox="0 0 60 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="30" cy="20" r="4" fill="#c8b49a"/>
+                        <path d="M30,20 C30,50 -10,60 -10,120 C-10,180 30,190 30,220" stroke="#c8b49a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+                        <circle cx="30" cy="220" r="4" fill="#c8b49a"/>
+                    </svg>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% empty %}
+                <p class="text-center text-muted w-100">سيتم إضافة الجدول الزمني قريباً</p>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. طلب التقديم -->
+{% if section_bgs.apply and section_bgs.apply.bg_image %}
+<section id="apply" class="py-5" style="background-image: url('{{ section_bgs.apply.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.apply.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.apply.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.apply.overlay_color }};opacity:{{ section_bgs.apply.overlay_opacity }};z-index:0;"></div>{% endif %}
+    <div class="container" style="position:relative;z-index:1;">
+{% elif section_bgs.apply and section_bgs.apply.bg_color %}
+<section id="apply" class="py-5" style="background-color: {{ section_bgs.apply.bg_color }};">
+    <div class="container">
+{% else %}
+<section id="apply" class="py-5" style="background-color: var(--bg-gray);">
+    <div class="container">
+{% endif %}
+        <div class="section-header" data-aos="fade-down"><h2>{{ content.title_apply }}</h2><div class="gold-line"></div></div>
+        <div class="row g-4">
+            <div class="col-md-6" data-aos="fade-left">
+                <div class="p-4 bg-white h-100 shadow-sm" style="border-right: 4px solid var(--gold);">
+                    <h4 class="fw-bold mb-4" style="color: var(--primary);"><i class="fas fa-clipboard-list ms-2" style="color: var(--gold);"></i> شروط التقدم</h4>
+                    <ul class="list-unstyled text-dark" style="line-height: 2.2;">
+                        <li><i class="fas fa-caret-left ms-2" style="color: var(--gold);"></i> {{ content.condition_1 }}</li>
+                        <li><i class="fas fa-caret-left ms-2" style="color: var(--gold);"></i> {{ content.condition_2 }}</li>
+                        <li><i class="fas fa-caret-left ms-2" style="color: var(--gold);"></i> {{ content.condition_3 }}</li>
+                        <li><i class="fas fa-caret-left ms-2" style="color: var(--gold);"></i> {{ content.condition_4 }}</li>
+                        <li><i class="fas fa-caret-left ms-2" style="color: var(--gold);"></i> {{ content.condition_5 }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6" data-aos="fade-right">
+                <div class="p-4 bg-white h-100 shadow-sm" style="border-right: 4px solid var(--primary);">
+                    <h4 class="fw-bold mb-4" style="color: var(--primary);"><i class="fas fa-stairs ms-2" style="color: var(--gold);"></i> خطوات الترشح</h4>
+                    <ul class="list-unstyled text-dark" style="line-height: 2.2;">
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">1</span> {{ content.step_1 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">2</span> {{ content.step_2 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">3</span> {{ content.step_3 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">4</span> {{ content.step_4 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">5</span> {{ content.step_5 }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. الجوائز -->
+{% if section_bgs.prizes and section_bgs.prizes.bg_image %}
+<section id="prizes" class="py-5" style="background-image: url('{{ section_bgs.prizes.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.prizes.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.prizes.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.prizes.overlay_color }};opacity:{{ section_bgs.prizes.overlay_opacity }};z-index:0;"></div>{% endif %}
+    <div class="container" style="position:relative;z-index:1;">
+{% elif section_bgs.prizes and section_bgs.prizes.bg_color %}
+<section id="prizes" class="py-5" style="background-color: {{ section_bgs.prizes.bg_color }};">
+    <div class="container">
+{% else %}
+<section id="prizes" class="py-5 bg-white">
+    <div class="container">
+{% endif %}
+        <div class="section-header" data-aos="fade-down"><h2>{{ content.title_prizes }}</h2><div class="gold-line"></div></div>
+        <div class="row text-center g-4 justify-content-center">
+            <div class="col-md-4" data-aos="zoom-in"><div class="p-5 h-100 shadow-sm" style="border: 2px solid #FFD700; border-radius: 0;"><i class="fas fa-trophy fa-4x mb-4" style="color: #FFD700;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الأول</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_1_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200"><div class="p-5 h-100 shadow-sm" style="border: 2px solid #C0C0C0; border-radius: 0;"><i class="fas fa-medal fa-4x mb-4" style="color: #C0C0C0;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثاني</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_2_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="400"><div class="p-5 h-100 shadow-sm" style="border: 2px solid #CD7F32; border-radius: 0;"><i class="fas fa-award fa-4x mb-4" style="color: #CD7F32;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثالث</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_3_desc }}</p></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- 8. لجنة التحكيم -->
+{% if section_bgs.judges and section_bgs.judges.bg_image %}
+<section id="judges" class="py-5" style="background-image: url('{{ section_bgs.judges.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.judges.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.judges.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.judges.overlay_color }};opacity:{{ section_bgs.judges.overlay_opacity }};z-index:0;"></div>{% endif %}
+    <div class="container" style="position:relative;z-index:1;">
+{% elif section_bgs.judges and section_bgs.judges.bg_color %}
+<section id="judges" class="py-5" style="background-color: {{ section_bgs.judges.bg_color }};">
+    <div class="container">
+{% else %}
+<section id="judges" class="py-5" style="background-color: var(--bg-gray);">
+    <div class="container">
+{% endif %}
+        <div class="section-header" data-aos="fade-down"><h2>{{ content.title_judges }}</h2><div class="gold-line"></div></div>
+        <div class="row text-center justify-content-center">
+            {% for judge in judges %}
+            <div class="col-lg-2 col-md-3 col-sm-4 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#judgeModal" data-name="{{ judge.name }}" data-title="{{ judge.title }}" data-desc="{{ judge.description }}" data-img="{{ judge.image.url }}">
+                    <img src="{{ judge.image.url }}" alt="{{ judge.name }}" class="rounded-circle mb-3 shadow" width="120" height="120" style="object-fit: contain; border: 3px solid var(--gold); transition: transform 0.3s;">
+                    <h6 class="fw-bold mb-1" style="color: var(--primary);">{{ judge.name }}</h6>
+                    <small class="text-muted">{{ judge.title }}</small>
+                </a>
+            </div>
+            {% empty %}<p class="text-muted">سيتم الإعلان عن لجنة التحكيم قريباً</p>{% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ========== قسم الرعاة ========== -->
+<style>
+.sponsor-marquee-section { padding: 40px 0; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); overflow: hidden; direction: ltr; }
+.sponsor-marquee-title { text-align: center; margin-bottom: 30px; font-size: 1.8rem; font-weight: 700; color: #2c3e50; direction: rtl; }
+.sponsor-marquee-wrapper { overflow: hidden; position: relative; width: 100%; padding: 20px 0; }
+.sponsor-marquee-wrapper::before, .sponsor-marquee-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; width: 100px; z-index: 2; pointer-events: none; }
+.sponsor-marquee-wrapper::before { left: 0; background: linear-gradient(to right, #f8f9fa, transparent); }
+.sponsor-marquee-wrapper::after { right: 0; background: linear-gradient(to left, #f8f9fa, transparent); }
+.sponsor-marquee-track { display: flex; align-items: center; gap: 60px; animation: marquee-scroll 40s linear infinite; width: max-content; }
+.sponsor-marquee-track:hover { animation-play-state: paused; }
+@keyframes marquee-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.sponsor-logo { flex-shrink: 0; height: 80px; width: auto; max-width: 200px; object-fit: contain; opacity: 0.85; transition: all 0.3s ease; cursor: pointer; border-radius: 8px; padding: 10px 20px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.sponsor-logo:hover { opacity: 1; transform: scale(1.08); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+.sponsors-empty-msg { text-align: center; padding: 40px 20px; color: #6c757d; font-size: 1.3rem; direction: rtl; }
+
+/* ===== Timeline CSS ===== */
+/* ===== Timeline Loop Zigzag ===== */
+.premium-timeline { position: relative; padding: 20px 0; overflow: hidden; }
+.timeline-h-track { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; padding: 30px 15px; gap: 0; position: relative; min-width: max-content; }
+
+/* العنصر */
+.timeline-h-item { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 150px; position: relative; z-index: 2; }
+.timeline-h-item:nth-child(odd)  { justify-content: flex-start; margin-top: 0; }
+.timeline-h-item:nth-child(even) { justify-content: flex-end;   margin-top: 120px; }
+
+/* الدائرة */
+@keyframes nodePulse  { 0%,100%{box-shadow:0 0 0 0 rgba(180,140,100,0.4);}50%{box-shadow:0 0 0 10px rgba(180,140,100,0);} }
+@keyframes nodeBreath { 0%,100%{transform:scale(1);}50%{transform:scale(1.06);} }
+.timeline-h-node { width:110px;height:110px;border-radius:50%;background:#fff;border:2px solid #c8b49a;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;animation:nodeBreath 3.5s ease-in-out infinite,nodePulse 3.5s ease-in-out infinite;cursor:pointer;z-index:2; }
+.timeline-h-node::after { content:'';position:absolute;width:88px;height:88px;border-radius:50%;background:linear-gradient(145deg,#fdf8f2,#f0e6d6);border:1.5px solid #d4b896;z-index:-1; }
+.timeline-h-node i { font-size:1.8rem;color:#b5916a;position:relative;z-index:1; }
+.timeline-h-node img { width:85px;height:85px;border-radius:50%;object-fit:contain;position:relative;z-index:1; }
+.timeline-h-node-dot { width:10px;height:10px;border-radius:50%;background:#c8b49a;border:2px solid #b5916a;flex-shrink:0; }
+.timeline-h-item:nth-child(odd)  .timeline-h-node-dot { margin-top:-1px; }
+.timeline-h-item:nth-child(even) .timeline-h-node-dot { margin-bottom:-1px;order:-1; }
+.timeline-h-item:nth-child(1) .timeline-h-node{animation-delay:0s}
+.timeline-h-item:nth-child(2) .timeline-h-node{animation-delay:0.4s}
+.timeline-h-item:nth-child(3) .timeline-h-node{animation-delay:0.8s}
+.timeline-h-item:nth-child(4) .timeline-h-node{animation-delay:1.2s}
+.timeline-h-item:nth-child(5) .timeline-h-node{animation-delay:1.6s}
+.timeline-h-item:nth-child(6) .timeline-h-node{animation-delay:2.0s}
+.timeline-h-item:hover .timeline-h-node { animation:none;transform:scale(1.08);border-color:var(--gold);box-shadow:0 6px 20px rgba(197,160,89,0.3);transition:all 0.3s; }
+.timeline-h-item:hover .timeline-h-node i { color:var(--gold); }
+
+/* النص */
+.timeline-h-content { text-align:center;padding:10px 6px;width:140px;cursor:pointer; }
+.timeline-h-item:nth-child(odd)  .timeline-h-content { margin-top:12px; }
+.timeline-h-item:nth-child(even) .timeline-h-content { margin-bottom:12px;order:-2; }
+.timeline-date  { color:#b5916a;font-weight:700;font-size:0.75rem;margin-bottom:4px; }
+.timeline-title { font-weight:700;color:var(--primary);font-size:0.9rem;line-height:1.5;margin:0; }
+.timeline-desc  { display:none; }
+
+/* الموصّل */
+.timeline-h-connector { flex-shrink:0;width:30px;height:240px;position:relative;margin-top:-60px;z-index:1; }
+.timeline-h-connector svg { width:30px;height:240px; }
+.timeline-mobile-line { display:none; }
+@media (max-width: 767px) {
+    .timeline-h-track { flex-direction:column;align-items:center;padding:20px;min-width:unset;gap:0; }
+    .timeline-h-item { flex-direction:row !important;width:100%;gap:14px;margin-top:0 !important;align-items:center;justify-content:flex-start !important; }
+    .timeline-h-item .timeline-h-node { width:70px;height:70px; }
+    .timeline-h-item .timeline-h-node::after { width:56px;height:56px; }
+    .timeline-h-item .timeline-h-node i { font-size:1.3rem; }
+    .timeline-h-item .timeline-h-node-dot { display:none; }
+    .timeline-h-item .timeline-h-content { margin:0 !important;order:0 !important;text-align:right;flex:1; }
+    .timeline-h-connector { display:none; }
+    .timeline-mobile-line { display:block;width:2px;height:25px;background:#c8b49a;margin:2px 34px; }
+}
+</style>
+
+<section class="sponsor-marquee-section" id="sponsors">
+    <div class="container">
+        <h2 class="sponsor-marquee-title">رعاة وشركاء النجاح</h2>
+        {% if sponsors %}
+    <div class="sponsor-marquee-wrapper">
+        <div class="sponsor-marquee-track">
+            {% for sponsor in sponsors %}
+                <a href="{% if sponsor.website %}{{ sponsor.website }}{% else %}#{% endif %}" target="_blank" rel="noopener noreferrer" title="{{ sponsor.name }}">
+                    <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}" class="sponsor-logo">
+                </a>
+            {% endfor %}
+            {% for sponsor in sponsors %}
+                <a href="{% if sponsor.website %}{{ sponsor.website }}{% else %}#{% endif %}" target="_blank" rel="noopener noreferrer" title="{{ sponsor.name }}">
+                    <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}" class="sponsor-logo">
+                </a>
+            {% endfor %}
+            {% for sponsor in sponsors %}
+                <a href="{% if sponsor.website %}{{ sponsor.website }}{% else %}#{% endif %}" target="_blank" rel="noopener noreferrer" title="{{ sponsor.name }}">
+                    <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}" class="sponsor-logo">
+                </a>
+            {% endfor %}
+            {% for sponsor in sponsors %}
+                <a href="{% if sponsor.website %}{{ sponsor.website }}{% else %}#{% endif %}" target="_blank" rel="noopener noreferrer" title="{{ sponsor.name }}">
+                    <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.name }}" class="sponsor-logo">
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+{% else %}
+    <div class="sponsors-empty-msg">سيتم الإعلان عن الشركاء قريباً</div>
+{% endif %}
+    </div>
+</section>
+<!-- ========== نهاية قسم الرعاة ========== -->
+
+<!-- بطاقة لجنة التحكيم المنبثقة (Modal) -->
+<div class="modal fade" id="judgeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: 2px solid var(--gold); border-radius: 0; background-color: #fff;">
+      <div class="modal-header" style="background-color: var(--primary); border-bottom: 2px solid var(--gold);"><h5 class="modal-title fw-bold" style="color: var(--gold);">عضو اللجنة</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body text-center p-4">
+        <img id="modalJudgeImg" src="" alt="Judge" class="rounded-circle mb-4 shadow" width="150" height="150" style="object-fit: contain; border: 4px solid var(--gold);">
+        <h4 id="modalJudgeTitle" class="fw-bold mb-3" style="color: var(--primary);"></h4>
+        <hr style="border-color: var(--gold); opacity: 0.3; width: 50px; margin: 0 auto 20px auto;">
+        <p id="modalJudgeDesc" class="text-dark" style="line-height: 2; font-size: 1.05rem; text-align: right;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- بطاقة الجدول الزمني المنبثقة (Modal) -->
+<div class="modal fade" id="timelineModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: 2px solid var(--gold); border-radius: 0; background-color: #fff;">
+      <div class="modal-header" style="background-color: var(--primary); border-bottom: 2px solid var(--gold);"><h5 class="modal-title fw-bold" id="timelineModalLabel" style="color: var(--gold);"></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body p-4" style="text-align: right;">
+        <div id="timelineModalImgContainer" style="display: none; text-align: center; margin-bottom: 20px;"><img id="timelineModalImg" src="" alt="" class="img-fluid" style="border: 2px solid var(--gold); border-radius: 8px; max-height: 300px; object-fit: cover;"></div>
+        <p id="timelineModalDesc" class="text-dark" style="line-height: 2; font-size: 1.1rem;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Countdown
+    const countdownElement = document.getElementById("countdownNav");
+    {% if settings and settings.registration_deadline %}
+        try {
+            const isoDate = "{{ settings.registration_deadline|date:'c' }}"; const targetDate = new Date(isoDate);
+            if (countdownElement && !isNaN(targetDate.getTime())) {
+                function formatDays(ms) { const days = Math.floor(ms / (1000 * 60 * 60 * 24)); return days + " يوم "; }
+                const now = new Date().getTime(); const distance = targetDate - now;
+                if (distance > 0) { let currentMs = 0; const animationDuration = 1500; const startTime = performance.now();
+                    function animateCountup(currentTime) { const elapsed = currentTime - startTime; const progress = Math.min(elapsed / animationDuration, 1); currentMs = distance * (1 - Math.pow(1 - progress, 3)); countdownElement.innerHTML = formatDays(currentMs); if (progress < 1) { requestAnimationFrame(animateCountup); } else { startRealCountdown(); } }
+                    function startRealCountdown() { countdownElement.innerHTML = formatDays(distance); setInterval(() => { const now2 = new Date().getTime(); const dist = targetDate - now2; if (dist > 0) { countdownElement.innerHTML = formatDays(dist); } else { countdownElement.innerHTML = "انتهى التسجيل"; } }, 60000); }
+                    requestAnimationFrame(animateCountup);
+                } else { countdownElement.innerHTML = "انتهى التسجيل"; }
+            }
+        } catch(e) { if(countdownElement) { countdownElement.innerHTML = "خطأ: " + e.message; countdownElement.style.color = "red"; } }
+    {% else %}
+        if (countdownElement) { countdownElement.innerHTML = "لا يوجد تاريخ!"; }
+    {% endif %}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var judgeModal = document.getElementById('judgeModal');
+    if (judgeModal) { judgeModal.addEventListener('show.bs.modal', function (event) { var button = event.relatedTarget; judgeModal.querySelector('.modal-title').textContent = button.getAttribute('data-name'); judgeModal.querySelector('#modalJudgeTitle').textContent = button.getAttribute('data-title'); judgeModal.querySelector('#modalJudgeDesc').textContent = button.getAttribute('data-desc'); judgeModal.querySelector('#modalJudgeImg').src = button.getAttribute('data-img'); }); }
+    var timelineModal = document.getElementById('timelineModal');
+    if (timelineModal) { timelineModal.addEventListener('show.bs.modal', function (event) { var button = event.relatedTarget; var modalTitle = timelineModal.querySelector('.modal-title'); var modalBodyDesc = timelineModal.querySelector('#timelineModalDesc'); var modalBodyImg = timelineModal.querySelector('#timelineModalImg'); var modalImgContainer = timelineModal.querySelector('#timelineModalImgContainer'); modalTitle.textContent = button.getAttribute('data-title'); modalBodyDesc.textContent = button.getAttribute('data-desc'); if (button.getAttribute('data-img') && button.getAttribute('data-img') !== '') { modalBodyImg.src = button.getAttribute('data-img'); modalImgContainer.style.display = 'block'; } else { modalBodyImg.src = ''; modalImgContainer.style.display = 'none'; } }); }
+});
+</script>
+
+{% endblock %}
