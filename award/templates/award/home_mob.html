@@ -1,4 +1,4 @@
-{% extends 'award/base_mob.html' %}
+{% extends 'award/base.html' %}
 
 {% block content %}
 
@@ -161,17 +161,8 @@
 
 /* ===== Mobile Fixes ===== */
 @media (max-width: 767px) {
-    /* ✅ إظهار شارة الأفلام في المنطقة الفارغة أسفل الصورة */
-    .side-credits {
-        display: block !important;
-        top: auto !important;
-        bottom: 5% !important;
-        right: 5% !important;
-        left: 5% !important;
-        width: auto !important;
-        height: 38% !important;
-        transform: none !important;
-    }
+    /* إخفاء الـ side-credits على الموبايل */
+    .side-credits { display: none !important; }
 
     /* news section عمودي */
     .news-section-wrapper { flex-direction: column !important; }
@@ -195,14 +186,7 @@
 
 {% else %}
 <!-- Hero عادي بدون بطاقات slideshow -->
-<style>
-@media (max-width: 767px) {
-    #home.hero-simple-section { background-size: contain !important; background-position: center top !important; background-repeat: no-repeat !important; }
-    #home.hero-simple-section video,
-    #home.hero-simple-section img { object-fit: contain !important; }
-}
-</style>
-<section id="home" class="hero-simple-section d-flex align-items-center justify-content-center text-center" style="position: relative; min-height: 100vh; color: white; {% if section_bgs.home and section_bgs.home.bg_image %}background-image: url('{{ section_bgs.home.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};{% elif section_bgs.home and section_bgs.home.bg_color %}background-color: {{ section_bgs.home.bg_color }};{% endif %}">
+<section id="home" class="d-flex align-items-center justify-content-center text-center" style="position: relative; min-height: 100vh; color: white; {% if section_bgs.home and section_bgs.home.bg_image %}background-image: url('{{ section_bgs.home.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};{% elif section_bgs.home and section_bgs.home.bg_color %}background-color: {{ section_bgs.home.bg_color }};{% endif %}">
     {% if section_bgs.home and section_bgs.home.bg_image and section_bgs.home.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.home.overlay_color }};opacity:{{ section_bgs.home.overlay_opacity }};z-index:-1;"></div>{% endif %}
     <div class="swiper hero-swiper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;">
         <div class="swiper-wrapper">
@@ -250,10 +234,10 @@
 .news-card-item p { color: #666; font-size: 0.9rem; line-height: 1.8; flex: 1; }
 @media (max-width: 767px) {
     .news-section-wrapper { flex-direction: column; }
-    .news-sidebar { flex: 0 0 auto; flex-direction: row !important; padding: 15px 20px !important; gap: 12px !important; width: 100%; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2; }
-    .news-sidebar .sidebar-line { width: 3px !important; height: 30px !important; }
-    .news-cards-row { grid-template-columns: 1fr; position: relative; z-index: 1; }
-    .news-card-item { border-left: none; border-bottom: 1px solid #eee; padding: 20px 15px; }
+    .news-sidebar { flex: 0 0 auto; flex-direction: column; padding: 20px; gap: 12px; }
+    .news-sidebar .sidebar-line { width: 40px; height: 3px; }
+    .news-cards-row { grid-template-columns: 1fr; }
+    .news-card-item { border-left: none; border-bottom: 1px solid #eee; }
 }
 </style>
 <section class="news-section-wrapper" data-aos="fade-up">
