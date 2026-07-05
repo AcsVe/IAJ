@@ -3,7 +3,7 @@ from .models import (
     Field, SiteSetting, HeroSlide, TimelineEvent, Judge, Submission,
     ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
     SectionBackground, Sponsor, SlideshowCard, News, Video, SuccessStory,
-    HeroCard
+    HeroCard, MediaGallery, Photo, Winner, WinnerCategory
 )
 from .forms import SubmissionForm
 
