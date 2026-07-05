@@ -234,8 +234,8 @@
 .news-card-item p { color: #666; font-size: 0.9rem; line-height: 1.8; flex: 1; }
 @media (max-width: 767px) {
     .news-section-wrapper { flex-direction: column; }
-    .news-sidebar { flex: 0 0 auto; flex-direction: column; padding: 20px; gap: 12px; }
-    .news-sidebar .sidebar-line { width: 40px; height: 3px; }
+    .news-sidebar { flex: 0 0 auto; flex-direction: row; padding: 15px 20px; }
+    .news-sidebar .sidebar-line { width: 3px; height: 30px; }
     .news-cards-row { grid-template-columns: 1fr; }
     .news-card-item { border-left: none; border-bottom: 1px solid #eee; }
 }
@@ -644,14 +644,6 @@
 
     // Hero Swiper عادي (بدون بطاقات)
     try { const heroSwiper = document.querySelector('.hero-swiper'); if (heroSwiper) { new Swiper('.hero-swiper', { loop: true, autoplay: { delay: 5000, disableOnInteraction: false }, effect: 'fade', fadeEffect: { crossFade: true }, speed: 1500 }); } } catch(e) { console.error("Hero Swiper Error:", e); }
-
-    // ✅ نسخ صورة الهيرو كخلفية مموّهة (تُستخدم على الموبايل خلف الصورة الكاملة بدون قص)
-    try {
-        document.querySelectorAll('.hero-slide-bg, .hero-card-img').forEach(function(box) {
-            var img = box.querySelector('img');
-            if (img && img.src) { box.style.backgroundImage = "url('" + img.src + "')"; }
-        });
-    } catch(e) { console.error("Hero Blur BG Error:", e); }
 
     // Countdown
     const countdownElement = document.getElementById("countdownNav");
