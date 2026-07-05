@@ -174,7 +174,7 @@ section#{{ sid }} .timeline-date {
                 <span>{{ news.date|date:"d-m-Y" }}</span>
             </div>
             <h4>{{ news.title }}</h4>
-            <p>{{ news.content|truncatewords:30 }}</p>
+            <p>{{ news.content.html|striptags|truncatewords:30 }}</p>
         </a>
         {% endfor %}
     </div>
