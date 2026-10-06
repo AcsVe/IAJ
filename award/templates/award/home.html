@@ -1,5 +1,7 @@
 {% extends 'award/base.html' %}
 
+{% block body_class %}is-home{% endblock %}
+
 {% block content %}
 
 <!-- ✅ ألوان العناوين والنصوص لكل قسم — تُقرأ من الإدمن (SectionBackground) -->
@@ -37,129 +39,118 @@ section#{{ sid }} .timeline-date {
 {% endfor %}
 </style>
 
-<!-- ========== Hero: صورة ثابتة + شارة أفلام (يمين) + بطاقة شفافة (يسار) ========== -->
-<section id="home" class="hero-slideshow" style="
-    position: relative; width: 100%; height: 100vh; min-height: 600px; max-height: 900px; overflow: hidden; color: white;
-    {% if section_bgs.home and section_bgs.home.bg_image %}
-        background-image: url('{{ section_bgs.home.bg_image.url }}');
-        background-size: cover; background-position: center;
-        background-attachment: {% if section_bgs.home.is_parallax %}fixed{% else %}scroll{% endif %};
-    {% elif section_bgs.home and section_bgs.home.bg_color %}
-        background-color: {{ section_bgs.home.bg_color }};
-    {% endif %}
-">
-    {% if section_bgs.home and section_bgs.home.bg_image %}
-    <!-- طبقة معكوسة تُستخدم فقط على الموبايل -->
-    <div class="hero-mirror-bg" style="background-image: url('{{ section_bgs.home.bg_image.url }}');"></div>
-    {% endif %}
-    <!-- طبقة غامقة فوق الخلفية -->
-    {% if section_bgs.home and section_bgs.home.enable_overlay %}
-    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.home.overlay_color }};opacity:{{ section_bgs.home.overlay_opacity }};z-index:1;"></div>
-    {% else %}
-    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(10,22,50,0.2),rgba(10,22,50,0.35));z-index:1;"></div>
+<!-- ========== Hero: الصورة الرئيسية + صورة جانبية + شارة أفلام + بطاقة شفافة ========== -->
+{% with home_bg=section_bgs.home side_img=settings.hero_side_image %}
+<section id="home" class="hero-slideshow hero-split{% if side_img %} has-side{% endif %}"
+         {% if home_bg and home_bg.bg_color %}style="background-color: {{ home_bg.bg_color }};"{% endif %}>
+
+    <!-- الصورة الرئيسية -->
+    <div class="hero-panel hero-main"
+         {% if home_bg and home_bg.bg_image %}style="--img: url('{{ home_bg.bg_image.url }}');"{% endif %}>
+        {% if home_bg and home_bg.bg_image %}
+        <div class="panel-blur" aria-hidden="true"></div>
+        <div class="panel-img" role="img" aria-label="{{ content.hero_title }}"
+             {% if home_bg.is_parallax and not side_img %}style="background-attachment: fixed;"{% endif %}></div>
+        {% endif %}
+        {% if home_bg and home_bg.enable_overlay %}
+        <div class="panel-overlay" style="background-color:{{ home_bg.overlay_color }};opacity:{{ home_bg.overlay_opacity|stringformat:'s' }};"></div>
+        {% else %}
+        <div class="panel-overlay" style="background:linear-gradient(rgba(10,22,50,0.2),rgba(10,22,50,0.35));"></div>
+        {% endif %}
+
+        <!-- شارة الأفلام المتحركة فوق الصورة الرئيسية -->
+        <div class="side-credits">
+            <div class="side-credits-scroll">
+                <h3 class="sc-heading">{{ content.hero_title }}</h3>
+                <p class="sc-text">{{ content.hero_subtitle }}</p>
+                <h3 class="sc-heading" aria-hidden="true">{{ content.hero_title }}</h3>
+                <p class="sc-text" aria-hidden="true">{{ content.hero_subtitle }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- الصورة الجانبية (بجانب الرئيسية) -->
+    {% if side_img %}
+    <div class="hero-panel hero-side" style="--img: url('{{ side_img.url }}');">
+        <div class="panel-blur" aria-hidden="true"></div>
+        <div class="panel-img" role="img" aria-label="صورة جانبية"></div>
+        <div class="panel-shade"></div>
+    </div>
     {% endif %}
 
-    <!-- البطاقة الشفافة على اليسار -->
-    {% if hero_card and hero_card.is_enabled %}
-    {% if hero_card.heading or hero_card.body_text %}
-    <div class="hero-card-left-wrapper">
+    <!-- البطاقة الشفافة -->
+    {% if hero_card and hero_card.is_enabled %}{% if hero_card.heading or hero_card.body_text %}
+    <div class="hero-card-slot">
         <div class="hero-transparent-card"
-             style="margin:0 !important;align-self:unset !important;width:500px;height:auto;min-height:180px;background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};text-align:right;">
-            {% if hero_card.heading %}<h3 style="margin-bottom:15px;line-height:1.6;color:{{ hero_card.font_color }} !important;">{{ hero_card.heading }}</h3>{% endif %}
-            {% if hero_card.body_text %}<p style="margin:0;line-height:1.9;opacity:0.93;color:{{ hero_card.font_color }} !important;">{{ hero_card.body_text }}</p>{% endif %}
+             style="background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity|stringformat:'s' }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};">
+            {% if hero_card.heading %}<h3 style="color:{{ hero_card.font_color }} !important;">{{ hero_card.heading }}</h3>{% endif %}
+            {% if hero_card.body_text %}<p style="color:{{ hero_card.font_color }} !important;">{{ hero_card.body_text|linebreaksbr }}</p>{% endif %}
         </div>
     </div>
-    {% endif %}
-    {% endif %}
-
-    <!-- شارة الأفلام المتحركة على اليمين -->
-    <div class="side-credits">
-        <div class="side-credits-scroll">
-            <h3 class="sc-heading">{{ content.hero_title }}</h3>
-            <p class="sc-text">{{ content.hero_subtitle }}</p>
-            <h3 class="sc-heading">{{ content.hero_title }}</h3>
-            <p class="sc-text">{{ content.hero_subtitle }}</p>
-        </div>
-    </div>
+    {% endif %}{% endif %}
 </section>
+{% endwith %}
 
 <style>
-/* ===== شارة أفلام متحركة (يمين الهيرو) ===== */
+/* ---------- هيكل الهيرو ---------- */
+.hero-split { position: relative; display: flex; width: 100%; height: 100vh; height: 100svh; min-height: 600px; max-height: 920px; overflow: hidden; color: #fff; background-color: var(--primary); }
+.hero-panel { position: relative; overflow: hidden; }
+.hero-main { flex: 1 1 auto; }
+.hero-side { flex: 0 0 38%; border-right: 3px solid var(--gold); }
+.panel-img { position: absolute; inset: 0; z-index: 0; background-image: var(--img); background-size: cover; background-position: center; background-repeat: no-repeat; }
+.panel-blur { display: none; }
+.panel-overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.panel-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(10,22,50,0.55), transparent 55%); pointer-events: none; }
+
+/* ---------- شارة الأفلام (فوق الصورة الرئيسية) ---------- */
 .side-credits {
-    position: absolute;
-    top: 50%; right: 4%;
-    width: 28%; height: 260px;
-    z-index: 3;
-    overflow: hidden;
-    transform: translateY(-50%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    position: absolute; top: 50%; right: 5%;
+    width: clamp(240px, 32%, 520px); height: 260px;
+    z-index: 3; overflow: hidden; transform: translateY(-50%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
 }
-.side-credits-scroll {
-    width: 100%;
-    animation: creditsRise 120s linear infinite;
-}
+.has-side .side-credits { width: clamp(240px, 48%, 520px); }
+.side-credits-scroll { width: 100%; animation: creditsRise 40s linear infinite; }
 .side-credits:hover .side-credits-scroll { animation-play-state: paused; }
-.sc-heading {
-    font-size: 24px; font-weight: 900; color: #fff;
-    text-align: right; line-height: 1.8;
-    text-shadow: 0 3px 15px rgba(0,0,0,0.5);
-    padding: 8px 0;
-}
-.sc-text {
-    font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.9);
-    text-align: right; line-height: 1.9;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
-    padding: 6px 0;
-}
-@keyframes creditsRise {
-    0%   { transform: translateY(0%); }
-    100% { transform: translateY(-50%); }
-}
-@media (max-width: 991px) {
-    .side-credits {
-        display: block;
-        width: 55%; height: 220px;
-    }
-    .sc-heading { font-size: 20px; }
-    .sc-text { font-size: 17px; }
-}
-@media (max-width: 576px) {
-    .side-credits { width: 75%; height: 190px; }
-    .sc-heading { font-size: 18px; }
-    .sc-text { font-size: 15px; }
+.sc-heading { font-size: 24px; font-weight: 900; color: #fff; text-align: right; line-height: 1.8; text-shadow: 0 3px 15px rgba(0,0,0,0.55); padding: 8px 0; margin: 0; }
+.sc-text { font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.92); text-align: right; line-height: 1.9; text-shadow: 0 2px 10px rgba(0,0,0,0.45); padding: 6px 0 40px; margin: 0; }
+@keyframes creditsRise { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+
+/* ---------- البطاقة الشفافة ---------- */
+.hero-card-slot { position: absolute; z-index: 4; top: 50%; left: 60px; transform: translateY(-50%); width: min(500px, 40%); }
+.has-side .hero-card-slot { top: auto; bottom: 60px; left: 30px; transform: none; width: calc(38% - 60px); }
+.hero-transparent-card { padding: 28px 32px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.14); text-align: right; transition: transform .4s ease, box-shadow .4s ease; }
+.hero-transparent-card:hover { transform: translateY(-5px); box-shadow: 0 25px 60px rgba(0,0,0,0.5); }
+.hero-transparent-card h3 { margin-bottom: 12px; line-height: 1.6; font-size: 1.35em; }
+.hero-transparent-card p { margin: 0; line-height: 1.9; opacity: .95; }
+
+/* ---------- تابلت ---------- */
+@media (max-width: 991.98px) {
+    .hero-side { flex-basis: 40%; }
+    .sc-heading { font-size: 20px; } .sc-text { font-size: 17px; }
+    .side-credits, .has-side .side-credits { width: 60%; height: 220px; }
+    .hero-card-slot { left: 30px; width: min(420px, 45%); }
 }
 
-/* ===== الموبايل: خلفية مموّهة فقط (بدون عرض الصورة الحقيقية) + شارة الأفلام فوقها ===== */
-.hero-mirror-bg { display: none; }
-@media (max-width: 767px) {
-    .hero-mirror-bg {
-        display: block;
-        position: absolute; inset: 0; z-index: 0;
-        background-repeat: no-repeat; background-position: center; background-size: cover;
-        filter: blur(25px) brightness(0.55);
-        transform: scale(1.15);
-    }
+/* ---------- موبايل: كل شي فوق بعض بدون تداخل، والصور كاملة بدون قص ---------- */
+@media (max-width: 767.98px) {
+    .hero-split { flex-direction: column; height: auto; min-height: 0; max-height: none; padding-top: var(--header-h); }
+    .hero-main { flex: none; height: 58svh; min-height: 340px; }
+    .hero-side { flex: none; height: 42svh; min-height: 260px; border-right: none; border-top: 3px solid var(--gold); }
+    .hero-split:not(.has-side) .hero-main { height: calc(100svh - var(--header-h)); min-height: 420px; }
+    .panel-img { background-size: contain; background-attachment: scroll !important; z-index: 1; }
+    .panel-blur { display: block; position: absolute; inset: -30px; z-index: 0; background-image: var(--img); background-size: cover; background-position: center; filter: blur(22px) brightness(.55); }
+    .panel-overlay { z-index: 2; opacity: .35 !important; }
+    .panel-shade { z-index: 2; }
+    .side-credits, .has-side .side-credits { top: auto; bottom: 14px; right: 50%; transform: translateX(50%); width: 88%; height: 150px; }
+    .sc-heading { font-size: 18px; text-align: center; padding: 4px 0; }
+    .sc-text { font-size: 15px; text-align: center; padding: 2px 0 26px; }
+    .hero-card-slot, .has-side .hero-card-slot { position: relative; top: auto; bottom: auto; left: auto; transform: none; width: 100%; z-index: 4; }
+    .hero-transparent-card { border-radius: 0 !important; padding: 22px 20px; backdrop-filter: none; -webkit-backdrop-filter: none; border: none; border-top: 3px solid var(--gold); }
+    .hero-transparent-card:hover { transform: none; box-shadow: none; }
 }
-
-/* ===== موقع البطاقة الشفافة (يسار الهيرو) ===== */
-.hero-card-left-wrapper {
-    position: absolute;
-    top: 50%; left: 60px;
-    transform: translateY(-50%);
-    z-index: 2;
-}
-@media (max-width: 767px) {
-    .hero-card-left-wrapper {
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: 90vw;
-    }
-    .hero-card-left-wrapper .hero-transparent-card {
-        width: 100% !important;
-        min-height: unset !important;
-    }
-}
+@media (prefers-reduced-motion: reduce) { .side-credits-scroll { animation-duration: 120s; } }
 </style>
 <!-- ========== نهاية Hero ========== -->
 
@@ -202,7 +193,7 @@ section#{{ sid }} .timeline-date {
                 <span>{{ news.date|date:"d-m-Y" }}</span>
             </div>
             <h4>{{ news.title }}</h4>
-            <p>{{ news.content|truncatewords:30 }}</p>
+            <p>{{ news.content|striptags|truncatewords:30 }}</p>
         </a>
         {% endfor %}
     </div>
@@ -265,6 +256,7 @@ section#{{ sid }} .timeline-date {
                             <i class="fas fa-star"></i>
                             <h4>{{ field.name_ar }}</h4>
                             <small>{{ field.name_en }}</small>
+                            <span class="flip-hint"><i class="fas fa-hand-pointer ms-1"></i> اضغط لعرض المسارات</span>
                         </div>
                         <div class="flip-card-back">
                             <h5>{{ field.name_ar }}</h5>
@@ -401,9 +393,9 @@ section#{{ sid }} .timeline-date {
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_prizes }}</h2><div class="gold-line"></div></div>
         <div class="row text-center g-4 justify-content-center">
-            <div class="col-md-4" data-aos="zoom-in"><div class="p-5 h-100 shadow-sm" style="border: 2px solid #FFD700; border-radius: 0;"><i class="fas fa-trophy fa-4x mb-4" style="color: #FFD700;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الأول</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_1_desc }}</p></div></div>
-            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200"><div class="p-5 h-100 shadow-sm" style="border: 2px solid #C0C0C0; border-radius: 0;"><i class="fas fa-medal fa-4x mb-4" style="color: #C0C0C0;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثاني</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_2_desc }}</p></div></div>
-            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="400"><div class="p-5 h-100 shadow-sm" style="border: 2px solid #CD7F32; border-radius: 0;"><i class="fas fa-award fa-4x mb-4" style="color: #CD7F32;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثالث</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_3_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in"><div class="p-4 p-md-5 h-100 shadow-sm" style="border: 2px solid #FFD700; border-radius: 0;"><i class="fas fa-trophy fa-4x mb-4" style="color: #FFD700;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الأول</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_1_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200"><div class="p-4 p-md-5 h-100 shadow-sm" style="border: 2px solid #C0C0C0; border-radius: 0;"><i class="fas fa-medal fa-4x mb-4" style="color: #C0C0C0;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثاني</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_2_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="400"><div class="p-4 p-md-5 h-100 shadow-sm" style="border: 2px solid #CD7F32; border-radius: 0;"><i class="fas fa-award fa-4x mb-4" style="color: #CD7F32;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثالث</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_3_desc }}</p></div></div>
         </div>
     </div>
 </section>
@@ -423,7 +415,7 @@ section#{{ sid }} .timeline-date {
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_judges }}</h2><div class="gold-line"></div></div>
         <div class="row text-center justify-content-center">
             {% for judge in judges %}
-            <div class="col-lg-2 col-md-3 col-sm-4 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
                 <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#judgeModal" data-name="{{ judge.name }}" data-title="{{ judge.title }}" data-desc="{{ judge.description }}" data-img="{{ judge.image.url }}">
                     <img src="{{ judge.image.url }}" alt="{{ judge.name }}" class="rounded-circle mb-3 shadow" width="120" height="120" style="object-fit: contain; border: 3px solid var(--gold); transition: transform 0.3s;">
                     <h6 class="fw-bold mb-1" style="color: var(--primary);">{{ judge.name }}</h6>
@@ -566,27 +558,6 @@ section#{{ sid }} .timeline-date {
     </div>
   </div>
 </div>
-
-<script>
-    // Countdown
-    const countdownElement = document.getElementById("countdownNav");
-    {% if settings and settings.registration_deadline %}
-        try {
-            const isoDate = "{{ settings.registration_deadline|date:'c' }}"; const targetDate = new Date(isoDate);
-            if (countdownElement && !isNaN(targetDate.getTime())) {
-                function formatDays(ms) { const days = Math.floor(ms / (1000 * 60 * 60 * 24)); return days + " يوم "; }
-                const now = new Date().getTime(); const distance = targetDate - now;
-                if (distance > 0) { let currentMs = 0; const animationDuration = 1500; const startTime = performance.now();
-                    function animateCountup(currentTime) { const elapsed = currentTime - startTime; const progress = Math.min(elapsed / animationDuration, 1); currentMs = distance * (1 - Math.pow(1 - progress, 3)); countdownElement.innerHTML = formatDays(currentMs); if (progress < 1) { requestAnimationFrame(animateCountup); } else { startRealCountdown(); } }
-                    function startRealCountdown() { countdownElement.innerHTML = formatDays(distance); setInterval(() => { const now2 = new Date().getTime(); const dist = targetDate - now2; if (dist > 0) { countdownElement.innerHTML = formatDays(dist); } else { countdownElement.innerHTML = "انتهى التسجيل"; } }, 60000); }
-                    requestAnimationFrame(animateCountup);
-                } else { countdownElement.innerHTML = "انتهى التسجيل"; }
-            }
-        } catch(e) { if(countdownElement) { countdownElement.innerHTML = "خطأ: " + e.message; countdownElement.style.color = "red"; } }
-    {% else %}
-        if (countdownElement) { countdownElement.innerHTML = "لا يوجد تاريخ!"; }
-    {% endif %}
-</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

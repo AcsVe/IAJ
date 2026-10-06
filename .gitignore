@@ -5,3 +5,6 @@ __pycache__/
 Music/
 start.sh
 runserver.txt
+
+.env
+media/

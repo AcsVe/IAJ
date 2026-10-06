@@ -11,11 +11,21 @@ import cloudinary.api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-_vr60vi(0iqx)t8i@j9xmoo_#ca24=n1joalaumf4u#10gt%c=')
+SECRET_KEY = (
+    os.environ.get('DJANGO_SECRET_KEY')
+    or os.environ.get('SECRET_KEY')
+    or 'django-insecure-_vr60vi(0iqx)t8i@j9xmoo_#ca24=n1joalaumf4u#10gt%c='
+)
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
+
+# Render يمرّر HTTPS عبر بروكسي — بدونها تسجيل الدخول للإدمن ممكن يرفض (CSRF Origin)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com'] + [
+    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,6 +63,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'award.context_processors.ticker_context',
+                'award.context_processors.site_context',
             ],
         },
     },
@@ -96,6 +107,10 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# الصور تُخزّن في قاعدة البيانات وتُعرض من /media/db/...
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # ===== إعدادات Cloudinary =====
 cloudinary.config(
     cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dd1ylbi9k'),
@@ -120,7 +135,8 @@ CL_UPLOAD_OPTIONS = {
 # ===== إعدادات التخزين =====
 STORAGES = {
     "default": {
-        "BACKEND": "award.storage.AutoCloudinaryStorage",
+        # صور ← قاعدة البيانات | فيديو و PDF ← Cloudinary
+        "BACKEND": "award.storage.HybridMediaStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",

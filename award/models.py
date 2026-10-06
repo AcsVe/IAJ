@@ -36,6 +36,11 @@ class SiteSetting(models.Model):
     hero_video = models.FileField(upload_to='site_media/', verbose_name="خلفية الصفحة الرئيسية (فيديو)", blank=True, null=True)
     site_logo = models.ImageField(upload_to='site_media/', verbose_name="شعار الموقع (Logo) - يظهر في الهيدر والفوتر", blank=True, null=True)
     registration_deadline = models.DateTimeField(verbose_name="موعد إغلاق التسجيل (للعداد التنازلي)", blank=True, null=True)
+    hero_side_image = models.ImageField(
+        upload_to='site_media/', blank=True, null=True,
+        verbose_name="صورة جانبية بجانب الصورة الرئيسية (الهيرو)",
+        help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الموبايل). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
+    )
 
     class Meta:
         verbose_name = "إعداد الموقع"
@@ -414,7 +419,10 @@ class TickerSetting(models.Model):
     font_color = models.CharField(max_length=7, default='#c5a059', verbose_name="لون الخط")
     bg_color = models.CharField(max_length=7, default='#0a1632', verbose_name="لون الخلفية")
     bg_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=0.95, verbose_name="شفافية الخلفية")
-    scroll_speed = models.IntegerField(default=30, verbose_name="السرعة")
+    scroll_speed = models.IntegerField(
+        default=60, verbose_name="السرعة (بكسل/ثانية)",
+        help_text="رقم أكبر = أسرع. المقترح: 40 بطيء، 60 متوسط، 100 سريع (من 10 إلى 300).",
+    )
     fade_width = models.CharField(max_length=5, default='150px', verbose_name="مسافة التلاشي")
     class Meta: verbose_name = "إعدادات الشريط"; verbose_name_plural = "إعدادات الشريط"
     def __str__(self): return "إعدادات الشريط الإخباري"
@@ -450,3 +458,27 @@ class HeroCard(models.Model):
             b = int(hex_color[4:6], 16)
             return f"{r},{g},{b}"
         return "0,0,0"
+
+
+# ========================================= #
+#   تخزين الصور داخل قاعدة البيانات          #
+# ========================================= #
+
+class StoredFile(models.Model):
+    """
+    الصور المرفوعة من لوحة التحكم تُحفظ هنا (Postgres) بدل Cloudinary
+    وتُعرض عبر /media/db/<name>
+    """
+    name = models.CharField(max_length=255, unique=True, verbose_name="المسار")
+    content = models.BinaryField(verbose_name="المحتوى")
+    content_type = models.CharField(max_length=100, default='application/octet-stream')
+    size = models.PositiveIntegerField(default=0, verbose_name="الحجم (بايت)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "ملف مخزّن"
+        verbose_name_plural = "الصور المخزّنة في قاعدة البيانات"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name

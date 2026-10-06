@@ -2,8 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جائزة انتصار عباس جردانة للثقافة والتعليم</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="{{ theme.primary_color|default:'#0a1632' }}">
+    <title>{% block title %}جائزة انتصار عباس جردانة للثقافة والتعليم{% endblock %}</title>
     {% load static %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,67 +21,44 @@
             --bg-light: #ffffff;
             --bg-gray: #f8f9fa;
             --text-dark: #1a1a1a;
+            --ticker-h: 0px;          /* يتحدد بالـ JS */
+            --header-h: 90px;         /* التيكر + النافبار — يتحدد بالـ JS */
             font-size: {{ theme.font_size|default:"16px" }};
         }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-light); color: var(--text-dark); overflow-x: hidden; }
-        .navbar-royal { background-color: transparent; padding: 20px 0; transition: all 0.4s ease; z-index: 1000; }
-        .navbar-royal.scrolled { background-color: var(--primary); padding: 10px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .navbar-royal .nav-link { color: #ffffff !important; font-weight: 600; margin: 0 15px; font-size: 0.95rem; position: relative; }
-        .navbar-royal .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -5px; right: 0; background-color: var(--gold); transition: width 0.3s; }
+        body.has-ticker { --ticker-h: 40px; --header-h: 130px; }
+        html { scroll-behavior: smooth; }
+        body { overflow-x: hidden; }
+        @supports (overflow: clip) { html, body { overflow-x: clip; } }
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-light); color: var(--text-dark); }
+        img { max-width: 100%; }
+
+        /* ===================== Navbar ===================== */
+        .navbar-royal { background-color: transparent; padding: 18px 0; transition: background-color .35s ease, padding .35s ease, box-shadow .35s ease; z-index: 1050; top: var(--ticker-h); }
+        .navbar-royal.scrolled,
+        body.not-home .navbar-royal,
+        .navbar-royal.menu-open { background-color: var(--primary); padding: 10px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .navbar-royal .nav-link { color: #ffffff !important; font-weight: 600; margin: 0 10px; font-size: 0.95rem; position: relative; }
+        .navbar-royal .nav-link::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -2px; right: 0; background-color: var(--gold); transition: width 0.3s; }
         .navbar-royal .nav-link:hover::after { width: 100%; }
-        .nav-main-dropdown .dropdown-menu {
-            background-color: var(--primary);
-            border: 1px solid var(--gold);
-            border-radius: 0;
-            padding: 10px 0;
-            min-width: 200px;
-            margin-top: 0;
-        }
-        .nav-main-dropdown .dropdown-item {
-            color: #fff;
-            font-weight: 600;
-            padding: 10px 25px;
-            font-size: 0.95rem;
-            transition: all 0.3s;
-        }
-        .nav-main-dropdown .dropdown-item:hover {
-            background-color: rgba(197, 160, 89, 0.2);
-            color: var(--gold);
-            padding-right: 35px;
-        }
+        .nav-main-dropdown .dropdown-menu { background-color: var(--primary); border: 1px solid var(--gold); border-radius: 0; padding: 10px 0; min-width: 210px; margin-top: 0; }
+        .nav-main-dropdown .dropdown-item { color: #fff; font-weight: 600; padding: 10px 25px; font-size: 0.95rem; transition: all 0.3s; }
+        .nav-main-dropdown .dropdown-item:hover, .nav-main-dropdown .dropdown-item:focus { background-color: rgba(197, 160, 89, 0.2); color: var(--gold); padding-right: 35px; }
         .nav-main-dropdown .dropdown-toggle::after { display: none; }
+        .navbar-royal .navbar-toggler { border-color: rgba(255,255,255,0.5); padding: 6px 10px; }
+        .navbar-royal .navbar-toggler:focus { box-shadow: 0 0 0 2px var(--gold); }
 
-        /* ===== شريط عنوان الجائزة (دون خلفية — أقصى اليمين — تحت التيكر) ===== */
-        .award-title-bar {
-            position: fixed;
-            top: 108px;
-            right: 15px;
-            width: auto;
-            padding: 5px 15px;
-            z-index: 1060;
-            pointer-events: none;
-        }
-        .award-title-bar h2 {
-            color: var(--gold);
-            font-size: 1rem;
-            font-weight: 800;
-            margin: 0;
-            letter-spacing: 1px;
-            text-shadow: 0 1px 6px rgba(0,0,0,0.7), 0 0 12px rgba(0,0,0,0.5);
-        }
-        .award-title-bar .subtitle {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.7rem;
-            margin-top: 1px;
-            letter-spacing: 0.5px;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-        }
-        @media (max-width: 768px) {
-            .award-title-bar { right: 10px; top: 108px; }
-            .award-title-bar h2 { font-size: 0.8rem; }
+        /* الموبايل: القائمة بخلفية واضحة وقابلة للتمرير */
+        @media (max-width: 991.98px) {
+            .navbar-royal .navbar-collapse { background-color: var(--primary); margin: 10px 0 0; padding: 8px 16px 18px; border-top: 2px solid var(--gold); max-height: calc(100svh - var(--header-h)); overflow-y: auto; }
+            .navbar-royal .nav-link { margin: 0; padding: 12px 4px !important; border-bottom: 1px solid rgba(255,255,255,0.08); }
+            .navbar-royal .nav-link::after { display: none; }
+            .nav-main-dropdown .dropdown-menu { border: none; border-right: 2px solid var(--gold); background: rgba(255,255,255,0.04); }
+            .navbar-royal .btn-gold { width: 100%; margin-top: 12px; }
+            .countdown-panel { position: static !important; margin: 6px 0 4px !important; }
+            .countdown-panel::before { display: none; }
         }
 
-        /* ===== أيقونة العداد المتنفسة ===== */
+        /* ===== أيقونة العداد ===== */
         .countdown-toggle i { font-size: 1.1rem; animation: breathe 3s ease-in-out infinite; }
         @keyframes breathe { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
         .countdown-panel { display: none; position: absolute; top: 100%; left: 0; background-color: rgba(10, 22, 50, 0.95); border: 1px solid var(--gold); padding: 15px 25px; text-align: center; min-width: 200px; z-index: 9999; backdrop-filter: blur(10px); margin-top: 10px; }
@@ -89,10 +67,14 @@
         .countdown-panel-value { color: #ffffff; font-size: 2.2rem; font-weight: 900; margin-bottom: 4px; }
         .countdown-panel-label { color: #aaa; font-size: 0.8rem; }
         #countdownDropdown.show .countdown-panel { display: block; }
-        #countdownDropdown.show .countdown-toggle::after { width: 100%; }
 
         .btn-gold { background-color: var(--gold); color: #fff; font-weight: 700; border-radius: 0; padding: 10px 30px; transition: all 0.3s; border: none; box-shadow: 0 4px 10px rgba(197, 160, 89, 0.5); }
         .btn-gold:hover { background-color: var(--primary); color: #fff; }
+
+        /* الصفحات الداخلية تبدأ تحت التيكر + النافبار */
+        body.not-home #pageContentWrapper { padding-top: var(--header-h); }
+
+        /* ===================== Footer ===================== */
         footer { background-color: var(--primary); color: #ffffff; padding: 60px 0 30px; border-top: 4px solid var(--gold); }
         .footer-logo-img { width: 80px; height: 80px; object-fit: contain; border: 2px solid var(--gold); padding: 5px; border-radius: 50%; background-color: #fff; }
         .footer-title { color: var(--gold); font-weight: 700; margin-bottom: 20px; font-size: 1.2rem; }
@@ -102,237 +84,122 @@
         .section-header h2 { font-weight: 900; color: var(--primary); font-size: 2.2rem; margin-bottom: 15px; }
         .section-header .gold-line { width: 80px; height: 3px; background-color: var(--gold); margin: 0 auto; }
         .section-header-white h2 { color: #fff; }
-        #scrollToTop { position: fixed; bottom: 30px; left: 30px; z-index: 9999; display: none; width: 50px; height: 50px; border-radius: 0; background-color: var(--gold); color: #fff; border: none; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(197, 160, 89, 0.5); transition: all 0.3s; }
-        #scrollToTop:hover { background-color: var(--primary); }
-        #scrollDown { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9999; display: none; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 1.2rem; text-decoration: none; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); animation: breatheDown 2s ease-in-out infinite; transition: background-color 0.3s; }
-        #scrollDown:hover { background-color: rgba(255,255,255,0.3); color: #fff; }
-        @keyframes breatheDown { 0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.12); } }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ===== قسم آخر الأخبار ===== */
-        .latest-news-section {
-            display: flex;
-            min-height: 300px;
-            background-color: var(--bg-gray);
-        }
-        .latest-news-sidebar {
-            flex: 0 0 220px;
-            background-color: var(--gold);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-            gap: 25px;
-        }
-        .latest-news-sidebar h3 {
-            color: #fff;
-            font-size: 1.6rem;
-            font-weight: 900;
-            text-align: center;
-            margin: 0;
-            writing-mode: horizontal-tb;
-        }
-        .latest-news-sidebar a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: opacity 0.3s;
-        }
-        .latest-news-sidebar a:hover { opacity: 0.8; }
-        .latest-news-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            padding: 30px 40px;
-        }
-        .latest-news-content:empty::after {
-            content: "لا توجد أخبار بعد";
-            color: #999;
-            text-align: center;
-            padding: 40px;
-        }
-        .news-item-block {
-            display: flex;
-            gap: 20px;
-            padding: 25px 0;
-            border-bottom: 1px solid #e0e0e0;
-            transition: background-color 0.3s;
-        }
-        .news-item-block:last-child { border-bottom: none; }
-        .news-item-block:hover { background-color: rgba(197, 160, 89, 0.05); }
-        .news-item-date {
-            flex: 0 0 110px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-        .news-item-date i { font-size: 1.5rem; color: #c0392b; }
-        .news-item-date span { font-size: 0.8rem; color: #c0392b; font-weight: 700; }
-        .news-item-body h4 { color: var(--primary); font-weight: 800; font-size: 1.05rem; margin-bottom: 8px; }
-        .news-item-body p { color: #555; font-size: 0.9rem; line-height: 1.7; margin: 0; }
-        @media (max-width: 768px) {
-            .latest-news-section { flex-direction: column; }
-            .latest-news-sidebar { flex: 0 0 auto; padding: 25px 20px; flex-direction: row; }
-            .latest-news-content { padding: 20px; }
+        @media (max-width: 767px) {
+            .section-header { margin-bottom: 35px; }
+            .section-header h2 { font-size: 1.65rem; }
+            footer { padding: 45px 0 90px; }
+            .media-page-header { padding: 45px 0 35px !important; }
+            .media-page-header h1 { font-size: 1.9rem !important; }
         }
 
-        /* ===== شريط الأخبار ===== */
+        /* ===================== أسهم التنقل النابضة (أعلى / أسفل) ===================== */
+        .scroll-nav { position: fixed; left: 22px; bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 1040; display: flex; flex-direction: column; gap: 12px; }
+        .scroll-arrow {
+            position: relative; width: 48px; height: 48px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background-color: var(--gold); color: #fff; border: none; font-size: 1.1rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer;
+            transition: opacity .3s ease, visibility .3s ease, transform .3s ease, background-color .3s;
+        }
+        .scroll-arrow::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid var(--gold); animation: arrowPulse 2s ease-out infinite; pointer-events: none;
+        }
+        .scroll-arrow i { animation: arrowNudgeDown 2s ease-in-out infinite; }
+        #scrollUp i { animation-name: arrowNudgeUp; }
+        .scroll-arrow:hover { background-color: var(--primary); }
+        .scroll-arrow:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+        .scroll-arrow.is-hidden { opacity: 0; visibility: hidden; transform: scale(.6); pointer-events: none; }
+        @keyframes arrowPulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.7); opacity: 0; } }
+        @keyframes arrowNudgeDown { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
+        @keyframes arrowNudgeUp   { 0%, 100% { transform: translateY(2px); }  50% { transform: translateY(-3px); } }
+        @media (max-width: 767px) { .scroll-nav { left: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); gap: 10px; } .scroll-arrow { width: 42px; height: 42px; font-size: 1rem; } }
+        @media (prefers-reduced-motion: reduce) { .scroll-arrow::after, .scroll-arrow i { animation: none; } }
+
+        /* ===================== شريط الأخبار ===================== */
         .ticker-wrapper {
             position: fixed; top: 0; left: 0; width: 100%; height: 40px;
             z-index: 1060; overflow: hidden;
             border-bottom: 2px solid var(--gold);
             background-color: var(--primary);
             direction: ltr;
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-            mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+            --fade: min({{ global_ticker_settings.fade_width|default:"150px" }}, 12%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade), #000 calc(100% - var(--fade)), transparent 100%);
+                    mask-image: linear-gradient(to right, transparent 0, #000 var(--fade), #000 calc(100% - var(--fade)), transparent 100%);
         }
-        .ticker-track {
-            display: flex; align-items: center; width: max-content; height: 40px;
-            direction: ltr; will-change: transform;
-        }
-        .ticker-track:hover { animation-play-state: paused !important; }
-        .ticker-item {
-            flex-shrink: 0; display: flex; align-items: center; gap: 10px;
-            padding: 0 35px; white-space: nowrap; height: 40px;
-        }
-        .ticker-logo { height: 24px; width: auto; max-width: 55px; object-fit: contain; border-radius: 4px; display: inline-block; vertical-align: middle; }
-        .ticker-text { font-size: 0.95rem; font-weight: 700; color: var(--gold); direction: plaintext; unicode-bidi: plaintext; display: inline-block; vertical-align: middle; }
-        .ticker-text a { color: var(--gold); text-decoration: none; }
+        .ticker-track { display: flex; align-items: center; width: max-content; height: 38px; direction: ltr; will-change: transform; }
+        .ticker-group { display: flex; align-items: center; flex-shrink: 0; }
+        .ticker-wrapper:hover .ticker-track, .ticker-wrapper.paused .ticker-track { animation-play-state: paused !important; }
+        .ticker-item { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 35px; white-space: nowrap; height: 38px; }
+        .ticker-logo { height: 24px; width: auto; max-width: 55px; object-fit: contain; border-radius: 4px; }
+        .ticker-text { font-size: 0.95rem; font-weight: 700; color: var(--ticker-color, var(--gold)); unicode-bidi: plaintext; }
+        .ticker-text a { color: inherit; text-decoration: none; }
         .ticker-text a:hover { text-decoration: underline; }
-        .ticker-sep { flex-shrink: 0; width: 25px; display: flex; align-items: center; justify-content: center; height: 40px; }
-        .ticker-sep::before { content: '\2726'; font-size: 0.6rem; color: var(--gold); opacity: 0.35; }
-        @keyframes tickerSlide { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+        .ticker-text p { display: inline; margin: 0; }
+        .ticker-sep { flex-shrink: 0; width: 25px; display: flex; align-items: center; justify-content: center; height: 38px; }
+        .ticker-sep::before { content: '\2726'; font-size: 0.6rem; color: var(--ticker-color, var(--gold)); opacity: 0.4; }
+        @keyframes tickerSlide { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+        @media (max-width: 767px) { .ticker-item { padding: 0 22px; } .ticker-text { font-size: 0.85rem; } }
 
-        /* ===== قسم الرعاة ===== */
-        .sponsors-section { padding: 60px 0; background-color: #ffffff; border-top: 4px solid var(--gold); }
-        .sponsors-marquee-wrapper { width: 100%; overflow: hidden; white-space: nowrap; padding: 20px 0; position: relative; }
-        .sponsors-marquee-wrapper::before, .sponsors-marquee-wrapper::after { content: ''; position: absolute; top: 0; width: 120px; height: 100%; z-index: 2; pointer-events: none; }
-        .sponsors-marquee-wrapper::before { left: 0; background: linear-gradient(to left, transparent, #ffffff); }
-        .sponsors-marquee-wrapper::after { right: 0; background: linear-gradient(to right, transparent, #ffffff); }
-        .sponsors-track { display: inline-flex; animation: sponsors-marquee 30s linear infinite; gap: 60px; }
-        .sponsors-track:hover { animation-play-state: paused; }
-        .sponsor-item { display: inline-flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
-        .sponsor-item img { height: 80px; width: auto; max-width: 180px; object-fit: contain; filter: grayscale(40%); opacity: 0.7; transition: all 0.4s ease; border-radius: 8px; padding: 5px; }
-        .sponsor-item:hover img { filter: grayscale(0%); opacity: 1; transform: scale(1.1); }
-        .sponsor-item.platinum img { height: 110px; max-width: 220px; }
-        .sponsor-item.gold img { height: 90px; max-width: 200px; }
-        .sponsor-item.silver img { height: 70px; max-width: 160px; }
-        .sponsor-item.bronze img { height: 60px; max-width: 140px; }
-        .sponsor-tier-badge { font-size: 0.65rem; font-weight: 700; padding: 2px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        .tier-platinum { background-color: #e5e4e2; color: #333; }
-        .tier-gold { background-color: #FFF3CD; color: #856404; border: 1px solid #FFD700; }
-        .tier-silver { background-color: #e9ecef; color: #495057; }
-        .tier-bronze { background-color: #f0d9c0; color: #8b4513; }
-        @keyframes sponsors-marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
-
-        /* ===== Hero Slideshow بالبطاقات الشفافة ===== */
-        .hero-slideshow { position: relative; width: 100%; height: 100vh; min-height: 600px; max-height: 900px; overflow: hidden; color: white; }
-        .hero-slideshow .swiper { width: 100%; height: 100%; }
-        .hero-slideshow .swiper-slide { position: relative; overflow: hidden; }
-        .hero-slide-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-        .hero-slide-bg img, .hero-slide-bg video { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .hero-slide-bg iframe { width: 100%; height: 100%; border: none; position: absolute; top: 0; left: 0; }
-        .hero-slide-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-
-        /* البطاقة الشفافة — عرض 550px بأقصى اليسار */
-        .hero-transparent-card {
-            position: relative; z-index: 2;
-            width: 550px; height: 380px;
-            margin: 50px auto 0 0 !important;
-            align-self: flex-start !important;
-            padding: 30px 35px;
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.12);
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-            display: flex; flex-direction: column; justify-content: center;
-        }
-        .hero-transparent-card:hover { transform: translateY(-5px); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); }
-        .hero-transparent-card h3 { margin-bottom: 15px; line-height: 1.6; }
-        .hero-transparent-card p { margin: 0; line-height: 1.9; opacity: 0.93; }
-
-        /* بطاقة صورة + نص (تخطيط جانبي — عرض 550px بأقصى اليسار) */
-        .hero-card-split {
-            display: flex; flex-direction: row-reverse; align-items: stretch;
-            width: 550px; height: 380px; overflow: hidden;
-            margin: 50px auto 0 0 !important;
-            align-self: flex-start !important;
-        }
-        .hero-card-split .hero-card-img { flex: 0 0 45%; min-height: 250px; overflow: hidden; }
-        .hero-card-split .hero-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .hero-card-split .hero-card-text { flex: 1; padding: 35px 40px; display: flex; flex-direction: column; justify-content: center; }
-
-        /* نقاط التنقل فقط — بدون أسهم */
-        .hero-slideshow .swiper-pagination-bullet { background-color: rgba(255,255,255,0.4); width: 10px; height: 10px; transition: all 0.3s; }
-        .hero-slideshow .swiper-pagination-bullet-active { background-color: var(--gold); width: 28px; border-radius: 5px; }
-
-        /* عنوان الجائزة (يظهر فوق السلايدات) */
-        .hero-title-overlay { position: absolute; bottom: 0; left: 0; width: 100%; z-index: 10; text-align: center; padding: 40px 20px 50px; background: linear-gradient(transparent, rgba(10,22,50,0.7)); }
-        .hero-title-overlay h1 { text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-        .hero-title-overlay h4 { color: rgba(255,255,255,0.85); text-shadow: 0 1px 4px rgba(0,0,0,0.4); }
-
-        @media (max-width: 767px) {
-            .hero-transparent-card { width: 90vw; height: auto; max-width: 550px; margin: 30px auto 0 0 !important; padding: 25px 25px; }
-            .hero-card-split { flex-direction: column; width: 90vw; max-width: 550px; margin: 30px auto 0 0 !important; }
-            .hero-card-split .hero-card-img { flex: 0 0 auto; min-height: 180px; width: 100%; }
-            .hero-card-split .hero-card-text { padding: 20px 25px; }
-        }
-
-        /* ===== Flip Cards للمجالات ===== */
-        .flip-card { perspective: 1000px; height: 350px; cursor: pointer; }
+        /* ===================== Flip Cards للمجالات ===================== */
+        .flip-card { position: relative; perspective: 1000px; height: 350px; cursor: pointer; }
         .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
-        .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
-        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; text-align: center; }
+        @media (hover: hover) { .flip-card:hover .flip-card-inner { transform: rotateY(180deg); } }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; inset: 0; width: auto; height: auto; box-sizing: border-box; -webkit-backface-visibility: hidden; backface-visibility: hidden; border-radius: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 25px; text-align: center; }
         .flip-card-front { background-color: var(--primary); border: 2px solid var(--gold); }
         .flip-card-front i { font-size: 2.8rem; color: var(--gold); margin-bottom: 15px; }
         .flip-card-front h4 { color: var(--gold); font-weight: 800; font-size: 1.2rem; margin-bottom: 5px; }
         .flip-card-front small { color: rgba(255,255,255,0.6); font-size: 0.85rem; }
+        .flip-card-front .flip-hint { margin-top: 14px; font-size: .75rem; color: rgba(255,255,255,.5); }
         .flip-card-back { background: linear-gradient(135deg, var(--secondary), var(--primary)); border: 2px solid var(--gold); transform: rotateY(180deg); overflow-y: auto; }
         .flip-card-back h5 { color: var(--gold); font-weight: 700; margin-bottom: 12px; font-size: 1rem; }
         .flip-card-back p { color: rgba(255,255,255,0.85); font-size: 0.9rem; line-height: 1.7; margin: 0; }
+        @media (hover: hover) { .flip-card-front .flip-hint { display: none; } }
+        @media (max-width: 767px) { .flip-card { height: 280px; } }
+
+        /* iOS لا يدعم background-attachment: fixed */
+        @media (max-width: 991.98px), (hover: none) {
+            [style*="background-attachment: fixed"], [style*="background-attachment:fixed"] { background-attachment: scroll !important; }
+        }
     </style>
     {% if theme and theme.custom_css %}
     <style>{{ theme.custom_css|safe }}</style>
     {% endif %}
+    {% block extra_head %}{% endblock %}
 </head>
-<body>
+{% with ticker_on=global_ticker_settings.is_enabled %}
+<body class="{% block body_class %}not-home{% endblock %}{% if ticker_on and global_ticker_items %} has-ticker{% endif %}">
 
-{% if global_ticker_settings and global_ticker_settings.is_enabled and global_ticker_items %}
-<div class="ticker-wrapper" id="tickerWrapper" style="position: fixed;">
+{% if ticker_on and global_ticker_items %}
+<div class="ticker-wrapper" id="tickerWrapper" role="marquee" aria-label="شريط الأخبار"
+     style="--ticker-color: {{ global_ticker_settings.font_color|default:'#c5a059' }};"
+     data-speed="{{ global_ticker_settings.scroll_speed|default:60 }}"
+     data-bg="{{ global_ticker_settings.bg_color|default:'#0a1632' }}"
+     data-opacity="{{ global_ticker_settings.bg_opacity|default:'0.95'|stringformat:'s' }}">
     <div class="ticker-track" id="tickerTrack">
-        {% for item in global_ticker_items %}
+        <div class="ticker-group">
+            {% for item in global_ticker_items %}
             <div class="ticker-item">
                 {% if item.logo %}<img class="ticker-logo" src="{{ item.logo.url }}" alt="">{% endif %}
                 <span class="ticker-text">{{ item.message_html|safe }}</span>
             </div>
             <div class="ticker-sep"></div>
-        {% endfor %}
-        {% for item in global_ticker_items %}
-            <div class="ticker-item">
-                {% if item.logo %}<img class="ticker-logo" src="{{ item.logo.url }}" alt="">{% endif %}
-                <span class="ticker-text">{{ item.message_html|safe }}</span>
-            </div>
-            <div class="ticker-sep"></div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endif %}
-<nav class="navbar navbar-expand-lg navbar-royal navbar-dark fixed-top">
+{% endwith %}
+
+<nav class="navbar navbar-expand-lg navbar-royal navbar-dark fixed-top" id="mainNavbar">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-        {% if settings and settings.site_logo %}<img src="{{ settings.site_logo.url }}" alt="Logo" style="width: 45px; height: 45px; object-fit: contain; margin-left: 10px; border-radius: 50%;">{% endif %}
+        {% if settings and settings.site_logo %}<img src="{{ settings.site_logo.url }}" alt="Logo" style="width: 45px; height: 45px; object-fit: contain; margin-left: 10px; border-radius: 50%;">{% else %}<span style="color: var(--gold); font-weight: 800; font-size: 1rem;">جائزة جردانة</span>{% endif %}
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="القائمة"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
         <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">الرئيسية</a></li>
         <li class="nav-item dropdown nav-main-dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="awardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -343,9 +210,11 @@
             <li><a class="dropdown-item" href="{% url 'home' %}#fields">المجالات</a></li>
             <li><a class="dropdown-item" href="{% url 'home' %}#apply">الشروط والضوابط</a></li>
             <li><a class="dropdown-item" href="{% url 'home' %}#timeline">الجدول الزمني</a></li>
+            <li><a class="dropdown-item" href="{% url 'home' %}#prizes">الجوائز</a></li>
           </ul>
         </li>
         <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#judges">التحكيم</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'winners_page' %}">الفائزون</a></li>
         <li class="nav-item dropdown nav-main-dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="mediaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             المركز الإعلامي <i class="fas fa-chevron-down" style="font-size: 0.65rem; margin-right: 5px;"></i>
@@ -359,9 +228,9 @@
           </ul>
         </li>
         {% if settings and settings.registration_deadline %}
-        <li class="nav-item dropdown" id="countdownDropdown">
-          <a class="nav-link countdown-toggle" href="#" style="position: relative;">
-            <i class="fas fa-hourglass-half"></i>
+        <li class="nav-item dropdown" id="countdownDropdown" style="position: relative;">
+          <a class="nav-link countdown-toggle" href="#" aria-label="الوقت المتبقي">
+            <i class="fas fa-hourglass-half"></i><span class="d-lg-none ms-2">الوقت المتبقي للتسجيل</span>
           </a>
           <div class="countdown-panel">
             <div class="countdown-panel-header">الوقت المتبقي</div>
@@ -372,67 +241,22 @@
         {% endif %}
       </ul>
       {% if request.path != '/submit/' %}
-      <a href="{% url 'submit_project' %}" class="btn btn-gold">{{ content.btn_navbar }}</a>
+      <a href="{% url 'submit_project' %}" class="btn btn-gold">{{ content.btn_navbar|default:"سجل الآن" }}</a>
       {% endif %}
     </div>
   </div>
 </nav>
 
-{% if settings and settings.registration_deadline %}
-<script>
-(function() {
-    var dd = document.getElementById('countdownDropdown');
-    var toggle = dd ? dd.querySelector('.countdown-toggle') : null;
-    if (dd && toggle) {
-        toggle.addEventListener('click', function(e) {
-            e.preventDefault(); e.stopPropagation(); dd.classList.toggle('show');
-        });
-        document.addEventListener('click', function(e) {
-            if (!dd.contains(e.target)) dd.classList.remove('show');
-        });
-    }
-})();
-</script>
-{% endif %}
-
-{% if global_ticker_settings and global_ticker_settings.is_enabled and global_ticker_items %}
-<script>
-(function() {
-    function initTicker() {
-        var wrapper = document.getElementById('tickerWrapper');
-        var track = document.getElementById('tickerTrack');
-        if (!wrapper || !track) return;
-
-        var hex = "{{ global_ticker_settings.bg_color|default:'#0a1632' }}".replace('#', '');
-        var r = parseInt(hex.substring(0, 2), 16);
-        var g = parseInt(hex.substring(2, 4), 16);
-        var b = parseInt(hex.substring(4, 6), 16);
-        var opacity = parseFloat("{{ global_ticker_settings.bg_opacity|default:'0.95' }}");
-        wrapper.style.backgroundColor = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity + ')';
-
-        var navbar = document.querySelector('.navbar-royal.fixed-top');
-        if (navbar) navbar.style.top = (wrapper.offsetHeight || 40) + 'px';
-
-        var halfWidth = track.scrollWidth / 2;
-        var speed = 100;
-        var dur = Math.max(15, halfWidth / speed);
-        track.style.animation = 'tickerSlide ' + dur.toFixed(1) + 's linear infinite';
-    }
-
-    if (document.readyState === 'complete') {
-        initTicker();
-    } else {
-        window.addEventListener('load', initTicker);
-    }
-})();
-</script>
-{% endif %}
-
+<div id="pageContentWrapper">
 {% block content %}{% endblock %}
+</div>
 
-<button id="scrollToTop"><i class="fas fa-chevron-up"></i></button>
-<a href="#" id="scrollDown"><i class="fas fa-chevron-down"></i></a>
-<footer{% if section_bgs.footer and section_bgs.footer.bg_color %} style="background-color: {{ section_bgs.footer.bg_color }};"{% endif %}>
+<div class="scroll-nav" aria-label="التنقل بين الأقسام">
+    <button type="button" id="scrollUp" class="scroll-arrow is-hidden" aria-label="القسم السابق"><i class="fas fa-chevron-up"></i></button>
+    <button type="button" id="scrollDown" class="scroll-arrow" aria-label="القسم التالي"><i class="fas fa-chevron-down"></i></button>
+</div>
+
+<footer id="siteFooter"{% if section_bgs.footer and section_bgs.footer.bg_color %} style="background-color: {{ section_bgs.footer.bg_color }};"{% endif %}>
     <div class="container">
         <div class="row mb-5 align-items-center">
             <div class="col-auto mb-3">{% if settings and settings.site_logo %}<img src="{{ settings.site_logo.url }}" alt="Logo" class="footer-logo-img">{% endif %}</div>
@@ -441,27 +265,207 @@
         <div class="row">
             <div class="col-md-4 mb-4"><h5 class="footer-title">عن الجائزة</h5><p style="color: #ccc; font-size: 0.9rem; line-height: 1.8;">{{ footer.about_text }}</p></div>
             <div class="col-md-4 mb-4"><h5 class="footer-title">روابط سريعة</h5><div class="footer-links"><a href="{% url 'home' %}#about">الرؤية والرسالة</a><a href="{% url 'home' %}#fields">المجالات</a><a href="{% url 'home' %}#apply">التقديم</a><a href="{% url 'submit_project' %}">نموذج التسجيل</a></div></div>
-            <div class="col-md-4 mb-4"><h5 class="footer-title">تواصل معنا</h5><div class="footer-links"><p><i class="fas fa-envelope ms-2" style="color: var(--gold);"></i> {{ footer.email }}</p><p><i class="fas fa-phone ms-2" style="color: var(--gold);"></i> {{ footer.phone }}</p><p><i class="fas fa-map-marker-alt ms-2" style="color: var(--gold);"></i> {{ footer.address }}</p></div></div>
+            <div class="col-md-4 mb-4"><h5 class="footer-title">تواصل معنا</h5><div class="footer-links"><p><i class="fas fa-envelope ms-2" style="color: var(--gold);"></i> {{ footer.email }}</p><p><i class="fas fa-phone ms-2" style="color: var(--gold);"></i> <span dir="ltr">{{ footer.phone }}</span></p><p><i class="fas fa-map-marker-alt ms-2" style="color: var(--gold);"></i> {{ footer.address }}</p></div></div>
         </div>
         <hr style="border-color: rgba(197, 160, 89, 0.3); margin: 30px 0;">
         <div class="text-center" style="color: #888; font-size: 0.85rem;"><p class="mb-0">{{ footer.copyright_text }}</p></div>
     </div>
 </footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
-    AOS.init({ duration: 800, once: true });
-    const scrollUpBtn = document.getElementById('scrollToTop');
-    const scrollDownBtn = document.getElementById('scrollDown');
-    const navbar = document.querySelector('.navbar-royal');
-    const sections = document.querySelectorAll('section[id]');
-    const offset = 80;
-    if (scrollDownBtn) { scrollDownBtn.addEventListener('click', function(e) { e.preventDefault(); let currentScroll = window.scrollY + offset; for (let i = 0; i < sections.length; i++) { if (sections[i].offsetTop > currentScroll) { window.scrollTo({ top: sections[i].offsetTop - offset, behavior: 'smooth' }); return; } } }); }
-    if (scrollUpBtn) { scrollUpBtn.addEventListener('click', function(e) { e.preventDefault(); let currentScroll = window.scrollY + offset; let target = 0; for (let i = 0; i < sections.length; i++) { if (sections[i].offsetTop < currentScroll) { target = sections[i].offsetTop - offset; } else { break; } } window.scrollTo({ top: target, behavior: 'smooth' }); }); }
-    function handleScroll() { const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200; if(navbar) { if (window.scrollY > 100) { navbar.classList.add('scrolled'); } else { if (window.location.pathname !== '/submit/') { navbar.classList.remove('scrolled'); } } } if(scrollUpBtn) { scrollUpBtn.style.display = (window.scrollY > 100) ? 'flex' : 'none'; } if(scrollDownBtn) { if (window.scrollY <= 100) { scrollDownBtn.style.display = 'flex'; } else if (isAtBottom) { scrollDownBtn.style.display = 'none'; } else { scrollDownBtn.style.display = 'flex'; } } }
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('DOMContentLoaded', handleScroll);
+(function () {
+    'use strict';
+    var root = document.documentElement;
+    var navbar = document.getElementById('mainNavbar');
+    var ticker = document.getElementById('tickerWrapper');
+    var track = document.getElementById('tickerTrack');
+    var isHome = document.body.classList.contains('is-home');
+
+    try { AOS.init({ duration: 800, once: true, disable: function () { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } }); } catch (e) {}
+
+    /* ---------- ارتفاع الهيدر (التيكر + النافبار) ---------- */
+    function headerHeight() {
+        var t = ticker ? ticker.offsetHeight : 0;
+        // ارتفاع سطر الشعار فقط (حتى لو قائمة الموبايل مفتوحة) + حشوة النافبار المصغّر
+        var brand = navbar ? navbar.querySelector('.navbar-brand') : null;
+        var n = (brand ? Math.max(brand.offsetHeight, 46) : 46) + 20;
+        return t + n;
+    }
+    function updateHeaderVars() {
+        var t = ticker ? ticker.offsetHeight : 0;
+        root.style.setProperty('--ticker-h', t + 'px');
+        document.body.style.setProperty('--ticker-h', t + 'px');
+        var h = headerHeight();
+        root.style.setProperty('--header-h', h + 'px');
+        document.body.style.setProperty('--header-h', h + 'px');
+        document.documentElement.style.scrollPaddingTop = h + 'px';
+    }
+
+    /* ---------- شريط الأخبار: السرعة من الإعدادات (بكسل/ثانية) ---------- */
+    var tickerOriginals = null, lastTickerWidth = 0;
+    function buildTicker(force) {
+        if (!ticker || !track) return;
+        var group = track.querySelector('.ticker-group');
+        if (!group) return;
+        var wrapW = ticker.clientWidth;
+        if (!force && wrapW === lastTickerWidth) return;
+        lastTickerWidth = wrapW;
+
+        if (!tickerOriginals) tickerOriginals = Array.prototype.slice.call(group.children).map(function (n) { return n.cloneNode(true); });
+        // إرجاع المجموعة للأصل ثم تكرارها حتى تغطي عرض الشاشة (بدون فراغات)
+        group.innerHTML = '';
+        tickerOriginals.forEach(function (n) { group.appendChild(n.cloneNode(true)); });
+        var guard = 0;
+        while (group.scrollWidth < wrapW && guard++ < 30) {
+            tickerOriginals.forEach(function (n) { group.appendChild(n.cloneNode(true)); });
+        }
+        // نسخة ثانية مطابقة لحلقة سلسة
+        Array.prototype.slice.call(track.querySelectorAll('.ticker-group.clone')).forEach(function (c) { c.remove(); });
+        var clone = group.cloneNode(true);
+        clone.classList.add('clone');
+        clone.setAttribute('aria-hidden', 'true');
+        track.appendChild(clone);
+
+        var speed = parseFloat(ticker.getAttribute('data-speed')) || 60;
+        speed = Math.min(300, Math.max(10, speed));
+        var duration = group.scrollWidth / speed;
+        track.style.animation = 'none';
+        void track.offsetWidth;  // إعادة تشغيل الأنيميشن
+        track.style.animation = 'tickerSlide ' + duration.toFixed(2) + 's linear infinite';
+    }
+    function initTicker() {
+        if (!ticker) return;
+        var hex = (ticker.getAttribute('data-bg') || '#0a1632').replace('#', '');
+        if (hex.length === 6) {
+            var r = parseInt(hex.substr(0, 2), 16), g = parseInt(hex.substr(2, 2), 16), b = parseInt(hex.substr(4, 2), 16);
+            var op = parseFloat(String(ticker.getAttribute('data-opacity')).replace(',', '.'));
+            if (isNaN(op)) op = 0.95;
+            ticker.style.backgroundColor = 'rgba(' + r + ',' + g + ',' + b + ',' + op + ')';
+        }
+        // لمسة على الموبايل = إيقاف/تشغيل
+        ticker.addEventListener('click', function (e) { if (!e.target.closest('a')) ticker.classList.toggle('paused'); });
+        buildTicker(true);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { buildTicker(true); });
+        window.addEventListener('load', function () { buildTicker(true); });
+    }
+
+    /* ---------- أسهم التنقل: قسم للأسفل / قسم للأعلى ---------- */
+    var upBtn = document.getElementById('scrollUp');
+    var downBtn = document.getElementById('scrollDown');
+
+    function sectionTops() {
+        var els = document.querySelectorAll('#pageContentWrapper section, #siteFooter');
+        var tops = [];
+        Array.prototype.forEach.call(els, function (el) {
+            if (el.offsetHeight < 40 || el.closest('.modal')) return;
+            // offsetTop لا يتأثر بحركات AOS (transform) فيبقى الموضع ثابت بالاتجاهين
+            var top = 0, n = el;
+            while (n) { top += n.offsetTop; n = n.offsetParent; }
+            if (tops.indexOf(top) === -1) tops.push(top);
+        });
+        return tops.sort(function (a, b) { return a - b; });
+    }
+    function maxScroll() { return Math.max(0, document.documentElement.scrollHeight - window.innerHeight); }
+    function goTo(y) { window.scrollTo({ top: Math.max(0, Math.min(y, maxScroll())), behavior: 'smooth' }); }
+
+    function scrollNext() {
+        var y = window.pageYOffset, off = headerHeight(), tops = sectionTops();
+        for (var i = 0; i < tops.length; i++) {
+            var target = tops[i] - off;
+            if (target > y + 5 && Math.min(target, maxScroll()) > y + 5) { goTo(target); return; }
+        }
+        goTo(maxScroll());
+    }
+    function scrollPrev() {
+        var y = window.pageYOffset, off = headerHeight(), tops = sectionTops(), target = 0;
+        for (var i = tops.length - 1; i >= 0; i--) {
+            var t = tops[i] - off;
+            if (t < y - 5) { target = t; break; }
+        }
+        goTo(target);
+    }
+    if (downBtn) downBtn.addEventListener('click', scrollNext);
+    if (upBtn) upBtn.addEventListener('click', scrollPrev);
+
+    function closeDesktopDropdowns() {
+        if (window.innerWidth < 992 || typeof bootstrap === 'undefined') return;
+        document.querySelectorAll('.navbar-royal .dropdown-menu.show').forEach(function (menu) {
+            var t = menu.closest('.dropdown').querySelector('[data-bs-toggle="dropdown"]');
+            var dd = t && bootstrap.Dropdown.getInstance(t);
+            if (dd) dd.hide();
+        });
+    }
+
+    var ticking = false;
+    function onScroll() {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+            ticking = false;
+            var y = window.pageYOffset;
+            if (navbar && isHome) navbar.classList.toggle('scrolled', y > 60);
+            if (upBtn) upBtn.classList.toggle('is-hidden', y < 60);
+            if (downBtn) downBtn.classList.toggle('is-hidden', y >= maxScroll() - 10);
+            closeDesktopDropdowns();
+        });
+    }
+
+    /* ---------- قائمة الموبايل ---------- */
+    var collapseEl = document.getElementById('navbarNav');
+    if (collapseEl && navbar) {
+        collapseEl.addEventListener('show.bs.collapse', function () { navbar.classList.add('menu-open'); });
+        collapseEl.addEventListener('hidden.bs.collapse', function () { navbar.classList.remove('menu-open'); });
+        // اغلاق القائمة عند اختيار رابط داخلي
+        collapseEl.querySelectorAll('a.dropdown-item, a.nav-link:not(.dropdown-toggle):not(.countdown-toggle)').forEach(function (a) {
+            a.addEventListener('click', function () {
+                if (window.innerWidth < 992 && collapseEl.classList.contains('show') && typeof bootstrap !== 'undefined') {
+                    bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+                }
+            });
+        });
+    }
+
+    /* ---------- العداد التنازلي ---------- */
+    var dd = document.getElementById('countdownDropdown');
+    if (dd) {
+        dd.querySelector('.countdown-toggle').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); dd.classList.toggle('show'); });
+        document.addEventListener('click', function (e) { if (!dd.contains(e.target)) dd.classList.remove('show'); });
+    }
+    var cdEl = document.getElementById('countdownNav');
+    {% if settings and settings.registration_deadline %}
+    if (cdEl) {
+        var target = new Date("{{ settings.registration_deadline|date:'c' }}");
+        var render = function () {
+            var d = target - new Date();
+            cdEl.textContent = d > 0 ? Math.floor(d / 86400000) + ' يوم' : 'انتهى التسجيل';
+        };
+        if (!isNaN(target.getTime())) { render(); setInterval(render, 60000); }
+    }
+    {% endif %}
+
+    /* ---------- Flip cards: لمسة على الموبايل ---------- */
+    document.querySelectorAll('.flip-card').forEach(function (card) {
+        card.setAttribute('tabindex', '0');
+        card.addEventListener('click', function () { card.classList.toggle('flipped'); });
+        card.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.classList.toggle('flipped'); } });
+    });
+
+    /* ---------- تشغيل ---------- */
+    updateHeaderVars();
+    initTicker();
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    var rT;
+    window.addEventListener('resize', function () {
+        clearTimeout(rT);
+        rT = setTimeout(function () { updateHeaderVars(); buildTicker(false); onScroll(); }, 150);
+    });
+    window.addEventListener('load', function () { updateHeaderVars(); onScroll(); });
+})();
 </script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

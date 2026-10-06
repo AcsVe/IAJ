@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<section id="apply" class="py-5" style="background-color: var(--bg-gray); min-height: 100vh; margin-top: 80px;">
+<section id="apply" class="py-5" style="background-color: var(--bg-gray); min-height: 100vh;">
     <div class="container">
         <div class="section-header" data-aos="fade-down">
             <h2>نموذج الترشح للجائزة</h2>
@@ -10,7 +10,7 @@
         </div>
         <div class="row justify-content-center">
             <div class="col-lg-8" data-aos="fade-up">
-                <div class="card border-0 shadow p-5 bg-white" style="border-top: 5px solid var(--gold) !important; border-radius: 0;">
+                <div class="card border-0 shadow p-4 p-md-5 bg-white" style="border-top: 5px solid var(--gold) !important; border-radius: 0;">
                     
                     <form method="POST" enctype="multipart/form-data" id="submissionForm">
                         {% csrf_token %}
@@ -49,9 +49,5 @@
     }
 </script>
 
-<!-- إجبار الهيدر على أخذ اللون الداكن فوراً في صفحة التسجيل -->
-<script>
-    document.querySelector('.navbar-royal').classList.add('scrolled');
-</script>
 
 {% endblock %}

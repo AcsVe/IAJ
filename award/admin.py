@@ -5,8 +5,9 @@ from .models import (
     Judge, ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
     SectionBackground, Sponsor, FAQ, Winner, WinnerCategory, MediaGallery,
     ContactMessage, TickerItem, SlideshowCard, TickerSetting, News,
-    Photo, Video, SuccessStory, HeroCard
+    Photo, Video, SuccessStory, HeroCard, StoredFile
 )
+from django.utils.html import format_html
 
 
 @admin.register(Field)
@@ -318,3 +319,30 @@ class SuccessStoryAdmin(admin.ModelAdmin):
     list_editable = ('is_active',)
     list_display_links = ('title',)
     search_fields = ('title',)
+
+
+@admin.register(StoredFile)
+class StoredFileAdmin(admin.ModelAdmin):
+    """الصور المحفوظة في قاعدة البيانات (للاطلاع فقط — تُضاف تلقائياً عند رفع أي صورة)"""
+    list_display = ('preview', 'name', 'size_kb', 'created_at')
+    list_display_links = ('name',)
+    search_fields = ('name',)
+    readonly_fields = ('preview', 'name', 'content_type', 'size', 'created_at')
+    exclude = ('content',)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).defer('content')
+
+    @admin.display(description='معاينة')
+    def preview(self, obj):
+        return format_html('<img src="/media/{}" style="height:50px;max-width:90px;object-fit:contain;">', obj.name)
+
+    @admin.display(description='الحجم (KB)', ordering='size')
+    def size_kb(self, obj):
+        return round((obj.size or 0) / 1024, 1)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

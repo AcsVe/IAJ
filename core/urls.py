@@ -2,9 +2,6 @@ from django.contrib import admin
 from django.urls import path
 from award import views
 
-from django.conf import settings
-from django.conf.urls.static import static
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
@@ -16,7 +13,6 @@ urlpatterns = [
     path('success-stories/', views.success_stories_page, name='success_stories_page'),
     path('statistics/', views.statistics_page, name='statistics_page'),
     path('winners/', views.winners_page, name='winners_page'),
+    # الصور المخزّنة في قاعدة البيانات
+    path('media/db/<path:name>', views.serve_db_media, name='db_media'),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
