@@ -44,7 +44,7 @@
         .nav-main-dropdown .dropdown-item { color: #fff; font-weight: 600; padding: 10px 25px; font-size: 0.95rem; transition: all 0.3s; }
         .nav-main-dropdown .dropdown-item:hover, .nav-main-dropdown .dropdown-item:focus { background-color: rgba(197, 160, 89, 0.2); color: var(--gold); padding-right: 35px; }
         .nav-main-dropdown .dropdown-toggle::after { display: none; }
-        .navbar-royal .navbar-toggler { border-color: rgba(255,255,255,0.5); padding: 6px 10px; }
+        .navbar-royal .navbar-toggler { border-color: rgba(255,255,255,0.6); padding: 6px 10px; background-color: rgba(10,22,50,0.55); }
         .navbar-royal .navbar-toggler:focus { box-shadow: 0 0 0 2px var(--gold); }
 
         /* الموبايل: القائمة بخلفية واضحة وقابلة للتمرير */
@@ -70,6 +70,10 @@
 
         .btn-gold { background-color: var(--gold); color: #fff; font-weight: 700; border-radius: 0; padding: 10px 30px; transition: all 0.3s; border: none; box-shadow: 0 4px 10px rgba(197, 160, 89, 0.5); }
         .btn-gold:hover { background-color: var(--primary); color: #fff; }
+
+        /* منع أي عنصر من توسيع الصفحة عرضياً (كان يسبب شريط أبيض وانزياح على الموبايل) */
+        #pageContentWrapper, #siteFooter { overflow-x: hidden; max-width: 100%; }
+        @supports (overflow: clip) { #pageContentWrapper, #siteFooter { overflow-x: clip; } }
 
         /* الصفحات الداخلية تبدأ تحت التيكر + النافبار */
         body.not-home #pageContentWrapper { padding-top: var(--header-h); }
@@ -284,6 +288,13 @@
     var track = document.getElementById('tickerTrack');
     var isHome = document.body.classList.contains('is-home');
 
+    // على الموبايل: حركات الدخول الجانبية تدفع المحتوى للخارج — نحولها لحركة من الأسفل
+    if (window.innerWidth < 992) {
+        document.querySelectorAll('[data-aos]').forEach(function (el) {
+            var a = el.getAttribute('data-aos') || '';
+            if (/left|right/.test(a)) el.setAttribute('data-aos', 'fade-up');
+        });
+    }
     try { AOS.init({ duration: 800, once: true, disable: function () { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } }); } catch (e) {}
 
     /* ---------- ارتفاع الهيدر (التيكر + النافبار) ---------- */
