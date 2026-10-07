@@ -5,11 +5,34 @@ Django settings for core project.
 from pathlib import Path
 import os
 import dj_database_url
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_env_file():
+    """
+    قراءة إعدادات الجهاز من ملف .env (أو IAJ.env) بجانب manage.py.
+    يقبل: KEY=value  أو  KEY = "value"  أو  export KEY='value'
+    المتغيرات الموجودة مسبقاً في النظام لها الأولوية.
+    """
+    for fname in ('.env', 'IAJ.env'):
+        path = BASE_DIR / fname
+        if not path.is_file():
+            continue
+        for raw in path.read_text(encoding='utf-8-sig', errors='ignore').splitlines():
+            line = raw.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            if line.lower().startswith('export '):
+                line = line[7:].strip()
+            key, val = line.split('=', 1)
+            key, val = key.strip(), val.strip().strip('"').strip("'").strip()
+            if key and val and not os.environ.get(key):
+                os.environ[key] = val
+        break
+
+
+_load_env_file()
 
 SECRET_KEY = (
     os.environ.get('DJANGO_SECRET_KEY')
@@ -19,13 +42,19 @@ SECRET_KEY = (
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+# عنوان الموقع العام (مثال: https://award.example.com) — يُكتب في .env
+SITE_URL = os.environ.get('SITE_URL', '').strip().rstrip('/')
 
-# Render يمرّر HTTPS عبر بروكسي — بدونها تسجيل الدخول للإدمن ممكن يرفض (CSRF Origin)
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()]
+
+# Cloudflare Tunnel يمرّر HTTPS عبر بروكسي — بدونها تسجيل الدخول للإدمن ممكن يرفض (CSRF Origin)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com'] + [
-    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in (os.environ.get('CSRF_TRUSTED_ORIGINS', '') + ',' + SITE_URL).split(',') if o.strip()
 ]
+if SITE_URL.startswith('https://') and not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -34,8 +63,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cloudinary',
-    'cloudinary_storage',  # 🔥 رجعناها
     'award',
 ]
 
@@ -78,8 +105,26 @@ DATABASES = {
     }
 }
 
-if os.environ.get('DATABASE_URL'):
-    DATABASES['default'] = dj_database_url.parse(os.environ.get('DATABASE_URL'), conn_max_age=600)
+# DATABASE_URL في .env  ← قاعدة PostgreSQL على الجهاز (مثال: postgresql://postgres:PASS@localhost:5432/iaj)
+# LOCAL_SQLITE=1        ← قاعدة تجريبية (ملف db.sqlite3) تتجاهل DATABASE_URL
+# CLOUD_DATABASE_URL    ← القاعدة السحابية القديمة (Neon) — تُستخدم فقط للاستيراد مرة واحدة
+import re as _re
+
+
+def _clean_db_url(value):
+    value = (value or '').strip()
+    # استخراج الرابط حتى لو كان داخل نص إضافي، مثل: psql 'postgresql://...'
+    m = _re.search(r'(postgres(?:ql)?|sqlite|mysql)://[^\s\'"]+', value)
+    return m.group(0) if m else value.strip('"').strip("'").strip()
+
+
+_db_url = _clean_db_url(os.environ.get('DATABASE_URL'))
+if _db_url and os.environ.get('LOCAL_SQLITE') != '1':
+    DATABASES['default'] = dj_database_url.parse(_db_url, conn_max_age=600, conn_health_checks=True)
+
+_cloud_url = _clean_db_url(os.environ.get('CLOUD_DATABASE_URL'))
+if _cloud_url:
+    DATABASES['cloud'] = dj_database_url.parse(_cloud_url, conn_max_age=0)
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -107,49 +152,31 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# الصور تُخزّن في قاعدة البيانات وتُعرض من /media/db/...
+# كل الملفات المرفوعة (صور، فيديو، PDF) تُحفظ على الجهاز
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT') or os.path.join(BASE_DIR, 'media')
 
-# ===== إعدادات Cloudinary =====
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dd1ylbi9k'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY', '488629293359776'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET', '6VohO8gyigQX2dF2S9z4uPX5MEA'),
-    secure=True
-)
-
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dd1ylbi9k'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '488629293359776'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', '6VohO8gyigQX2dF2S9z4uPX5MEA'),
-    'RESOURCE_TYPE': 'auto',
-}
-
-CL_UPLOAD_OPTIONS = {
-    'resource_type': 'auto',
-    'chunk_size': 6000000,
-    'timeout': 120,
-}
-
-# ===== إعدادات التخزين =====
 STORAGES = {
-    "default": {
-        # صور ← قاعدة البيانات | فيديو و PDF ← Cloudinary
-        "BACKEND": "award.storage.HybridMediaStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
-    },
-    "videos": {
-        "BACKEND": "award.storage.VideoCloudinaryStorage",
-    },
-    "raw": {
-        "BACKEND": "award.storage.RawCloudinaryStorage",
-    },
+    "default": {"BACKEND": "award.storage.LocalMediaStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    "videos": {"BACKEND": "award.storage.LocalMediaStorage"},
+    "raw": {"BACKEND": "award.storage.LocalMediaStorage"},
 }
 
+# بيانات Cloudinary القديمة — تُستخدم فقط لتنزيل الملفات القديمة (localize_media)
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dd1ylbi9k')
+
+FILE_UPLOAD_PERMISSIONS = 0o644
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ذاكرة مؤقتة داخل السيرفر (للإعدادات العامة والصور المخزّنة)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'iaj',
+        'OPTIONS': {'MAX_ENTRIES': 600},
+    }
+}

@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{# نفس قالب Django الأصلي + مربع بحث شامل في أعلى كل صفحات لوحة التحكم #}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+  #header { flex-wrap: wrap; gap: 10px; }
+  .iaj-admin-search { display: flex; align-items: center; flex: 1 1 260px; max-width: 460px; margin: 0 16px; position: relative; }
+  .iaj-admin-search input {
+    width: 100%; padding: 8px 38px 8px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.35);
+    background: rgba(255,255,255,.12); color: #fff; font-size: 14px; outline: none;
+  }
+  .iaj-admin-search input::placeholder { color: rgba(255,255,255,.75); }
+  .iaj-admin-search input:focus { background: #fff; color: #222; border-color: #c5a059; box-shadow: 0 0 0 3px rgba(197,160,89,.35); }
+  .iaj-admin-search input:focus::placeholder { color: #888; }
+  .iaj-admin-search button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: inherit; cursor: pointer; font-size: 15px; opacity: .85; }
+  [dir="rtl"] .iaj-admin-search input { padding: 8px 12px 8px 38px; }
+  [dir="rtl"] .iaj-admin-search button { right: auto; left: 6px; }
+  .iaj-admin-search input:focus + button { color: #222; }
+  @media (max-width: 767px) { .iaj-admin-search { order: 3; flex-basis: 100%; max-width: none; margin: 4px 0 0; } }
+</style>
+{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% if user.is_active and user.is_staff %}
+<form class="iaj-admin-search" action="{% url 'admin_global_search' %}" method="get" role="search">
+  <input type="search" name="q" value="{{ q|default:'' }}" placeholder="ابحث في كل لوحة التحكم… (خبر، مسار، مدرسة، اسم)" aria-label="بحث في لوحة التحكم" autocomplete="off">
+  <button type="submit" aria-label="بحث">🔍</button>
+</form>
+{% endif %}
+{% if user.is_anonymous %}
+  {% include "admin/color_theme_toggle.html" %}
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

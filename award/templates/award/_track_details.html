@@ -1,0 +1,23 @@
+{# جدول تفاصيل المسار — يُستخدم في صفحة المسار وفي النافذة المنبثقة #}
+{% if track.show_notice %}
+<div class="trk-notice" data-speed="{{ track.notice_speed|default:50 }}" role="status" aria-label="ملاحظة">
+  <span class="trk-notice-icon"><i class="fas fa-bell"></i></span>
+  <div class="trk-notice-mask"><div class="trk-notice-run">
+    <span class="trk-notice-item">{{ track.notice_text }}</span>
+  </div></div>
+</div>
+{% endif %}
+{% if track.details.all %}
+<div class="td-table">
+  {% for d in track.details.all %}
+  <div class="td-row">
+    <div class="td-key">{% if d.icon %}<i class="fas {{ d.icon }}"></i>{% endif %}<span>{{ d.title }}</span></div>
+    <div class="td-val">
+      {% with ls=d.lines %}
+      {% if ls|length > 1 %}<ul>{% for l in ls %}<li>{{ l }}</li>{% endfor %}</ul>{% else %}{{ d.content|linebreaksbr }}{% endif %}
+      {% endwith %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

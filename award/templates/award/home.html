@@ -40,9 +40,9 @@ section#{{ sid }} .timeline-date {
 </style>
 
 <!-- ========== Hero: الصورة الرئيسية + صورة جانبية + شارة أفلام + بطاقة شفافة ========== -->
-{% with home_bg=section_bgs.home side_img=settings.hero_side_image %}
-<section id="home" class="hero-slideshow hero-split{% if side_img %} has-side{% endif %}"
-         {% if home_bg and home_bg.bg_color %}style="background-color: {{ home_bg.bg_color }};"{% endif %}>
+{% with home_bg=section_bgs.home has_side=hero_slides %}
+<section id="home" class="hero-slideshow hero-split{% if has_side %} has-side{% endif %}"
+         {% if home_bg and home_bg.bg_color %}style="{{ home_bg.bg_css }}"{% endif %}>
 
     <!-- الصورة الرئيسية -->
     <div class="hero-panel hero-main"
@@ -50,10 +50,10 @@ section#{{ sid }} .timeline-date {
         {% if home_bg and home_bg.bg_image %}
         <div class="panel-blur" aria-hidden="true"></div>
         <div class="panel-img" role="img" aria-label="{{ content.hero_title }}"
-             {% if home_bg.is_parallax and not side_img %}style="background-attachment: fixed;"{% endif %}></div>
+             {% if home_bg.is_parallax %}style="background-attachment: fixed;"{% endif %}></div>
         {% endif %}
         {% if home_bg and home_bg.enable_overlay %}
-        <div class="panel-overlay" style="background-color:{{ home_bg.overlay_color }};opacity:{{ home_bg.overlay_opacity|stringformat:'s' }};"></div>
+        <div class="panel-overlay" style="{{ home_bg.overlay_css }}opacity:{{ home_bg.overlay_opacity|stringformat:'s' }};"></div>
         {% else %}
         <div class="panel-overlay" style="background:linear-gradient(rgba(10,22,50,0.2),rgba(10,22,50,0.35));"></div>
         {% endif %}
@@ -69,37 +69,196 @@ section#{{ sid }} .timeline-date {
         </div>
     </div>
 
-    <!-- الصورة الجانبية (بجانب الرئيسية) -->
-    {% if side_img %}
-    <div class="hero-panel hero-side" style="--img: url('{{ side_img.url }}');">
-        <div class="panel-blur" aria-hidden="true"></div>
-        <div class="panel-img" role="img" aria-label="صورة جانبية"></div>
-        <div class="panel-shade"></div>
-    </div>
-    {% endif %}
+    {% with show_card=hero_card.is_enabled %}
+    <!-- العمود الجانبي: صورة أو فيديو بشكل بطاقة يوتيوب + البطاقة الشفافة تحتها -->
+    {% if has_side %}
+    <div class="hero-side yt-side">
+        <div class="yt-stack">
+            <div class="yt-card hs{% if hero_slides|length > 1 %} multi{% endif %}" id="heroShow"
+                 data-interval="{{ settings.slide_seconds|default:6 }}" aria-roledescription="carousel" aria-label="صور وفيديوهات">
+                {% for sl in hero_slides %}
+                <div class="hs-slide{% if forloop.first %} active{% endif %}" data-kind="{{ sl.kind }}"
+                     aria-roledescription="slide" aria-label="{{ forloop.counter }} / {{ hero_slides|length }}"{% if not forloop.first %} aria-hidden="true"{% endif %}>
+                    {% if sl.kind == 'image' %}
+                        {% if sl.click == 'link' %}<a class="hs-link" href="{{ sl.link }}"{% if 'http' in sl.link|slice:":4" %} target="_blank" rel="noopener"{% endif %}>{% endif %}
+                        <img class="yt-media{% if sl.click == 'zoom' %} hs-zoomable{% endif %}" src="{{ sl.src }}" alt="{{ sl.title }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+                        {% if sl.click == 'link' %}</a>{% endif %}
+                        {% if sl.click == 'zoom' %}<button type="button" class="hs-expand" aria-label="تكبير الصورة"><i class="fas fa-expand"></i></button>{% endif %}
+                    {% elif sl.kind == 'video' %}
+                        <video class="yt-media" playsinline preload="metadata"{% if sl.poster %} poster="{{ sl.poster }}"{% endif %} src="{{ sl.src }}{% if not sl.poster %}#t=0.1{% endif %}"></video>
+                        <span class="yt-duration" hidden></span>
+                        <button type="button" class="yt-bigplay" aria-label="تشغيل الفيديو"><i class="fas fa-play"></i></button>
+                    {% elif sl.kind == 'youtube' %}
+                        <div class="hs-yt" data-yt="{{ sl.yt }}">
+                            <img class="yt-media" src="{% if sl.poster %}{{ sl.poster }}{% else %}https://i.ytimg.com/vi/{{ sl.yt }}/hqdefault.jpg{% endif %}" alt="{{ sl.title }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+                        </div>
+                        <button type="button" class="yt-bigplay yt-red" aria-label="تشغيل فيديو يوتيوب"><i class="fas fa-play"></i></button>
+                    {% endif %}
+                    {% if sl.title %}<div class="hs-title">{{ sl.title }}</div>{% endif %}
+                </div>
+                {% endfor %}
 
-    <!-- البطاقة الشفافة -->
-    {% if hero_card and hero_card.is_enabled %}{% if hero_card.heading or hero_card.body_text %}
-    <div class="hero-card-slot">
-        <div class="hero-transparent-card"
-             style="background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity|stringformat:'s' }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};">
-            {% if hero_card.heading %}<h3 style="color:{{ hero_card.font_color }} !important;">{{ hero_card.heading }}</h3>{% endif %}
-            {% if hero_card.body_text %}<p style="color:{{ hero_card.font_color }} !important;">{{ hero_card.body_text|linebreaksbr }}</p>{% endif %}
+                <!-- أدوات تحكم الفيديو (تظهر بعد الضغط على تشغيل) -->
+                <div class="yt-controls" id="ytControls" dir="ltr">
+                    <div class="yt-progress" id="ytProgress" role="slider" aria-label="تقدم الفيديو" tabindex="0"><div class="yt-buffer" id="ytBuffer"></div><div class="yt-played" id="ytPlayed"><span class="yt-knob"></span></div></div>
+                    <div class="yt-bar">
+                        <button type="button" id="ytPlay" aria-label="تشغيل"><i class="fas fa-play"></i></button>
+                        <button type="button" id="ytBack" aria-label="رجوع 10 ثوانٍ"><i class="fas fa-rotate-left"></i><small>10</small></button>
+                        <button type="button" id="ytFwd" aria-label="تقديم 10 ثوانٍ"><i class="fas fa-rotate-right"></i><small>10</small></button>
+                        <div class="yt-vol">
+                            <button type="button" id="ytSound" aria-label="كتم الصوت"><i class="fas fa-volume-high"></i></button>
+                            <input type="range" id="ytVolume" min="0" max="1" step="0.05" value="0.8" aria-label="درجة الصوت">
+                        </div>
+                        <span class="yt-time" id="ytTime">0:00 / 0:00</span>
+                        <button type="button" id="ytFull" class="ms-auto" aria-label="ملء الشاشة"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+
+                {% if hero_slides|length > 1 %}
+                <button type="button" class="hs-nav hs-prev" aria-label="السابق"><i class="fas fa-chevron-right"></i></button>
+                <button type="button" class="hs-nav hs-next" aria-label="التالي"><i class="fas fa-chevron-left"></i></button>
+                <div class="hs-dots" role="tablist">
+                    {% for sl in hero_slides %}<button type="button" class="hs-dot{% if forloop.first %} active{% endif %}" aria-label="الشريحة {{ forloop.counter }}"></button>{% endfor %}
+                </div>
+                {% if settings.slide_show_timer|default_if_none:True %}<div class="hs-timer"><span></span></div>{% endif %}
+                {% endif %}
+            </div>
+            {% if show_card and hero_text_items %}{% include 'award/_hero_card.html' %}{% endif %}
         </div>
     </div>
-    {% endif %}{% endif %}
+    <!-- تكبير الصورة بملء الشاشة -->
+    <div class="hs-lightbox" id="hsLightbox" role="dialog" aria-modal="true" aria-label="عرض الصورة" hidden>
+        <button type="button" class="hs-lb-close" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>
+        <button type="button" class="hs-lb-nav hs-lb-prev" aria-label="السابق"><i class="fas fa-chevron-right"></i></button>
+        <figure><img alt=""><figcaption></figcaption></figure>
+        <button type="button" class="hs-lb-nav hs-lb-next" aria-label="التالي"><i class="fas fa-chevron-left"></i></button>
+        <div class="hs-lb-count"></div>
+    </div>
+    {% else %}
+    <!-- بدون عمود جانبي: البطاقة الشفافة فوق الصورة -->
+    {% if show_card and hero_text_items %}
+    <div class="hero-card-slot">{% include 'award/_hero_card.html' %}</div>
+    {% endif %}
+    {% endif %}
+    {% endwith %}
 </section>
 {% endwith %}
 
 <style>
 /* ---------- هيكل الهيرو ---------- */
-.hero-split { position: relative; display: flex; width: 100%; height: 100vh; height: 100svh; min-height: 600px; max-height: 920px; overflow: hidden; color: #fff; background-color: var(--primary); }
+.hero-split { position: relative; display: flex; width: 100%; height: 100vh; height: 100svh; min-height: 360px; max-height: 1100px; overflow: hidden; color: #fff; background-color: var(--primary); }
 .hero-panel { position: relative; overflow: hidden; }
 .hero-main { flex: 1 1 auto; }
-.hero-side { flex: 0 0 38%; border-right: 3px solid var(--gold); }
 .panel-img { position: absolute; inset: 0; z-index: 0; background-image: var(--img); background-size: cover; background-position: center; background-repeat: no-repeat; }
 .panel-blur { display: none; }
 .panel-overlay { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+/* ---------- بطاقة الفيديو/الصورة (شكل يوتيوب) تطفو فوق الخلفية الأصلية — بدون تقسيم الشاشة ---------- */
+.yt-side { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: none; }
+/* أعلى البطاقة بمستوى زر «سجل الآن»، وقريبة من الحافة اليسرى */
+.hero-split { --cw: 100vw; }
+@media (min-width: 992px)  { .hero-split { --cw: 960px; } }
+@media (min-width: 1200px) { .hero-split { --cw: 1140px; } }
+@media (min-width: 1400px) { .hero-split { --cw: 1320px; } }
+.yt-stack { position: absolute; left: clamp(16px, 2.5vw, 48px); top: calc(var(--header-h) + 14px); width: min(700px, 45%);
+            display: flex; flex-direction: column; align-items: stretch; gap: 14px; pointer-events: auto; }
+.yt-stack .yt-card { margin-right: auto; }   /* يبقى بمحاذاة زر «سجل الآن» يساراً */
+/* الفيديو يصغر على الشاشات القصيرة حتى يتسع النص تحته */
+.yt-stack .yt-card { max-width: calc((100vh - var(--header-h) - 60px) * 16 / 9); }
+.yt-stack:has(.hero-transparent-card) .yt-card { max-width: calc((100vh - var(--header-h) - 250px) * 16 / 9); min-width: min(100%, 320px); }
+.yt-card { position: relative; width: 100%; aspect-ratio: 16 / 9; flex-shrink: 0; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+.yt-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; display: block; }
+.yt-duration { position: absolute; right: 8px; bottom: 8px; z-index: 2; direction: ltr; background: rgba(0,0,0,.8); color: #fff; font: 600 12px/1 Roboto, Arial, sans-serif; padding: 4px 6px; border-radius: 4px; letter-spacing: .3px; }
+/* أدوات تحكم الفيديو (مثل يوتيوب) */
+.yt-card video { cursor: pointer; }
+.yt-controls { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 26px 10px 6px;
+    background: linear-gradient(transparent, rgba(0,0,0,.75)); opacity: 0; transition: opacity .25s; }
+.yt-controls { display: none; }
+.yt-card.started .yt-controls { display: block; }
+.yt-card.started:hover .yt-controls, .yt-card.started.paused .yt-controls, .yt-card.started:focus-within .yt-controls { opacity: 1; }
+.yt-duration { transition: opacity .25s; }
+.yt-progress { position: relative; height: 4px; background: rgba(255,255,255,.3); border-radius: 2px; cursor: pointer; margin: 0 4px 6px; transition: height .15s; }
+.yt-progress:hover { height: 6px; }
+.yt-buffer { position: absolute; inset: 0 auto 0 0; width: 0; background: rgba(255,255,255,.45); border-radius: 2px; }
+.yt-played { position: absolute; inset: 0 auto 0 0; width: 0; background: #f00; border-radius: 2px; }
+.yt-knob { position: absolute; right: -6px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: #f00; transform: scale(0); transition: transform .15s; }
+.yt-progress:hover .yt-knob { transform: scale(1); }
+.yt-bar { display: flex; align-items: center; gap: 4px; }
+.yt-bar button { background: none; border: 0; color: #fff; width: 34px; height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 1px; font-size: .95rem; cursor: pointer; border-radius: 4px; opacity: .92; }
+.yt-bar button:hover { opacity: 1; background: rgba(255,255,255,.12); }
+.yt-bar button small { font-size: .55rem; font-weight: 700; }
+.yt-vol { display: inline-flex; align-items: center; }
+.yt-vol input { width: 0; opacity: 0; transition: width .2s, opacity .2s; accent-color: #fff; height: 4px; cursor: pointer; }
+.yt-vol:hover input, .yt-vol input:focus { width: 70px; opacity: 1; margin-left: 4px; }
+.yt-time { color: #fff; font: 500 12px/1 Roboto, Arial, sans-serif; margin-left: 6px; white-space: nowrap; }
+.yt-bigplay { position: absolute; top: 50%; left: 50%; z-index: 4; width: 68px; height: 48px; margin: -24px 0 0 -34px; border-radius: 14px; border: 0; background: rgba(0,0,0,.65);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; cursor: pointer; transition: background .2s, transform .2s; }
+.yt-bigplay:hover { background: rgba(0,0,0,.85); transform: scale(1.06); }
+.yt-bigplay.yt-red { background: rgba(255,0,0,.9); }
+.yt-bigplay.yt-red:hover { background: #f00; }
+.hs-slide.playing .yt-bigplay, .hs-slide.playing .yt-duration { display: none; }
+.yt-card.ended .yt-controls { opacity: 0 !important; pointer-events: none; }
+.hs-slide.ended .yt-bigplay { width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; }
+@media (hover: none) { .yt-card.started .yt-controls { opacity: 1; } .yt-vol input { width: 60px; opacity: 1; } }
+
+/* ---------- شرائح الصور والفيديو ---------- */
+.hs-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility 0s linear .7s; }
+.hs-slide.active { opacity: 1; visibility: visible; transition: opacity .7s ease; z-index: 1; }
+.hs-slide img.yt-media { transform: scale(1.04); transition: transform 7s ease-out; }
+.hs-slide.active img.yt-media { transform: scale(1); }
+.hs-slide .hs-yt iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.hs-title { position: absolute; right: 0; left: 0; bottom: 0; z-index: 2; padding: 34px 16px 12px; text-align: right;
+    color: #fff; font-weight: 700; font-size: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    background: linear-gradient(transparent, rgba(0,0,0,.65)); pointer-events: none; transition: opacity .3s; }
+.multi .hs-title { padding-bottom: 26px; }
+.hs-slide.playing .hs-title { opacity: 0; }
+.hs-nav { position: absolute; top: 50%; z-index: 5; width: 38px; height: 38px; margin-top: -19px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.35); background: rgba(10,22,50,.45); color: #fff; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; opacity: 0; transition: opacity .25s, background .2s; }
+.hs-prev { right: 10px; } .hs-next { left: 10px; }
+.yt-card:hover .hs-nav, .hs-nav:focus-visible { opacity: 1; }
+.hs-nav:hover { background: rgba(10,22,50,.75); }
+.hs-dots { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 5; display: flex; gap: 6px; }
+.hs-dot { width: 8px; height: 8px; padding: 0; border-radius: 4px; border: 0; background: rgba(255,255,255,.55); cursor: pointer; transition: width .3s, background .3s; }
+.hs-dot.active { width: 22px; background: #fff; }
+.yt-card.started .hs-dots { display: none; }
+.hs-timer { position: absolute; left: 0; right: 0; top: 0; height: 3px; direction: rtl; z-index: 5; background: rgba(255,255,255,.15); }
+.hs-timer span { display: block; height: 100%; width: 0; margin-right: 0; margin-left: auto; background: var(--secondary, #c9a227); }
+.hs-timer.run span { width: 100%; transition: width var(--hs-dur, 6s) linear; }
+.yt-card:fullscreen .yt-media { object-fit: contain; }
+.hs-zoomable { cursor: zoom-in; }
+.hs-link { position: absolute; inset: 0; display: block; }
+.hs-expand { position: absolute; top: 12px; left: 12px; z-index: 5; width: 34px; height: 34px; border-radius: 8px; border: 0;
+    background: rgba(10,22,50,.5); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; transition: opacity .25s, background .2s; }
+.yt-card:hover .hs-expand, .hs-expand:focus-visible { opacity: 1; }
+.hs-expand:hover { background: rgba(10,22,50,.8); }
+@media (hover: none) { .hs-expand { opacity: .85; } }
+/* نافذة تكبير الصورة */
+.hs-lightbox { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center;
+    background: rgba(5,10,25,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); opacity: 0; transition: opacity .25s; }
+.hs-lightbox[hidden] { display: none; }
+.hs-lightbox.open { opacity: 1; }
+.hs-lightbox figure { margin: 0; max-width: 94vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.hs-lightbox img { max-width: 94vw; max-height: 84vh; object-fit: contain; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    transform: scale(.96); transition: transform .25s; cursor: zoom-out; user-select: none; }
+.hs-lightbox.open img { transform: scale(1); }
+.hs-lightbox figcaption { color: #fff; font-weight: 700; text-align: center; }
+.hs-lb-close, .hs-lb-nav { position: absolute; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .2s; }
+.hs-lb-close:hover, .hs-lb-nav:hover { background: rgba(255,255,255,.25); }
+.hs-lb-close { top: 18px; left: 18px; width: 44px; height: 44px; font-size: 1.3rem; }
+.hs-lb-nav { top: 50%; width: 48px; height: 48px; margin-top: -24px; }
+.hs-lb-prev { right: 18px; } .hs-lb-next { left: 18px; }
+.hs-lb-count { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.8); font: 600 13px/1 Roboto, Arial, sans-serif; direction: ltr; }
+.hs-lightbox.single .hs-lb-nav, .hs-lightbox.single .hs-lb-count { display: none; }
+@media (max-width: 767.98px) { .hs-lb-nav { width: 40px; height: 40px; margin-top: -20px; } .hs-lb-prev { right: 8px; } .hs-lb-next { left: 8px; } }
+@media (hover: none) { .hs-nav { opacity: .85; width: 32px; height: 32px; margin-top: -16px; } }
+.yt-stack .hero-transparent-card { width: 100%; max-height: 220px; overflow: auto; }
+.yt-stack .hero-transparent-card.hc-multi { overflow: hidden; }
+.yt-stack .hc-multi .hc-slides { max-height: 165px; overflow: auto; }
+.side-video { background: #000; }
+.side-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.side-video iframe { position: absolute; top: 50%; left: 50%; width: 177.78vh; min-width: 100%; height: 56.25vw; min-height: 100%; transform: translate(-50%, -50%); border: 0; z-index: 0; }
 .panel-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(to top, rgba(10,22,50,0.55), transparent 55%); pointer-events: none; }
 
 /* ---------- شارة الأفلام (فوق الصورة الرئيسية) ---------- */
@@ -110,8 +269,7 @@ section#{{ sid }} .timeline-date {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
             mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
 }
-.has-side .side-credits { width: clamp(240px, 48%, 520px); }
-.side-credits-scroll { width: 100%; animation: creditsRise 40s linear infinite; }
+.side-credits-scroll { width: 100%; animation: creditsRise 40s linear 4s infinite; }   /* يبدأ بعد 4 ثوانٍ */
 .side-credits:hover .side-credits-scroll { animation-play-state: paused; }
 .sc-heading { font-size: 24px; font-weight: 900; color: #fff; text-align: right; line-height: 1.8; text-shadow: 0 3px 15px rgba(0,0,0,0.55); padding: 8px 0; margin: 0; }
 .sc-text { font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.92); text-align: right; line-height: 1.9; text-shadow: 0 2px 10px rgba(0,0,0,0.45); padding: 6px 0 40px; margin: 0; }
@@ -119,15 +277,42 @@ section#{{ sid }} .timeline-date {
 
 /* ---------- البطاقة الشفافة ---------- */
 .hero-card-slot { position: absolute; z-index: 4; top: 50%; left: 60px; transform: translateY(-50%); width: min(500px, 40%); }
-.has-side .hero-card-slot { top: auto; bottom: 60px; left: 30px; transform: none; width: calc(38% - 60px); }
 .hero-transparent-card { padding: 28px 32px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.14); text-align: right; transition: transform .4s ease, box-shadow .4s ease; }
 .hero-transparent-card:hover { transform: translateY(-5px); box-shadow: 0 25px 60px rgba(0,0,0,0.5); }
 .hero-transparent-card h3 { margin-bottom: 12px; line-height: 1.6; font-size: 1.35em; }
 .hero-transparent-card p { margin: 0; line-height: 1.9; opacity: .95; }
 
+/* ---------- نصوص متبدّلة داخل البطاقة الشفافة ---------- */
+.hc-slides { display: grid; }
+.hc-slide { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity .6s ease, transform .6s ease, filter .6s ease, visibility 0s linear .6s; }
+.hc-slide.active { opacity: 1; visibility: visible; transform: none; filter: none; transition: opacity .6s ease, transform .6s ease, filter .6s ease; }
+.hc-fx-slide .hc-slide:not(.active) { transform: translateX(-40px); }
+.hc-fx-slide .hc-slide.leaving { transform: translateX(40px); }
+.hc-fx-up .hc-slide:not(.active) { transform: translateY(24px); }
+.hc-fx-up .hc-slide.leaving { transform: translateY(-24px); }
+.hc-fx-zoom .hc-slide:not(.active) { transform: scale(.88); }
+.hc-fx-zoom .hc-slide.leaving { transform: scale(1.08); }
+.hc-fx-blur .hc-slide:not(.active) { filter: blur(10px); }
+.hc-fx-flip { perspective: 900px; }
+.hc-fx-flip .hc-slide:not(.active) { transform: rotateX(80deg); }
+.hc-fx-flip .hc-slide.leaving { transform: rotateX(-80deg); }
+.hc-multi { position: relative; padding-bottom: 46px !important; }
+.hc-nav { position: absolute; left: 14px; bottom: 10px; display: flex; align-items: center; gap: 8px; direction: rtl; }
+.hc-nav[hidden] { display: none; }
+.hc-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1);
+    color: inherit; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; cursor: pointer; transition: background .2s, transform .2s; }
+.hc-nav button:hover { background: var(--gold); color: var(--primary); transform: scale(1.08); }
+.hc-count { font: 600 .78rem/1 Roboto, Arial, sans-serif; opacity: .75; direction: ltr; min-width: 34px; text-align: center; }
+.hc-progress { position: absolute; right: 18px; left: 120px; bottom: 23px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; direction: rtl; }
+.hc-progress span { display: block; height: 100%; width: 0; margin-right: 0; margin-left: auto; background: var(--gold); }
+.hc-progress.run span { width: 100%; transition: width var(--hc-dur, 5s) linear; }
+.hc-nav[hidden] + .hc-progress { left: 18px; }
+@media (prefers-reduced-motion: reduce) { .hc-slide { transition: none !important; transform: none !important; filter: none !important; } }
+
 /* ---------- تابلت ---------- */
 @media (max-width: 991.98px) {
-    .hero-side { flex-basis: 40%; }
+    .yt-stack { left: 30px; width: min(460px, 46%); }
+    .yt-stack .yt-card, .yt-stack:has(.hero-transparent-card) .yt-card { max-width: 100%; min-width: 0; }
     .sc-heading { font-size: 20px; } .sc-text { font-size: 17px; }
     .side-credits, .has-side .side-credits { width: 60%; height: 220px; }
     .hero-card-slot { left: 30px; width: min(420px, 45%); }
@@ -135,23 +320,416 @@ section#{{ sid }} .timeline-date {
 
 /* ---------- موبايل: كل شي فوق بعض بدون تداخل، والصور كاملة بدون قص ---------- */
 @media (max-width: 767.98px) {
-    .hero-split { flex-direction: column; height: auto; min-height: 0; max-height: none; padding-top: var(--header-h); }
-    .hero-main { flex: none; height: 58svh; min-height: 340px; }
-    .hero-side { flex: none; height: 42svh; min-height: 260px; border-right: none; border-top: 3px solid var(--gold); }
-    .hero-split:not(.has-side) .hero-main { height: calc(100svh - var(--header-h)); min-height: 420px; }
+    /* الهيرو على الموبايل = شاشة واحدة بالضبط: الصورة الرئيسية + الجانبية فوق بعض */
+    .hero-split { flex-direction: column; height: 100svh; min-height: 0; max-height: none; padding-top: 0; }
+    /* الصورة الواضحة تبدأ تحت الهيدر، والنسخة المموّهة تملأ ما خلف الهيدر — بدون شريط فارغ */
+    .hero-main .panel-img { top: var(--header-h); }
+    .hero-main .side-credits { margin-top: 0; }
+    .hero-main { flex: 1 1 100%; height: auto; min-height: 0; }
     .panel-img { background-size: contain; background-attachment: scroll !important; z-index: 1; }
     .panel-blur { display: block; position: absolute; inset: -30px; z-index: 0; background-image: var(--img); background-size: cover; background-position: center; filter: blur(22px) brightness(.55); }
     .panel-overlay { z-index: 2; opacity: .35 !important; }
     .panel-shade { z-index: 2; }
+    .side-video video { object-fit: contain; }
+    /* البطاقة مباشرة تحت الشريط العلوي، والنص المتحرك ينزل لأسفل الشاشة — بدون فراغ فوق البطاقة */
+    .yt-stack { left: 12px; right: 12px; width: auto; top: calc(var(--header-h) + 10px); bottom: auto; transform: none; gap: 10px; align-items: stretch; }
+    .yt-card { border-radius: 10px; }
+    .has-side .yt-stack .hero-transparent-card { padding: 10px 14px; max-height: 22svh; overflow: auto; }
+    .has-side .yt-stack .hc-multi { padding-bottom: 40px !important; overflow: hidden; }
+    .has-side .yt-stack .hc-multi .hc-slides { max-height: calc(22svh - 50px); overflow: auto; }
+    .has-side .yt-stack .hero-transparent-card h3 { font-size: .95rem; margin-bottom: 2px; }
+    .has-side .yt-stack .hero-transparent-card p { font-size: .82rem; line-height: 1.6; }
+    .side-video iframe { width: 100%; height: 100%; min-height: 0; top: 0; left: 0; transform: none; pointer-events: auto; }
     .side-credits, .has-side .side-credits { top: auto; bottom: 14px; right: 50%; transform: translateX(50%); width: 88%; height: 150px; }
     .sc-heading { font-size: 18px; text-align: center; padding: 4px 0; }
     .sc-text { font-size: 15px; text-align: center; padding: 2px 0 26px; }
-    .hero-card-slot, .has-side .hero-card-slot { position: relative; top: auto; bottom: auto; left: auto; transform: none; width: 100%; z-index: 4; }
-    .hero-transparent-card { border-radius: 0 !important; padding: 22px 20px; backdrop-filter: none; -webkit-backdrop-filter: none; border: none; border-top: 3px solid var(--gold); }
+    /* البطاقة الشفافة فوق أسفل الهيرو بدل ما تطوّله */
+    .hero-card-slot { position: absolute; top: auto; bottom: 10px; left: 10px; right: 10px; transform: none; width: auto; z-index: 4; }
+    .hero-transparent-card { padding: 12px 16px; font-size: .9rem !important; max-height: 38svh; overflow: auto; }
+    .hero-transparent-card h3 { font-size: 1.05rem; margin-bottom: 6px; }
+    .hero-transparent-card p { line-height: 1.7; }
+    .has-side .side-credits { top: auto; bottom: 64px; height: clamp(100px, 20svh, 170px); }
     .hero-transparent-card:hover { transform: none; box-shadow: none; }
 }
 @media (prefers-reduced-motion: reduce) { .side-credits-scroll { animation-duration: 120s; } }
+
+/* ---------- قسم «عن الجائزة»: خط كبير وبطاقات بأي عدد ---------- */
+/* إطار فخم لنص التخليد */
+#about .about-frame { position: relative; padding: 30px 32px 22px !important; border-right: 5px solid var(--gold) !important;
+    background: linear-gradient(135deg, rgba(255,255,255,.9) 0%, rgba(255,252,243,.75) 50%, rgba(197,160,89,.22) 100%) !important;
+    box-shadow: 0 16px 40px rgba(10,22,50,.14), inset 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px rgba(197,160,89,.25) !important; }
+#about .about-frame::after { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(197,160,89,.28); border-radius: 10px; pointer-events: none; }
+#about .about-frame:hover { transform: none; }
+#about .about-quote { position: absolute; top: -18px; right: 22px; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; color: #fff; background: linear-gradient(135deg, #e6c27a, var(--gold)); box-shadow: 0 6px 16px rgba(197,160,89,.45); }
+#about .about-text { font-size: 1.25rem; line-height: 2.1; color: #2b2b2b; text-align: justify; position: relative; z-index: 1; }
+#about .about-text p:last-child { margin-bottom: 0; }
+#about .about-text p { margin-bottom: 14px; }
+#about .about-vm { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px !important; font-size: 1.15rem; line-height: 1.9; color: #2b2b2b; }
+#about .about-vm i { font-size: 2rem; color: var(--gold); margin-top: 4px; flex-shrink: 0; }
+#about .about-vm strong { display: block; color: var(--primary); font-size: 1.2rem; margin-bottom: 2px; }
+#about .about-sub { font-size: 1.5rem; font-weight: 900; color: var(--primary); margin-bottom: 18px; }
+#about .principles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+#about .principle-card { text-align: center; padding: 24px 16px !important; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px; }
+#about .principle-card i { font-size: 2.4rem; color: var(--gold); margin-bottom: 12px; filter: drop-shadow(0 4px 10px rgba(197,160,89,.4)); }
+#about .principle-card h4 { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0; }
+#about .principle-card p { font-size: .98rem; color: #555; margin: 8px 0 0; line-height: 1.7; }
+@media (max-width: 767px) {
+    #about .about-text { font-size: 1.08rem; text-align: right; }
+    #about .about-frame { padding: 26px 18px 16px !important; }
+    #about .about-vm { font-size: 1rem; }
+    #about .principles-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    #about .principle-card { min-height: 120px; padding: 16px 10px !important; }
+    #about .principle-card h4 { font-size: 1rem; }
+}
+
+/* صناديق زجاجية: لمسة حركة */
+.glass-light { transition: transform .3s ease, box-shadow .3s ease; }
+.glass-light:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(10,22,50,.22), inset 0 1px 0 rgba(255,255,255,.5) !important; }
+.prize-box i { filter: drop-shadow(0 6px 14px rgba(0,0,0,.18)); }
+/* كل بطاقة جائزة بلون معدنها، والنصوص متناسقة معه */
+.prize-box h4 { font-weight: 900; }
+.prize-box p { margin-bottom: 0; }
+.prize-gold   { background: linear-gradient(145deg, rgba(255,247,214,.92) 0%, rgba(250,224,140,.62) 55%, rgba(212,175,55,.45) 100%) !important; border: 2px solid rgba(212,175,55,.9) !important; }
+.prize-gold h4 { color: #8a6508; } .prize-gold p { color: #5c4306; } .prize-gold i { color: #d4a017 !important; }
+.prize-silver { background: linear-gradient(145deg, rgba(250,251,253,.95) 0%, rgba(222,227,234,.70) 55%, rgba(176,184,196,.50) 100%) !important; border: 2px solid rgba(160,168,180,.9) !important; }
+.prize-silver h4 { color: #4a5563; } .prize-silver p { color: #333b47; } .prize-silver i { color: #8e98a6 !important; }
+.prize-bronze { background: linear-gradient(145deg, rgba(255,240,226,.93) 0%, rgba(232,183,140,.62) 55%, rgba(176,108,58,.45) 100%) !important; border: 2px solid rgba(184,115,51,.9) !important; }
+.prize-bronze h4 { color: #8b4a1c; } .prize-bronze p { color: #5e3214; } .prize-bronze i { color: #b87333 !important; }
+
+/* ---------- الموبايل: أقسام مضغوطة حتى يظهر القسم كاملاً بضغطة واحدة ---------- */
+@media (max-width: 767.98px) {
+    #prizes .row > [class*="col-"] > div { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; text-align: right; padding: 14px 16px !important; }
+    #prizes .row > [class*="col-"] > div > i { grid-row: span 2; font-size: 2rem !important; margin: 0 !important; }
+    #prizes .row > [class*="col-"] > div > h4 { font-size: 1rem; margin: 0; }
+    #prizes .row > [class*="col-"] > div > p { font-size: .9rem !important; margin: 2px 0 0 !important; }
+    #prizes .row.g-4 { --bs-gutter-y: .75rem; }
+    #apply .p-4 { padding: 1rem !important; }
+    #apply ul { line-height: 1.9 !important; margin-bottom: 0; }
+    section.py-5 { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+}
 </style>
+<script>
+// بطاقة الشرائح: صور تتبدّل تلقائياً + فيديو/يوتيوب يعمل فقط عند الضغط عليه
+(function () {
+    var card = document.getElementById('heroShow');
+    if (!card) return;
+    var slides = [].slice.call(card.querySelectorAll('.hs-slide'));
+    var dots = [].slice.call(card.querySelectorAll('.hs-dot'));
+    var timerBar = card.querySelector('.hs-timer');
+    var interval = Math.max(2, parseInt(card.dataset.interval, 10) || 6) * 1000;
+    var multi = slides.length > 1, idx = 0, timer = null, hovering = false, inView = true;
+    var $ = function (id) { return document.getElementById(id); };
+    var playBtn = $('ytPlay'), soundBtn = $('ytSound'), vol = $('ytVolume'), prog = $('ytProgress'),
+        played = $('ytPlayed'), buffer = $('ytBuffer'), time = $('ytTime');
+    var volume = 0.8, muted = false;
+
+    function fmt(t) { t = Math.max(0, Math.round(t || 0)); var m = Math.floor(t / 60), s = t % 60; return m + ':' + (s < 10 ? '0' : '') + s; }
+    function curSlide() { return slides[idx]; }
+    function curVideo() { var v = curSlide().querySelector('video'); return v; }
+
+    // ---------- التبديل التلقائي ----------
+    function stopTimer() { clearTimeout(timer); timer = null; if (timerBar) timerBar.classList.remove('run'); }
+    function busy() { var sl = curSlide(); return sl.classList.contains('playing') || sl.classList.contains('yt-on'); }
+    function startTimer(ms) {
+        stopTimer();
+        if (!multi || hovering || !inView || busy()) return;
+        ms = ms || interval;
+        if (timerBar) {
+            timerBar.style.setProperty('--hs-dur', ms + 'ms');
+            void timerBar.offsetWidth;
+            timerBar.classList.add('run');
+        }
+        timer = setTimeout(function () { go(idx + 1); }, ms);
+    }
+
+    function stopMedia(sl) {
+        var v = sl.querySelector('video');
+        if (v && !v.paused) v.pause();
+        if (v && v.ended) {   // الفيديو المنتهي يرجع لبدايته عند العودة إليه
+            v.currentTime = 0; sl.classList.remove('ended', 'started');
+            var bp = sl.querySelector('.yt-bigplay'); if (bp) bp.innerHTML = '<i class="fas fa-play"></i>';
+        }
+        var yt = sl.querySelector('.hs-yt');
+        if (yt && yt.querySelector('iframe')) { yt.querySelector('iframe').remove(); yt.querySelector('img').style.display = ''; }
+        sl.classList.remove('yt-on', 'playing');
+    }
+
+    function go(n) {
+        if (!multi) return;
+        var old = curSlide();
+        stopMedia(old);
+        old.classList.remove('active'); old.setAttribute('aria-hidden', 'true');
+        idx = (n + slides.length) % slides.length;
+        var sl = curSlide();
+        sl.classList.add('active'); sl.removeAttribute('aria-hidden');
+        dots.forEach(function (d, i) { d.classList.toggle('active', i === idx); });
+        bindControls();
+        startTimer();
+    }
+
+    // ---------- يوتيوب: الصورة أولاً، والفيديو يُحمّل عند الضغط ----------
+    function playYouTube(sl) {
+        var box = sl.querySelector('.hs-yt');
+        if (box.querySelector('iframe')) return;
+        var f = document.createElement('iframe');
+        f.src = 'https://www.youtube.com/embed/' + box.dataset.yt + '?autoplay=1&rel=0&modestbranding=1&playsinline=1';
+        f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+        f.allowFullscreen = true; f.title = 'YouTube';
+        box.querySelector('img').style.display = 'none';
+        box.appendChild(f);
+        sl.classList.add('yt-on');
+        stopTimer();
+    }
+
+    // ---------- أدوات تحكم الفيديو ----------
+    function update() {
+        var v = curVideo(); if (!v) return;
+        var d = v.duration || 0, p = d ? v.currentTime / d : 0;
+        played.style.width = (p * 100) + '%';
+        time.textContent = fmt(v.currentTime) + ' / ' + fmt(d);
+        if (v.buffered.length && d) buffer.style.width = (v.buffered.end(v.buffered.length - 1) / d * 100) + '%';
+    }
+    function setPlayIcon() {
+        var v = curVideo();
+        card.classList.toggle('started', !!v && (v.currentTime > 0 || !v.paused) && curSlide().classList.contains('started'));
+        card.classList.toggle('paused', !v || v.paused);
+        card.classList.toggle('ended', !!v && v.ended);
+        if (!v) return;
+        playBtn.innerHTML = v.paused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+        playBtn.setAttribute('aria-label', v.paused ? 'تشغيل' : 'إيقاف');
+    }
+    function setSoundIcon() {
+        var icon = (muted || volume === 0) ? 'fa-volume-xmark' : volume < 0.5 ? 'fa-volume-low' : 'fa-volume-high';
+        soundBtn.innerHTML = '<i class="fas ' + icon + '"></i>';
+        soundBtn.setAttribute('aria-label', muted ? 'تشغيل الصوت' : 'كتم الصوت');
+        vol.value = muted ? 0 : volume;
+    }
+    function applySound(v) { v.volume = volume; v.muted = muted; }
+    function bindControls() { var v = curVideo(); if (v) { applySound(v); update(); } setPlayIcon(); }
+    function toggle() {
+        var v = curVideo(); if (!v) return;
+        if (v.ended) v.currentTime = 0;
+        if (v.paused) { curSlide().classList.add('started'); applySound(v); v.play(); } else v.pause();
+    }
+    function seekBy(sec) { var v = curVideo(); if (!v) return; v.currentTime = Math.min(Math.max(0, v.currentTime + sec), v.duration || 0); update(); }
+    function seekTo(e) {
+        var v = curVideo(); if (!v) return;
+        var r = prog.getBoundingClientRect(), x = (e.touches ? e.touches[0].clientX : e.clientX);
+        var p = Math.min(1, Math.max(0, (x - r.left) / r.width));
+        if (v.duration) v.currentTime = p * v.duration;
+        update();
+    }
+
+    slides.forEach(function (sl) {
+        var v = sl.querySelector('video'), big = sl.querySelector('.yt-bigplay');
+        if (v) {
+            var badge = sl.querySelector('.yt-duration');
+            var showDur = function () { if (isFinite(v.duration) && v.duration > 0) { badge.textContent = fmt(v.duration); badge.hidden = false; } };
+            v.addEventListener('loadedmetadata', showDur); showDur();
+            v.addEventListener('timeupdate', function () { if (sl === curSlide()) update(); });
+            v.addEventListener('progress', function () { if (sl === curSlide()) update(); });
+            v.addEventListener('play', function () {
+                sl.classList.add('playing', 'started'); sl.classList.remove('ended');
+                stopTimer(); if (sl === curSlide()) setPlayIcon();
+            });
+            v.addEventListener('pause', function () {
+                sl.classList.remove('playing');
+                if (sl === curSlide()) { setPlayIcon(); if (!v.ended) startTimer(interval * 3); }
+            });
+            v.addEventListener('ended', function () {
+                sl.classList.add('ended'); sl.classList.remove('playing');
+                if (big) big.innerHTML = '<i class="fas fa-rotate-right"></i>';
+                if (sl === curSlide()) { setPlayIcon(); if (multi) startTimer(1500); }
+            });
+            v.addEventListener('click', toggle);
+            if (big) big.addEventListener('click', function () { big.innerHTML = '<i class="fas fa-play"></i>'; toggle(); });
+        } else if (big && sl.querySelector('.hs-yt')) {
+            big.addEventListener('click', function () { playYouTube(sl); });
+            sl.querySelector('.hs-yt').addEventListener('click', function () { playYouTube(sl); });
+        }
+    });
+
+    playBtn.addEventListener('click', toggle);
+    $('ytBack').addEventListener('click', function () { seekBy(-10); });
+    $('ytFwd').addEventListener('click', function () { seekBy(10); });
+    soundBtn.addEventListener('click', function () {
+        if (muted || volume === 0) { muted = false; if (volume === 0) volume = 0.8; } else { muted = true; }
+        var v = curVideo(); if (v) applySound(v); setSoundIcon();
+    });
+    vol.addEventListener('input', function () {
+        volume = parseFloat(vol.value); muted = volume === 0;
+        var v = curVideo(); if (v) applySound(v); setSoundIcon();
+    });
+    var dragging = false;
+    prog.addEventListener('mousedown', function (e) { dragging = true; seekTo(e); });
+    window.addEventListener('mousemove', function (e) { if (dragging) seekTo(e); });
+    window.addEventListener('mouseup', function () { dragging = false; });
+    prog.addEventListener('touchstart', seekTo, { passive: true });
+    prog.addEventListener('touchmove', seekTo, { passive: true });
+    prog.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') { seekBy(5); e.preventDefault(); }
+        if (e.key === 'ArrowLeft') { seekBy(-5); e.preventDefault(); }
+    });
+    $('ytFull').addEventListener('click', function () {
+        var v = curVideo();
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (card.requestFullscreen) card.requestFullscreen();
+        else if (v && v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+    });
+
+    // ---------- أزرار التنقل + السحب على الموبايل ----------
+    var prev = card.querySelector('.hs-prev'), next = card.querySelector('.hs-next');
+    if (prev) prev.addEventListener('click', function () { go(idx - 1); });
+    if (next) next.addEventListener('click', function () { go(idx + 1); });
+    dots.forEach(function (d, i) { d.addEventListener('click', function () { if (i !== idx) go(i); }); });
+    var sx = null, sy = null;
+    card.addEventListener('touchstart', function (e) { if (e.target.closest('.yt-controls')) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    card.addEventListener('touchend', function (e) {
+        if (sx === null) return;
+        var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? idx - 1 : idx + 1);   // RTL
+    }, { passive: true });
+    card.addEventListener('keydown', function (e) {
+        if (e.target.closest('.yt-progress')) return;
+        if (e.key === 'ArrowLeft') go(idx + 1);
+        if (e.key === 'ArrowRight') go(idx - 1);
+    });
+
+    // التوقف عند وضع الماوس، وعند الخروج من الشاشة
+    if (window.matchMedia('(hover: hover)').matches) {
+        card.addEventListener('mouseenter', function () { hovering = true; stopTimer(); });
+        card.addEventListener('mouseleave', function () { hovering = false; startTimer(); });
+    }
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (es) {
+            inView = es[0].isIntersecting;
+            if (!inView) { var v = curVideo(); if (v && !v.paused) v.pause(); stopTimer(); }
+            else startTimer();
+        }, { threshold: 0.25 }).observe(card);
+    }
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stopTimer(); else startTimer(); });
+
+    // ---------- تكبير الصورة بملء الشاشة ----------
+    var lb = document.getElementById('hsLightbox');
+    if (lb) document.body.appendChild(lb);   // خارج الهيرو حتى لا يتأثر بالتصغير أو القص
+    var zoomables = slides.filter(function (sl) { return sl.querySelector('.hs-zoomable'); });
+    var lbIdx = 0, lbOpen = false, lastFocus = null;
+    function lbShow(i) {
+        lbIdx = (i + zoomables.length) % zoomables.length;
+        var img = zoomables[lbIdx].querySelector('.hs-zoomable'), t = zoomables[lbIdx].querySelector('.hs-title');
+        lb.querySelector('img').src = img.currentSrc || img.src;
+        lb.querySelector('img').alt = img.alt;
+        lb.querySelector('figcaption').textContent = t ? t.textContent : '';
+        lb.querySelector('.hs-lb-count').textContent = (lbIdx + 1) + ' / ' + zoomables.length;
+    }
+    function lbOpenAt(sl) {
+        if (!lb) return;
+        lastFocus = document.activeElement;
+        lb.classList.toggle('single', zoomables.length < 2);
+        lbShow(zoomables.indexOf(sl));
+        lb.hidden = false; void lb.offsetWidth; lb.classList.add('open'); lbOpen = true;
+        document.documentElement.style.overflow = 'hidden';
+        stopTimer();
+        lb.querySelector('.hs-lb-close').focus();
+    }
+    function lbClose() {
+        if (!lbOpen) return;
+        lb.classList.remove('open'); lbOpen = false;
+        document.documentElement.style.overflow = '';
+        setTimeout(function () { lb.hidden = true; }, 250);
+        // البطاقة تكمل من الصورة التي كانت معروضة
+        var sl = zoomables[lbIdx], n = slides.indexOf(sl);
+        if (n !== idx) go(n); else startTimer();
+        if (lastFocus) lastFocus.focus();
+    }
+    zoomables.forEach(function (sl) {
+        sl.querySelector('.hs-zoomable').addEventListener('click', function () { lbOpenAt(sl); });
+        var ex = sl.querySelector('.hs-expand');
+        if (ex) ex.addEventListener('click', function () { lbOpenAt(sl); });
+    });
+    if (lb) {
+        lb.querySelector('.hs-lb-close').addEventListener('click', lbClose);
+        lb.querySelector('.hs-lb-prev').addEventListener('click', function (e) { e.stopPropagation(); lbShow(lbIdx - 1); });
+        lb.querySelector('.hs-lb-next').addEventListener('click', function (e) { e.stopPropagation(); lbShow(lbIdx + 1); });
+        lb.addEventListener('click', function (e) { if (e.target === lb || e.target.tagName === 'IMG' || e.target.tagName === 'FIGURE') lbClose(); });
+        document.addEventListener('keydown', function (e) {
+            if (!lbOpen) return;
+            if (e.key === 'Escape') lbClose();
+            if (e.key === 'ArrowLeft') lbShow(lbIdx + 1);
+            if (e.key === 'ArrowRight') lbShow(lbIdx - 1);
+        });
+        var lx = null;
+        lb.addEventListener('touchstart', function (e) { lx = e.touches[0].clientX; }, { passive: true });
+        lb.addEventListener('touchend', function (e) {
+            if (lx === null) return; var dx = e.changedTouches[0].clientX - lx; lx = null;
+            if (Math.abs(dx) > 45 && zoomables.length > 1) lbShow(dx < 0 ? lbIdx - 1 : lbIdx + 1);
+        }, { passive: true });
+    }
+    // لا يبدأ التبديل التلقائي من جديد أثناء فتح نافذة التكبير
+    var _startTimer = startTimer;
+    startTimer = function (ms) { if (lbOpen) return; _startTimer(ms); };
+
+    bindControls(); setSoundIcon(); startTimer();
+})();
+</script>
+<script>
+// النصوص المتبدّلة داخل البطاقة الشفافة: المدة حسب طول النص + حركة انتقال + سهمان
+(function () {
+    document.querySelectorAll('.hero-transparent-card.hc-multi').forEach(function (card) {
+        var slides = [].slice.call(card.querySelectorAll('.hc-slide'));
+        var count = card.querySelector('.hc-count'), bar = card.querySelector('.hc-progress');
+        var speed = Math.max(4, parseFloat(card.dataset.speed) || 14), minS = Math.max(2, parseFloat(card.dataset.min) || 4);
+        var idx = 0, timer = null, paused = false;
+        function dur(sl) { var n = (sl.textContent || '').replace(/\s+/g, ' ').trim().length; return Math.min(30, Math.max(minS, 1.2 + n / speed)) * 1000; }
+        function schedule() {
+            clearTimeout(timer); if (bar) bar.classList.remove('run');
+            if (paused || document.hidden) return;
+            var ms = dur(slides[idx]);
+            if (bar) { bar.style.setProperty('--hc-dur', ms + 'ms'); void bar.offsetWidth; bar.classList.add('run'); }
+            timer = setTimeout(function () { go(idx + 1); }, ms);
+        }
+        function go(n) {
+            var old = slides[idx];
+            old.classList.remove('active'); old.classList.add('leaving'); old.setAttribute('aria-hidden', 'true');
+            setTimeout(function () { old.classList.remove('leaving'); }, 650);
+            idx = (n + slides.length) % slides.length;
+            slides[idx].classList.add('active'); slides[idx].removeAttribute('aria-hidden');
+            if (count) count.textContent = (idx + 1) + ' / ' + slides.length;
+            schedule();
+        }
+        var prev = card.querySelector('.hc-prev'), next = card.querySelector('.hc-next');
+        if (prev) prev.addEventListener('click', function () { go(idx - 1); });
+        if (next) next.addEventListener('click', function () { go(idx + 1); });
+        if (window.matchMedia('(hover: hover)').matches) {
+            card.addEventListener('mouseenter', function () { paused = true; schedule(); });
+            card.addEventListener('mouseleave', function () { paused = false; schedule(); });
+        }
+        var sx = null;
+        card.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+        card.addEventListener('touchend', function (e) {
+            if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null;
+            if (Math.abs(dx) > 40) go(dx < 0 ? idx - 1 : idx + 1);
+        }, { passive: true });
+        document.addEventListener('visibilitychange', schedule);
+        schedule();
+    });
+})();
+</script>
+<script>
+// سرعة النص المتحرك ثابتة (بكسل/ثانية) مهما كان طول النص — بطيئة ومريحة للقراءة
+(function () {
+    var el = document.querySelector('.side-credits-scroll');
+    if (!el) return;
+    function setSpeed() {
+        var half = el.scrollHeight / 2;
+        var pxPerSec = 14;
+        el.style.animationDuration = Math.max(25, half / pxPerSec).toFixed(1) + 's';
+    }
+    setSpeed();
+    window.addEventListener('load', setSpeed);
+})();
+</script>
 <!-- ========== نهاية Hero ========== -->
 
 <!-- آخر الأخبار -->
@@ -164,7 +742,7 @@ section#{{ sid }} .timeline-date {
 .news-sidebar a { color: var(--gold); font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
 .news-sidebar a:hover { opacity: 0.8; transform: translateX(-3px); }
 .news-cards-row { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
-.news-card-item { background: #fff; padding: 28px 22px; border-left: 1px solid #eee; display: flex; flex-direction: column; transition: all 0.3s; }
+.news-card-item { background: var(--glass-light); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 28px 22px; border-left: 1px solid rgba(197,160,89,.25); display: flex; flex-direction: column; transition: all 0.3s; }
 .news-card-item:last-child { border-left: none; }
 .news-card-item:hover { background-color: #fefefe; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
 .news-card-date { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; color: var(--gold); font-weight: 700; font-size: 0.85rem; }
@@ -202,32 +780,40 @@ section#{{ sid }} .timeline-date {
 
 <!-- 3. عن الجائزة والمبادئ -->
 {% if section_bgs.about and section_bgs.about.bg_image %}
-<section id="about" class="py-5" style="background-image: url('{{ section_bgs.about.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.about.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
-    {% if section_bgs.about.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.about.overlay_color }};opacity:{{ section_bgs.about.overlay_opacity }};z-index:0;"></div>{% endif %}
+<section id="about" data-no-fit class="py-5" style="background-image: url('{{ section_bgs.about.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.about.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+    {% if section_bgs.about.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.about.overlay_css }}opacity:{{ section_bgs.about.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.about and section_bgs.about.bg_color %}
-<section id="about" class="py-5" style="background-color: {{ section_bgs.about.bg_color }};">
+<section id="about" data-no-fit class="py-5" style="{{ section_bgs.about.bg_css }}">
     <div class="container">
 {% else %}
-<section id="about" class="py-5 bg-white">
+<section id="about" data-no-fit class="py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_about }}</h2><div class="gold-line"></div></div>
-        <div class="row align-items-start">
-            <div class="col-md-6 mb-4" data-aos="fade-left">
-                <p class="text-dark" style="font-size: 1.1rem; line-height: 2;">{{ content.about_text }}</p>
-                <div class="mt-4">
-                    <div class="d-flex align-items-center mb-3 p-3" style="background-color: var(--bg-gray); border-right: 4px solid var(--gold);"><i class="fas fa-eye fa-2x ms-3" style="color: var(--gold);"></i><div><strong style="color: var(--primary);">الرؤية:</strong> {{ content.vision_text }}</div></div>
-                    <div class="d-flex align-items-center p-3" style="background-color: var(--bg-gray); border-right: 4px solid var(--primary);"><i class="fas fa-bullseye fa-2x ms-3" style="color: var(--gold);"></i><div><strong style="color: var(--primary);">الرسالة:</strong> {{ content.mission_text }}</div></div>
+        <div class="row align-items-start g-4 about-row">
+            <div class="col-lg-6" data-aos="fade-up">
+                <div class="about-frame glass-light">
+                    <i class="fas fa-quote-right about-quote" aria-hidden="true"></i>
+                    <div class="about-text">{{ content.about_text|linebreaks }}</div>
+                </div>
+                <div class="mt-4 d-grid gap-3">
+                    <div class="about-vm glass-light" style="border-right: 5px solid var(--gold) !important;"><i class="fas fa-eye"></i><div><strong>الرؤية</strong>{{ content.vision_text|linebreaksbr }}</div></div>
+                    <div class="about-vm glass-light" style="border-right: 5px solid var(--primary) !important;"><i class="fas fa-bullseye"></i><div><strong>الرسالة</strong>{{ content.mission_text|linebreaksbr }}</div></div>
                 </div>
             </div>
-            <div class="col-md-6 mb-4" data-aos="fade-right">
-                <h5 class="fw-bold mb-3" style="color: var(--primary);">المبادئ العامة للجائزة</h5>
-                <div class="row">
-                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-hand-holding-heart fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_1 }}</h6></div>
-                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-lightbulb fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_2 }}</h6></div>
-                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-recycle fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_3 }}</h6></div>
-                    <div class="col-6 mb-3 text-center p-3" style="border: 1px solid #eee;"><i class="fas fa-chart-line fa-2x mb-2" style="color: var(--gold);"></i><h6 class="fw-bold">{{ content.principle_4 }}</h6></div>
+            <div class="col-lg-6" data-aos="fade-up">
+                <h3 class="about-sub">المبادئ العامة للجائزة</h3>
+                <div class="principles-grid">
+                    {% for pr in principles %}
+                    <div class="principle-card glass-light">
+                        <i class="fas {{ pr.icon|default:'fa-star' }}"></i>
+                        <h4>{{ pr.title }}</h4>
+                        {% if pr.description %}<p>{{ pr.description|linebreaksbr }}</p>{% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">سيتم إضافة المبادئ قريباً.</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -237,34 +823,46 @@ section#{{ sid }} .timeline-date {
 <!-- 4. مجالات العمل التطوعي — Flip Cards -->
 {% if section_bgs.fields and section_bgs.fields.bg_image %}
 <section id="fields" class="py-5" style="background-image: url('{{ section_bgs.fields.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.fields.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
-    {% if section_bgs.fields.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.fields.overlay_color }};opacity:{{ section_bgs.fields.overlay_opacity }};z-index:0;"></div>{% endif %}
+    {% if section_bgs.fields.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.fields.overlay_css }}opacity:{{ section_bgs.fields.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.fields and section_bgs.fields.bg_color %}
-<section id="fields" class="py-5" style="background-color: {{ section_bgs.fields.bg_color }};">
+<section id="fields" class="py-5" style="{{ section_bgs.fields.bg_css }}">
     <div class="container">
 {% else %}
-<section id="fields" class="py-5" style="background-color: var(--primary);">
+<section id="fields" class="py-5 sec-dark">
     <div class="container">
 {% endif %}
         <div class="section-header section-header-white" data-aos="fade-down"><h2>{{ content.title_fields }}</h2><div class="gold-line"></div></div>
-        <div class="row g-4">
+        <div class="row g-4 flip-wrap{% if theme.flip_style == 'gold' %} flip-gold{% endif %}">
             {% for field in fields %}
             <div class="col-12 col-lg-6" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
-                <div class="flip-card">
+                <div class="flip-card" style="--tracks: {{ field.tracks_cached|length|default:1 }};">
                     <div class="flip-card-inner">
-                        <div class="flip-card-front">
-                            <i class="fas fa-star"></i>
-                            <h4>{{ field.name_ar }}</h4>
+                        <div class="flip-card-front{% if field.cover_image %} has-cover{% endif %}"{% if field.cover_image %} style="--cover: url('{{ field.cover_image.url }}'); --cover-dim: {{ field.cover_overlay|stringformat:'s' }};"{% endif %}>
+                            {% if field.cover_image %}<div class="fc-cover" aria-hidden="true"></div>{% endif %}
+                            <h4 class="fc-title">{{ field.name_ar }}</h4>
                             <small>{{ field.name_en }}</small>
                             <span class="flip-hint"><i class="fas fa-hand-pointer ms-1"></i> اضغط لعرض المسارات</span>
                         </div>
                         <div class="flip-card-back">
-                            <h5>{{ field.name_ar }}</h5>
-                            {% for track in field.track_set.all %}
-                                <p><i class="fas fa-check ms-1" style="color: var(--gold); font-size: 0.75rem;"></i> {{ track.name_ar }}</p>
-                            {% empty %}
-                                <p style="color: rgba(255,255,255,0.5);">لم تتم إضافة مسارات بعد</p>
+                            <h5 class="fb-title">{{ field.name_ar }}</h5>
+                            {% if field.tracks_cached %}
+                            <span class="fb-sub">المسارات ({{ field.tracks_cached|length }}) — اضغط على المسار للتفاصيل</span>
+                            <div class="fb-tracks{% if field.tracks_cached|length > 3 %} two-col{% endif %}">
+                            {% for track in field.tracks_cached %}
+                                <a href="#" class="flip-track" data-bs-toggle="modal" data-bs-target="#trackModal"
+                                   data-field="{{ field.name_ar }}" data-field-id="{{ field.pk }}" data-track-id="{{ track.pk }}"
+                                   data-title="{{ track.name_ar }}" data-en="{{ track.name_en|default:'' }}" data-desc="{{ track.description_ar|default:'' }}">
+                                    <span class="ft-num">{{ forloop.counter }}</span>
+                                    <span class="ft-name">{{ track.name_ar }}</span>
+                                    <i class="fas fa-circle-info ft-info" aria-hidden="true"></i>
+                                </a>
+                                <template id="trk-{{ track.pk }}">{% include 'award/_track_details.html' %}</template>
                             {% endfor %}
+                            </div>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.6);">لم تتم إضافة مسارات بعد</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -277,13 +875,13 @@ section#{{ sid }} .timeline-date {
 <!-- 5. الإطار الزمني -->
 {% if section_bgs.timeline and section_bgs.timeline.bg_image %}
 <section id="timeline" class="py-5" style="background-image: url('{{ section_bgs.timeline.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.timeline.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
-    {% if section_bgs.timeline.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.timeline.overlay_color }};opacity:{{ section_bgs.timeline.overlay_opacity }};z-index:0;"></div>{% endif %}
+    {% if section_bgs.timeline.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.timeline.overlay_css }}opacity:{{ section_bgs.timeline.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.timeline and section_bgs.timeline.bg_color %}
-<section id="timeline" class="py-5" style="background-color: {{ section_bgs.timeline.bg_color }};">
+<section id="timeline" class="py-5" style="{{ section_bgs.timeline.bg_css }}">
     <div class="container">
 {% else %}
-<section id="timeline" class="py-5 bg-white">
+<section id="timeline" class="py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_timeline }}</h2><div class="gold-line"></div></div>
@@ -340,19 +938,19 @@ section#{{ sid }} .timeline-date {
 <!-- 6. طلب التقديم -->
 {% if section_bgs.apply and section_bgs.apply.bg_image %}
 <section id="apply" class="py-5" style="background-image: url('{{ section_bgs.apply.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.apply.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
-    {% if section_bgs.apply.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.apply.overlay_color }};opacity:{{ section_bgs.apply.overlay_opacity }};z-index:0;"></div>{% endif %}
+    {% if section_bgs.apply.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.apply.overlay_css }}opacity:{{ section_bgs.apply.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.apply and section_bgs.apply.bg_color %}
-<section id="apply" class="py-5" style="background-color: {{ section_bgs.apply.bg_color }};">
+<section id="apply" class="py-5" style="{{ section_bgs.apply.bg_css }}">
     <div class="container">
 {% else %}
-<section id="apply" class="py-5" style="background-color: var(--bg-gray);">
+<section id="apply" class="py-5 sec-gray">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_apply }}</h2><div class="gold-line"></div></div>
         <div class="row g-4">
             <div class="col-md-6" data-aos="fade-left">
-                <div class="p-4 bg-white h-100 shadow-sm" style="border-right: 4px solid var(--gold);">
+                <div class="p-4 h-100 glass-light" style="border-right: 4px solid var(--gold) !important;">
                     <h4 class="fw-bold mb-4" style="color: var(--primary);"><i class="fas fa-clipboard-list ms-2" style="color: var(--gold);"></i> شروط التقدم</h4>
                     <ul class="list-unstyled text-dark" style="line-height: 2.2;">
                         <li><i class="fas fa-caret-left ms-2" style="color: var(--gold);"></i> {{ content.condition_1 }}</li>
@@ -364,7 +962,7 @@ section#{{ sid }} .timeline-date {
                 </div>
             </div>
             <div class="col-md-6" data-aos="fade-right">
-                <div class="p-4 bg-white h-100 shadow-sm" style="border-right: 4px solid var(--primary);">
+                <div class="p-4 h-100 glass-light" style="border-right: 4px solid var(--primary) !important;">
                     <h4 class="fw-bold mb-4" style="color: var(--primary);"><i class="fas fa-stairs ms-2" style="color: var(--gold);"></i> خطوات الترشح</h4>
                     <ul class="list-unstyled text-dark" style="line-height: 2.2;">
                         <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">1</span> {{ content.step_1 }}</li>
@@ -382,20 +980,20 @@ section#{{ sid }} .timeline-date {
 <!-- 7. الجوائز -->
 {% if section_bgs.prizes and section_bgs.prizes.bg_image %}
 <section id="prizes" class="py-5" style="background-image: url('{{ section_bgs.prizes.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.prizes.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
-    {% if section_bgs.prizes.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.prizes.overlay_color }};opacity:{{ section_bgs.prizes.overlay_opacity }};z-index:0;"></div>{% endif %}
+    {% if section_bgs.prizes.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.prizes.overlay_css }}opacity:{{ section_bgs.prizes.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.prizes and section_bgs.prizes.bg_color %}
-<section id="prizes" class="py-5" style="background-color: {{ section_bgs.prizes.bg_color }};">
+<section id="prizes" class="py-5" style="{{ section_bgs.prizes.bg_css }}">
     <div class="container">
 {% else %}
-<section id="prizes" class="py-5 bg-white">
+<section id="prizes" class="py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_prizes }}</h2><div class="gold-line"></div></div>
         <div class="row text-center g-4 justify-content-center">
-            <div class="col-md-4" data-aos="zoom-in"><div class="p-4 p-md-5 h-100 shadow-sm" style="border: 2px solid #FFD700; border-radius: 0;"><i class="fas fa-trophy fa-4x mb-4" style="color: #FFD700;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الأول</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_1_desc }}</p></div></div>
-            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200"><div class="p-4 p-md-5 h-100 shadow-sm" style="border: 2px solid #C0C0C0; border-radius: 0;"><i class="fas fa-medal fa-4x mb-4" style="color: #C0C0C0;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثاني</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_2_desc }}</p></div></div>
-            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="400"><div class="p-4 p-md-5 h-100 shadow-sm" style="border: 2px solid #CD7F32; border-radius: 0;"><i class="fas fa-award fa-4x mb-4" style="color: #CD7F32;"></i><h4 style="color: var(--primary); font-weight: 800;">المركز الثالث</h4><p class="fw-bold mt-3 fs-5" style="color: var(--primary);">{{ content.prize_3_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in"><div class="p-4 p-md-5 h-100 glass-light prize-box prize-gold"><i class="fas fa-trophy fa-4x mb-4" style="color: #FFD700;"></i><h4>المركز الأول</h4><p class="fw-bold mt-3 fs-5">{{ content.prize_1_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200"><div class="p-4 p-md-5 h-100 glass-light prize-box prize-silver"><i class="fas fa-medal fa-4x mb-4" style="color: #C0C0C0;"></i><h4>المركز الثاني</h4><p class="fw-bold mt-3 fs-5">{{ content.prize_2_desc }}</p></div></div>
+            <div class="col-md-4" data-aos="zoom-in" data-aos-delay="400"><div class="p-4 p-md-5 h-100 glass-light prize-box prize-bronze"><i class="fas fa-award fa-4x mb-4" style="color: #CD7F32;"></i><h4>المركز الثالث</h4><p class="fw-bold mt-3 fs-5">{{ content.prize_3_desc }}</p></div></div>
         </div>
     </div>
 </section>
@@ -403,20 +1001,20 @@ section#{{ sid }} .timeline-date {
 <!-- 8. لجنة التحكيم -->
 {% if section_bgs.judges and section_bgs.judges.bg_image %}
 <section id="judges" class="py-5" style="background-image: url('{{ section_bgs.judges.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.judges.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
-    {% if section_bgs.judges.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;background-color:{{ section_bgs.judges.overlay_color }};opacity:{{ section_bgs.judges.overlay_opacity }};z-index:0;"></div>{% endif %}
+    {% if section_bgs.judges.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.judges.overlay_css }}opacity:{{ section_bgs.judges.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.judges and section_bgs.judges.bg_color %}
-<section id="judges" class="py-5" style="background-color: {{ section_bgs.judges.bg_color }};">
+<section id="judges" class="py-5" style="{{ section_bgs.judges.bg_css }}">
     <div class="container">
 {% else %}
-<section id="judges" class="py-5" style="background-color: var(--bg-gray);">
+<section id="judges" class="py-5 sec-gray">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_judges }}</h2><div class="gold-line"></div></div>
         <div class="row text-center justify-content-center">
             {% for judge in judges %}
             <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
-                <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#judgeModal" data-name="{{ judge.name }}" data-title="{{ judge.title }}" data-desc="{{ judge.description }}" data-img="{{ judge.image.url }}">
+                <a href="#" class="text-decoration-none judge-card" data-bs-toggle="modal" data-bs-target="#judgeModal" data-name="{{ judge.name }}" data-title="{{ judge.title }}" data-desc="{{ judge.description }}" data-img="{{ judge.image.url }}">
                     <img src="{{ judge.image.url }}" alt="{{ judge.name }}" class="rounded-circle mb-3 shadow" width="120" height="120" style="object-fit: contain; border: 3px solid var(--gold); transition: transform 0.3s;">
                     <h6 class="fw-bold mb-1" style="color: var(--primary);">{{ judge.name }}</h6>
                     <small class="text-muted">{{ judge.title }}</small>
@@ -430,7 +1028,7 @@ section#{{ sid }} .timeline-date {
 <!-- ========== قسم الرعاة ========== -->
 <style>
 .sponsor-marquee-section { padding: 40px 0; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); overflow: hidden; direction: ltr; }
-.sponsor-marquee-title { text-align: center; margin-bottom: 30px; font-size: 1.8rem; font-weight: 700; color: #2c3e50; direction: rtl; }
+#sponsors .sponsor-header { direction: rtl; margin-bottom: 30px; }
 .sponsor-marquee-wrapper { overflow: hidden; position: relative; width: 100%; padding: 20px 0; }
 .sponsor-marquee-wrapper::before, .sponsor-marquee-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; width: 100px; z-index: 2; pointer-events: none; }
 .sponsor-marquee-wrapper::before { left: 0; background: linear-gradient(to right, #f8f9fa, transparent); }
@@ -496,9 +1094,9 @@ section#{{ sid }} .timeline-date {
 }
 </style>
 
-<section class="sponsor-marquee-section" id="sponsors">
+<section class="sponsor-marquee-section" id="sponsors"{% if section_bgs.sponsors and section_bgs.sponsors.bg_color %} style="{{ section_bgs.sponsors.bg_css }}"{% endif %}>
     <div class="container">
-        <h2 class="sponsor-marquee-title">رعاة وشركاء النجاح</h2>
+        <div class="section-header sponsor-header" data-aos="fade-down"><h2>{{ content.title_sponsors|default:"رعاة وشركاء النجاح" }}</h2><div class="gold-line"></div></div>
         {% if sponsors %}
     <div class="sponsor-marquee-wrapper">
         <div class="sponsor-marquee-track">
@@ -546,6 +1144,135 @@ section#{{ sid }} .timeline-date {
   </div>
 </div>
 
+<!-- نافذة المسار (من البطاقات المقلوبة) -->
+<div class="modal fade" id="trackModal" tabindex="-1" aria-hidden="true" aria-labelledby="trackModalTitle">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content trk-modal">
+      <div class="modal-header">
+        <div>
+          <span class="trk-modal-field"><i class="fas fa-layer-group ms-1"></i> <span id="trackModalField"></span></span>
+          <h5 class="modal-title" id="trackModalTitle"></h5>
+          <div class="trk-modal-en" id="trackModalEn"></div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p id="trackModalDesc" class="trk-modal-desc"></p>
+        <div id="trackModalDetails"></div>
+        <a id="trackModalPage" href="#" class="trk-modal-more"><i class="fas fa-file-lines ms-1"></i> عرض صفحة المسار كاملة</a>
+      </div>
+      <div class="modal-footer">
+        <a id="trackModalApply" href="{% url 'submit_project' %}" class="trk-modal-apply">قدّم في هذا المسار <i class="fas fa-arrow-left me-2"></i></a>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  .trk-modal .modal-header { align-items: flex-start; border-bottom: 1px solid rgba(197,160,89,.45); }
+  .trk-modal-field { display: inline-block; font-size: .82rem; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+  .trk-modal .modal-title { font-family: 'Noto Kufi Arabic', 'Cairo', sans-serif; font-weight: 900; font-size: 1.5rem; color: #fff; margin: 0; }
+  .trk-modal .modal-body { text-align: right; }
+  .trk-modal-en { color: rgba(255,255,255,.85); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; font-size: 1.1rem; margin-top: 2px; }
+  .trk-modal-en:empty { display: none; }
+  .trk-modal-desc { color: rgba(255,255,255,.9); line-height: 2; font-size: 1.08rem; white-space: pre-line; }
+  .trk-modal .td-table { margin-bottom: 14px; }
+  .trk-modal-more { color: var(--gold); font-weight: 700; text-decoration: none; }
+  .trk-modal-more:hover { color: #fff; }
+  .trk-modal .modal-footer { border-top: 1px solid rgba(197,160,89,.35); justify-content: stretch; }
+  .trk-modal-apply { flex: 1; text-align: center; padding: 12px; border-radius: 999px; font-weight: 800; text-decoration: none;
+      color: var(--primary) !important; background: linear-gradient(135deg, #f1d188, var(--gold)); box-shadow: 0 8px 22px rgba(197,160,89,.35); transition: transform .2s; }
+  .trk-modal-apply:hover { transform: translateY(-2px); }
+</style>
+
+<style>
+/* ---------- الوجه الخلفي للمجالات: عنوان أكبر ومسارات أوضح ---------- */
+#fields .flip-card-back {
+    justify-content: center; gap: 0; padding: 26px 28px;
+    background: radial-gradient(110% 80% at 85% 0%, rgba(197,160,89,.45) 0%, transparent 55%),
+                linear-gradient(160deg, rgba(14,30,68,.97) 0%, rgba(8,18,44,.97) 100%) !important;
+    border: 1px solid rgba(197,160,89,.75);
+}
+#fields .flip-card-back .fb-title { color: var(--gold, #c5a059) !important; font-weight: 900; font-size: clamp(1.35rem, 2vw, 1.9rem);
+    margin: 0 0 4px; text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+#fields .flip-card-back .fb-title::after { content: ''; display: block; width: 56px; height: 3px; margin: 10px auto 0; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold, #c5a059), transparent); }
+#fields .fb-sub { color: rgba(255,255,255,.75); font-size: .9rem; margin: 6px 0 16px; }
+#fields .fb-tracks { display: grid; grid-template-columns: 1fr; gap: 10px; width: 100%; max-width: 460px; }
+#fields .fb-tracks.two-col { grid-template-columns: 1fr 1fr; max-width: 640px; }
+#fields .flip-card-back .flip-track {
+    display: flex; align-items: center; gap: 10px; text-align: right; margin: 0;
+    padding: 10px 12px; border-radius: 12px; text-decoration: none;
+    font-size: clamp(1rem, 1.25vw, 1.15rem); font-weight: 700; line-height: 1.45; color: #fff !important;
+    background: rgba(255,255,255,.08) !important; border: 1px solid rgba(197,160,89,.45) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    transition: background-color .2s, color .2s, transform .2s, border-color .2s;
+}
+#fields .flip-card-back .flip-track:hover, #fields .flip-card-back .flip-track:focus-visible {
+    background: var(--gold, #c5a059) !important; color: #0a1632 !important; border-color: var(--gold, #c5a059) !important; transform: translateY(-2px);
+}
+#fields .ft-num { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 800; background: var(--gold, #c5a059); color: #0a1632; transition: background .2s, color .2s; }
+#fields .flip-track:hover .ft-num { background: #0a1632; color: var(--gold, #c5a059); }
+#fields .ft-name { flex: 1 1 auto; }
+#fields .ft-info { flex: 0 0 auto; font-size: .95rem; opacity: .8; }
+@media (max-width: 991.98px) { #fields .fb-tracks.two-col { grid-template-columns: 1fr; max-width: 460px; } }
+/* ---------- الوجه الأمامي: عنوان كبير وواضح + صورة غلاف اختيارية ---------- */
+#fields .flip-card-front > * { position: relative; z-index: 2; }
+#fields .flip-card-front .fc-title {
+    font-family: 'Noto Kufi Arabic', 'Cairo', sans-serif; font-weight: 900; line-height: 1.35;
+    font-size: clamp(1.7rem, 3vw, 2.6rem); color: var(--gold, #c5a059); margin: 0 0 10px;
+    text-shadow: 0 3px 16px rgba(0,0,0,.55), 0 1px 0 rgba(0,0,0,.35);
+    -webkit-text-stroke: .3px rgba(0,0,0,.25);
+}
+#fields .flip-card-front .fc-title::after { content: ''; display: block; width: 64px; height: 3px; margin: 14px auto 0; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent); opacity: .85; }
+#fields .flip-card-front small { font-size: clamp(1.25rem, 2vw, 1.75rem); font-weight: 700; color: rgba(255,255,255,.92); letter-spacing: 1.5px;
+    text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,.45); font-family: 'Cairo', 'Segoe UI', sans-serif; }
+@media (max-width: 767px) { #fields .flip-card-front small { font-size: 1.15rem; } }
+#fields .flip-card-front .fc-cover { position: absolute; inset: 0; z-index: 0; background: var(--cover) center / cover no-repeat; transition: transform .8s ease; }
+#fields .flip-card-front .fc-cover::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(10,22,50,calc(var(--cover-dim, .55) * .55)) 0%, rgba(10,22,50,var(--cover-dim, .55)) 100%); }
+#fields .flip-card:hover .fc-cover { transform: scale(1.05); }
+#fields .flip-card-front.has-cover::before { z-index: 1; }
+#fields .flip-card-front.has-cover .fc-title { color: #fff; }
+#fields .flip-card-front.has-cover .fc-title::after { background: linear-gradient(90deg, transparent, var(--gold, #c5a059), transparent); }
+@media (max-width: 767px) { #fields .flip-card-front .fc-title { font-size: 1.6rem; } }
+/* ---------- نمط معكوس: ذهبي مع كحلي ---------- */
+#fields .flip-gold .flip-card-front {
+    background: radial-gradient(110% 80% at 15% 0%, rgba(255,255,255,.45) 0%, transparent 55%),
+                linear-gradient(150deg, #f3d892 0%, var(--gold, #c5a059) 50%, #8a6a2c 100%) !important;
+    border: 1px solid rgba(255,240,205,.85);
+}
+#fields .flip-gold .flip-card-front i { color: #0a1632; filter: drop-shadow(0 4px 10px rgba(10,22,50,.35)); }
+#fields .flip-gold .flip-card-front h4 { color: #0a1632; text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+#fields .flip-gold .flip-card-front.has-cover h4 { color: #fff; text-shadow: 0 3px 16px rgba(0,0,0,.55); }
+#fields .flip-gold .flip-card-front small, #fields .flip-gold .flip-card-front .flip-hint { color: rgba(10,22,50,.8); text-shadow: none; }
+#fields .flip-gold .flip-card-front.has-cover small { color: rgba(255,255,255,.92); text-shadow: 0 2px 10px rgba(0,0,0,.45); }
+#fields .flip-gold .flip-card-back {
+    background: radial-gradient(110% 80% at 85% 0%, rgba(255,255,255,.45) 0%, transparent 55%),
+                linear-gradient(150deg, #f3d892 0%, var(--gold, #c5a059) 50%, #8a6a2c 100%) !important;
+    border: 1px solid rgba(255,240,205,.85);
+}
+#fields .flip-gold .flip-card-back .fb-title { color: #0a1632 !important; text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+#fields .flip-gold .flip-card-back .fb-title::after { background: linear-gradient(90deg, transparent, #0a1632, transparent); }
+#fields .flip-gold .fb-sub { color: rgba(10,22,50,.8); }
+#fields .flip-gold .flip-card-back .flip-track {
+    color: #fff !important; background: linear-gradient(135deg, rgba(18,36,80,.92), rgba(10,22,50,.88)) !important;
+    border: 1px solid rgba(10,22,50,.6) !important; box-shadow: 0 6px 16px rgba(10,22,50,.25), inset 0 1px 0 rgba(255,255,255,.12);
+}
+#fields .flip-gold .flip-card-back .flip-track:hover, #fields .flip-gold .flip-card-back .flip-track:focus-visible {
+    background: #fff !important; color: #0a1632 !important; border-color: #fff !important;
+}
+/* الموبايل والتابلت: ارتفاع البطاقة حسب عدد المسارات حتى لا يُقص أي مسار */
+@media (max-width: 991.98px) { #fields .flip-card { height: calc(150px + var(--tracks, 1) * 58px); min-height: 260px; } }
+@media (max-width: 767px) {
+    #fields .flip-card { height: calc(138px + var(--tracks, 1) * 54px); min-height: 230px; }
+    #fields .flip-card-back { padding: 18px 16px; }
+    #fields .fb-sub { font-size: .82rem; margin-bottom: 12px; }
+    #fields .flip-card-back .flip-track { font-size: 1rem; padding: 8px 10px; }
+}
+</style>
+
 <!-- بطاقة الجدول الزمني المنبثقة (Modal) -->
 <div class="modal fade" id="timelineModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -558,6 +1285,61 @@ section#{{ sid }} .timeline-date {
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // نافذة المسار
+    var tm = document.getElementById('trackModal');
+    if (tm) tm.addEventListener('shown.bs.modal', function () { if (window.initTrkNotice) window.initTrkNotice(tm); });
+    if (tm) tm.addEventListener('show.bs.modal', function (e) {
+        var b = e.relatedTarget;
+        tm.querySelector('.modal-title').textContent = b.getAttribute('data-title');
+        document.getElementById('trackModalEn').textContent = b.getAttribute('data-en') || '';
+        document.getElementById('trackModalField').textContent = b.getAttribute('data-field');
+        var d = b.getAttribute('data-desc'), tpl = document.getElementById('trk-' + b.getAttribute('data-track-id'));
+        var box = document.getElementById('trackModalDetails');
+        box.innerHTML = tpl ? tpl.innerHTML : '';
+        document.getElementById('trackModalDesc').textContent = d || (box.innerHTML.trim() ? '' : 'سيتم إضافة شرح هذا المسار قريباً.');
+        document.getElementById('trackModalPage').href = '/tracks/' + b.getAttribute('data-track-id') + '/';
+        setTimeout(function () { if (window.initTrkNotice) window.initTrkNotice(box); }, 50);
+        document.getElementById('trackModalApply').href = '{% url "submit_project" %}?field=' + b.getAttribute('data-field-id') + '&track=' + b.getAttribute('data-track-id');
+    });
+    // الضغط على مسار لا يقلب البطاقة
+    document.querySelectorAll('.flip-track').forEach(function (a) {
+        a.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
+
+    // قلب تلقائي للبطاقات في كل مرة يصل فيها الزائر للقسم (بالنزول أو الصعود أو بالأسهم)
+    var section = document.getElementById('fields');
+    var cards = Array.prototype.slice.call(document.querySelectorAll('#fields .flip-card'));
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (section && cards.length && 'IntersectionObserver' in window && !reduce) {
+        var inView = false, timers = [];
+        function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+        function play() {
+            clearTimers();
+            cards.forEach(function (card, i) {
+                timers.push(setTimeout(function () {
+                    if (card.matches(':hover') || card.dataset.userFlipped) return;
+                    card.classList.add('flipped');
+                    timers.push(setTimeout(function () { if (!card.dataset.userFlipped) card.classList.remove('flipped'); }, 2600));
+                }, 450 + i * 650));
+            });
+        }
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (en) {
+                var visible = en.intersectionRatio >= 0.55 || (en.isIntersecting && en.intersectionRect.height >= window.innerHeight * 0.55);
+                if (visible && !inView) { inView = true; play(); }
+                else if (!en.isIntersecting || en.intersectionRatio < 0.15) {
+                    if (inView) { inView = false; clearTimers(); cards.forEach(function (c) { if (!c.dataset.userFlipped) c.classList.remove('flipped'); }); }
+                }
+            });
+        }, { threshold: [0, 0.15, 0.3, 0.55, 0.8, 1] });
+        io.observe(section);
+        cards.forEach(function (c) { c.addEventListener('click', function () { c.dataset.userFlipped = '1'; }); });
+    }
+});
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

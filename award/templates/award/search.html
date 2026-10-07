@@ -1,0 +1,47 @@
+{% extends 'award/base.html' %}
+{% block content %}
+<section class="media-page-header" style="background: linear-gradient(160deg, var(--secondary, #122450), var(--primary) 60%, #050c1e); padding: 80px 0 40px; text-align: center;">
+    <div class="container">
+        <h1 style="color: var(--gold); font-weight: 900; font-size: 2.3rem;">البحث في الموقع</h1>
+        <form action="{% url 'search' %}" method="get" class="search-page-form mx-auto mt-4" role="search">
+            <input type="search" name="q" value="{{ q }}" placeholder="اكتب كلمة البحث…" aria-label="كلمة البحث" autofocus>
+            <button type="submit" aria-label="بحث"><i class="fas fa-magnifying-glass"></i></button>
+        </form>
+    </div>
+</section>
+<section class="py-5 search-page" style="background: linear-gradient(160deg, #ffffff 0%, #f3f5fa 55%, #f7f0e2 100%); min-height: 40vh;">
+    <div class="container" style="max-width: 900px;">
+        {% if not q %}
+            <p class="text-center text-muted fs-5">اكتب ما تبحث عنه: خبر، مسار، شرط من شروط التقديم، اسم فائز…</p>
+        {% elif not total %}
+            <p class="text-center text-muted fs-5">لا توجد نتائج لـ «{{ q }}». جرّب كلمة أقصر أو مختلفة.</p>
+        {% else %}
+            <p class="mb-4 text-muted">{{ total }} نتيجة لـ «<b class="text-dark">{{ q }}</b>»</p>
+            {% for group, items in groups.items %}
+            <h2 class="sp-group">{{ group }} <span>({{ items|length }})</span></h2>
+            {% for r in items %}
+            <a href="{{ r.url }}" class="sp-item glass-light">
+                <i class="fas {{ r.icon }}"></i>
+                <div><b>{{ r.title }}</b><span>{{ r.snippet|safe }}</span></div>
+            </a>
+            {% endfor %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</section>
+<style>
+  .search-page-form { display: flex; max-width: 620px; border-radius: 999px; overflow: hidden; border: 1px solid rgba(197,160,89,.6);
+      background: rgba(255,255,255,.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .search-page-form input { flex: 1; min-width: 0; border: 0; background: transparent; color: #fff; padding: 14px 22px; font-size: 1.1rem; outline: none; }
+  .search-page-form input::placeholder { color: rgba(255,255,255,.6); }
+  .search-page-form button { border: 0; padding: 0 22px; background: var(--gold); color: var(--primary); font-size: 1.1rem; cursor: pointer; }
+  .sp-group { font-size: 1.15rem; font-weight: 800; color: var(--primary); margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 2px solid rgba(197,160,89,.5); }
+  .sp-group span { color: #888; font-weight: 600; font-size: .95rem; }
+  .sp-item { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; margin-bottom: 12px; text-decoration: none; color: inherit; }
+  .sp-item i { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #f1d188, var(--gold)); color: var(--primary); }
+  .sp-item b { display: block; color: var(--primary); font-size: 1.05rem; margin-bottom: 4px; }
+  .sp-item span { display: block; color: #555; line-height: 1.8; font-size: .95rem; }
+  .search-page mark { background: #f6e3b4; color: #222; }
+</style>
+{% endblock %}

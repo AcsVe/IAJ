@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+  .iaj-sr-head { margin: 0 0 18px; font-size: 15px; }
+  .iaj-sr-group { margin: 0 0 22px; border: 1px solid var(--hairline-color, #ddd); border-radius: 10px; overflow: hidden; }
+  .iaj-sr-group h2 { margin: 0; padding: 10px 14px; font-size: 15px; display: flex; justify-content: space-between; align-items: center;
+                     background: var(--darkened-bg, #f8f8f8); }
+  .iaj-sr-group h2 a { font-size: 12px; font-weight: normal; }
+  .iaj-sr-item { display: block; padding: 10px 14px; border-top: 1px solid var(--hairline-color, #eee); text-decoration: none !important; }
+  .iaj-sr-item:hover { background: rgba(197,160,89,.10); }
+  .iaj-sr-item b { display: block; font-size: 14px; margin-bottom: 3px; }
+  .iaj-sr-item span { display: block; font-size: 12.5px; color: var(--body-quiet-color, #666); line-height: 1.7; }
+  .iaj-sr-item mark { background: #f6e3b4; color: #222; padding: 0 2px; border-radius: 3px; }
+  .iaj-sr-empty { padding: 30px; text-align: center; font-size: 15px; color: var(--body-quiet-color, #666); }
+</style>
+{% if not q %}
+  <p class="iaj-sr-empty">اكتب كلمة في مربع البحث بالأعلى للبحث في كل الجداول: الأخبار، المسارات، الطلبات، الفائزين، النصوص…</p>
+{% elif not groups %}
+  <p class="iaj-sr-empty">لا توجد نتائج لـ «{{ q }}». جرّب كلمة أقصر أو مختلفة.</p>
+{% else %}
+  <p class="iaj-sr-head">نتائج البحث عن «<b>{{ q }}</b>»: <b>{{ total }}</b> نتيجة في <b>{{ groups|length }}</b> قسم</p>
+  {% for g in groups %}
+  <div class="iaj-sr-group">
+    <h2><span>{{ g.name }} ({{ g.total }})</span>{% if g.list_url %}<a href="{{ g.list_url }}?q={{ q|urlencode }}">عرض الكل في الجدول ←</a>{% endif %}</h2>
+    {% for it in g.items %}
+      <a class="iaj-sr-item" href="{{ it.url|default:g.list_url }}"><b>{{ it.title }}</b><span>{{ it.snippet|safe }}</span></a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+{% endif %}
+{% endblock %}

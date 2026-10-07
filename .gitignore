@@ -1,10 +1,17 @@
-venv/
-db.sqlite3
-__pycache__/
-*.pyc
-Music/
-start.sh
-runserver.txt
 
+*.pyc
+*.sqlite3
 .env
+.env.*
+Music/
+__pycache__/
+backups/
+db.sqlite3
+live_copy.sqlite3
+logs/
 media/
+pyexe.txt
+runserver.txt
+start.sh
+staticfiles/
+venv/

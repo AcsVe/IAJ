@@ -2,35 +2,84 @@
 
 {% block content %}
 
-<section id="apply" class="py-5" style="background-color: var(--bg-gray); min-height: 100vh;">
-    <div class="container">
+<section id="apply" class="submit-page">
+    <div class="container submit-container">
         <div class="section-header" data-aos="fade-down">
             <h2>نموذج الترشح للجائزة</h2>
             <div class="gold-line"></div>
+            <p class="submit-intro">املأ البيانات التالية وأرفق ملف البحث (PDF). جميع الحقول مطلوبة.</p>
         </div>
-        <div class="row justify-content-center">
-            <div class="col-lg-8" data-aos="fade-up">
-                <div class="card border-0 shadow p-4 p-md-5 bg-white" style="border-top: 5px solid var(--gold) !important; border-radius: 0;">
-                    
-                    <form method="POST" enctype="multipart/form-data" id="submissionForm">
-                        {% csrf_token %}
-                        <div class="row g-3">
-                            <div class="col-md-6"><label class="form-label fw-bold text-dark">{{ form.school_name.label_tag }}</label>{{ form.school_name }}</div>
-                            <div class="col-md-6"><label class="form-label fw-bold text-dark">{{ form.contact_person.label_tag }}</label>{{ form.contact_person }}</div>
-                            <div class="col-md-6"><label class="form-label fw-bold text-dark">{{ form.email.label_tag }}</label>{{ form.email }}</div>
-                            <div class="col-md-6"><label class="form-label fw-bold text-dark">{{ form.phone.label_tag }}</label>{{ form.phone }}</div>
-                            <div class="col-md-6"><label class="form-label fw-bold text-dark">{{ form.field.label_tag }}</label>{{ form.field }}</div>
-                            <div class="col-md-6"><label class="form-label fw-bold text-dark">{{ form.track.label_tag }}</label>{{ form.track }}</div>
-                            <div class="col-12"><label class="form-label fw-bold text-dark">{{ form.project_title.label_tag }}</label>{{ form.project_title }}</div>
-                            <div class="col-12"><label class="form-label fw-bold text-dark">{{ form.document.label_tag }}</label>{{ form.document }}</div>
-                        </div>
-                        <button type="submit" class="btn btn-gold w-100 mt-4 py-3 fs-5">إرسال الطلب <i class="fas fa-paper-plane ms-2"></i></button>
-                    </form>
+        <div class="submit-card glass-light" data-aos="fade-up">
+            {% if form.errors %}
+            <div class="alert alert-danger mb-4"><i class="fas fa-circle-exclamation ms-2"></i> يرجى تصحيح الحقول المظللة بالأحمر.</div>
+            {% endif %}
+            <form method="POST" enctype="multipart/form-data" id="submissionForm" novalidate>
+                {% csrf_token %}
+                <div class="row g-4">
+                    {% for f in form %}
+                    <div class="{% if f.name == 'project_title' or f.name == 'document' %}col-12{% else %}col-md-6{% endif %}">
+                        <label class="form-label" for="{{ f.id_for_label }}">
+                            {% if f.name == 'school_name' %}<i class="fas fa-school"></i>{% elif f.name == 'contact_person' %}<i class="fas fa-user-tie"></i>{% elif f.name == 'email' %}<i class="fas fa-envelope"></i>{% elif f.name == 'phone' %}<i class="fas fa-phone"></i>{% elif f.name == 'field' %}<i class="fas fa-star"></i>{% elif f.name == 'track' %}<i class="fas fa-route"></i>{% elif f.name == 'project_title' %}<i class="fas fa-heading"></i>{% else %}<i class="fas fa-file-pdf"></i>{% endif %}
+                            {{ f.label }}
+                        </label>
+                        {{ f }}
+                        {% if f.name == 'document' %}<div class="form-hint">ملف PDF من 15 إلى 20 صفحة.</div>{% endif %}
+                        {% for e in f.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+                    </div>
+                    {% endfor %}
                 </div>
-            </div>
+                <button type="submit" class="btn btn-gold submit-btn w-100">إرسال الطلب <i class="fas fa-paper-plane me-2"></i></button>
+            </form>
         </div>
     </div>
 </section>
+
+<style>
+.submit-page { min-height: 100vh; padding: 40px 0 70px;
+    background: radial-gradient(80% 60% at 85% 0%, rgba(197,160,89,.18) 0%, transparent 60%),
+                radial-gradient(70% 60% at 0% 100%, rgba(10,22,50,.10) 0%, transparent 60%), var(--bg-gray); }
+.submit-container { max-width: 1100px; }
+.submit-intro { margin-top: 18px; color: #555; font-size: 1.2rem; }
+.submit-page .section-header h2 { font-size: 2.6rem; }
+.submit-card { padding: 42px 48px !important; border-top: 5px solid var(--gold) !important; }
+.submit-card .form-label { font-weight: 800; color: var(--primary); font-size: 1.25rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.submit-card .form-label i { color: var(--gold); font-size: 1.1rem; width: 22px; text-align: center; }
+.submit-card .form-control, .submit-card .form-select {
+    font-size: 1.2rem; padding: 15px 18px; min-height: 60px; border-radius: 12px !important;
+    border: 1px solid rgba(10,22,50,.15); background-color: rgba(255,255,255,.85) !important; transition: border-color .2s, box-shadow .2s; }
+.submit-card .form-select { background-position: left 14px center; padding-left: 40px; }
+.submit-card .form-control:focus, .submit-card .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(197,160,89,.2); }
+.submit-card input[type=file].form-control { padding: 12px 14px; }
+.submit-card .is-invalid, .submit-card .field-error ~ * { border-color: #dc3545 !important; }
+.field-error { color: #dc3545; font-size: 1rem; margin-top: 6px; font-weight: 600; }
+.form-hint { color: #666; font-size: 1rem; margin-top: 6px; }
+.submit-btn { margin-top: 34px; padding: 18px; font-size: 1.35rem; border-radius: 12px; }
+@media (max-width: 767px) { .submit-card { padding: 24px 18px !important; } .submit-page { padding: 24px 0 50px; } .submit-page .section-header h2 { font-size: 1.9rem; } .submit-card .form-label { font-size: 1.12rem; } .submit-card .form-control, .submit-card .form-select { font-size: 1.1rem; } }
+</style>
+
+<script>
+// قائمة المسارات تعرض فقط مسارات المجال المختار
+(function () {
+    var map = {{ track_map|safe }};
+    var field = document.getElementById('id_field'), track = document.getElementById('id_track');
+    if (!field || !track) return;
+    var all = Array.prototype.slice.call(track.options).map(function (o) { return { v: o.value, t: o.text }; });
+    function refresh() {
+        var f = field.value, keep = track.value;
+        track.innerHTML = '';
+        all.forEach(function (o) {
+            if (!o.v || !f || String(map[o.v]) === f) {
+                var opt = new Option(o.t, o.v); if (o.v === keep) opt.selected = true; track.add(opt);
+            }
+        });
+    }
+    field.addEventListener('change', refresh); refresh();
+})();
+// تمييز الحقول التي فيها أخطاء
+document.querySelectorAll('.field-error').forEach(function (e) {
+    var input = e.parentElement.querySelector('input, select, textarea'); if (input) input.classList.add('is-invalid');
+});
+</script>
 
 <script>
     let formDirty = false;

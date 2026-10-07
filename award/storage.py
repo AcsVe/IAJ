@@ -1,24 +1,55 @@
 """
-التخزين:
-  • الصور  ← قاعدة البيانات (موديل StoredFile) وتُعرض من /media/db/...
-  • الفيديو وملفات PDF ← Cloudinary كما كان سابقاً
-  • الروابط القديمة (https://res.cloudinary.com/...) تبقى شغالة بدون أي تغيير
+التخزين المحلي — كل الملفات (صور، فيديو، PDF) تُحفظ على الجهاز داخل مجلد media.
+
+  • الصور تُصغَّر وتُضغط تلقائياً قبل الحفظ.
+  • الملفات القديمة المخزّنة داخل قاعدة البيانات (db/...) تبقى تعمل،
+    ويمكن نقلها للمجلد بالأمر:  python manage.py localize_media
+  • أي رابط كامل (https://...) يُعرض كما هو.
 """
 import io
-import mimetypes
 import os
 import uuid
 
-import cloudinary
-import cloudinary.uploader
-from django.conf import settings
 from django.core.files.base import ContentFile
-from cloudinary_storage.storage import MediaCloudinaryStorage
+from django.core.files.storage import FileSystemStorage
+from django.utils.deconstruct import deconstructible
 
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.avif', '.ico', '.jfif'}
 DB_PREFIX = 'db/'
 MAX_IMAGE_SIDE = 2400        # أقصى عرض/ارتفاع بعد التصغير التلقائي
 JPEG_QUALITY = 85
+
+
+def norm(name):
+    """مسارات Windows تستخدم \\ — نوحّدها إلى /"""
+    return (name or '').replace('\\', '/')
+
+
+_MAGIC = [
+    (b'\x89PNG\r\n\x1a\n', '.png'), (b'\xff\xd8\xff', '.jpg'), (b'GIF8', '.gif'),
+    (b'%PDF', '.pdf'), (b'\x1aE\xdf\xa3', '.webm'), (b'BM', '.bmp'), (b'\x00\x00\x01\x00', '.ico'),
+]
+
+
+def sniff_ext(head):
+    """معرفة نوع الملف من أول بايتات فيه (لملفات Cloudinary التي بلا امتداد)"""
+    head = head or b''
+    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':
+        return '.webp'
+    if head[4:8] == b'ftyp':
+        brand = head[8:12]
+        if brand in (b'avif', b'avis'):
+            return '.avif'
+        if brand in (b'heic', b'heix', b'mif1'):
+            return '.heic'
+        return '.mov' if brand == b'qt  ' else '.mp4'
+    for sig, ext in _MAGIC:
+        if head.startswith(sig):
+            return ext
+    stripped = head.lstrip()[:200].lower()
+    if stripped.startswith(b'<svg') or (stripped.startswith(b'<?xml') and b'<svg' in head.lower()):
+        return '.svg'
+    return ''
 
 
 def is_image_name(name):
@@ -30,7 +61,7 @@ def is_url(name):
 
 
 def optimize_image(data, ext):
-    """تصغير الصور الكبيرة جداً وضغطها لتوفير مساحة قاعدة البيانات"""
+    """تصغير الصور الكبيرة جداً وضغطها لتوفير المساحة وتسريع الموقع"""
     if ext in ('.gif', '.svg', '.ico'):
         return data
     try:
@@ -41,7 +72,6 @@ def optimize_image(data, ext):
         resized = max(img.size) > MAX_IMAGE_SIDE
         if resized:
             img.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.LANCZOS)
-
         out = io.BytesIO()
         if fmt in ('JPEG', 'MPO') or ext in ('.jpg', '.jpeg', '.jfif'):
             if img.mode not in ('RGB', 'L'):
@@ -59,48 +89,31 @@ def optimize_image(data, ext):
         return data
 
 
-class HybridMediaStorage(MediaCloudinaryStorage):
+@deconstructible
+class LocalMediaStorage(FileSystemStorage):
 
     # ---------- حفظ ----------
-    def get_available_name(self, name, max_length=None):
-        # الصور تأخذ اسم فريد (uuid) داخل _save — لا داعي لسؤال Cloudinary
-        if is_image_name(name):
-            return name
-        return super().get_available_name(name, max_length)
+    def generate_filename(self, filename):
+        filename = norm(filename)
+        if is_image_name(filename):
+            # الصور تأخذ اسماً فريداً قصيراً
+            folder = os.path.dirname(filename)
+            ext = os.path.splitext(filename)[1].lower()
+            filename = (folder + '/' if folder else '') + uuid.uuid4().hex + ext
+        return norm(super().generate_filename(filename))
 
     def _save(self, name, content):
+        name = norm(name)
         if is_image_name(name):
-            return self.save_to_db(name, content)
-        return self._save_cloudinary(name, content)
-
-    def save_to_db(self, name, content):
-        from .models import StoredFile
-        ext = os.path.splitext(name)[1].lower()
-        if hasattr(content, 'seek'):
             try:
                 content.seek(0)
             except Exception:
                 pass
-        data = content.read()
-        if isinstance(data, str):
-            data = data.encode()
-        data = optimize_image(data, ext)
-
-        folder = os.path.dirname(name).strip('/')
-        new_name = DB_PREFIX + (folder + '/' if folder else '') + uuid.uuid4().hex + ext
-        ctype = mimetypes.guess_type(new_name)[0] or 'application/octet-stream'
-        StoredFile.objects.create(name=new_name, content=data, content_type=ctype, size=len(data))
-        return new_name
-
-    def _save_cloudinary(self, name, content):
-        response = cloudinary.uploader.upload(
-            content,
-            resource_type='auto',
-            use_filename=True,
-            unique_filename=True,
-            folder=os.path.dirname(name) or '',
-        )
-        return response.get('secure_url', response.get('public_id', name))
+            data = content.read()
+            if isinstance(data, str):
+                data = data.encode()
+            content = ContentFile(optimize_image(data, os.path.splitext(name)[1].lower()))
+        return norm(super()._save(name, content))
 
     # ---------- قراءة ----------
     def url(self, name):
@@ -108,70 +121,47 @@ class HybridMediaStorage(MediaCloudinaryStorage):
             return ''
         if is_url(name):
             return name
-        if name.startswith(DB_PREFIX):
-            return settings.MEDIA_URL + name
-        return super().url(name)
+        return super().url(norm(name))
+
+    def path(self, name):
+        return super().path(norm(name))
 
     def exists(self, name):
-        if name and name.startswith(DB_PREFIX):
-            from .models import StoredFile
-            return StoredFile.objects.filter(name=name).exists()
         if is_url(name):
             return True
-        return super().exists(name)
+        if name and norm(name).startswith(DB_PREFIX):
+            from .models import StoredFile
+            return StoredFile.objects.filter(name=norm(name)).exists()
+        return super().exists(norm(name))
 
     def _open(self, name, mode='rb'):
-        if name.startswith(DB_PREFIX):
+        if norm(name).startswith(DB_PREFIX):
             from .models import StoredFile
-            obj = StoredFile.objects.get(name=name)
-            f = ContentFile(bytes(obj.content), name=name)
-            return f
-        return super()._open(name, mode)
+            obj = StoredFile.objects.get(name=norm(name))
+            return ContentFile(bytes(obj.content), name=name)
+        return super()._open(norm(name), mode)
 
     def size(self, name):
-        if name.startswith(DB_PREFIX):
+        if norm(name).startswith(DB_PREFIX):
             from .models import StoredFile
-            return StoredFile.objects.filter(name=name).values_list('size', flat=True).first() or 0
-        return super().size(name)
+            return StoredFile.objects.filter(name=norm(name)).values_list('size', flat=True).first() or 0
+        return super().size(norm(name))
 
     def delete(self, name):
-        if not name:
+        if not name or is_url(name):
             return
-        if name.startswith(DB_PREFIX):
+        if norm(name).startswith(DB_PREFIX):
             from .models import StoredFile
-            StoredFile.objects.filter(name=name).delete()
+            StoredFile.objects.filter(name=norm(name)).delete()
             return
-        if is_url(name):
-            return  # ملفات Cloudinary القديمة لا نحذفها تلقائياً
         try:
-            super().delete(name)
+            super().delete(norm(name))
         except Exception:
             pass
 
 
-# أسماء قديمة كانت مستخدمة في settings / migrations — نخليها تشير لنفس الكلاس
-AutoCloudinaryStorage = HybridMediaStorage
-
-
-class VideoCloudinaryStorage(MediaCloudinaryStorage):
-    def _save(self, name, content):
-        response = cloudinary.uploader.upload(
-            content, resource_type='video', use_filename=True, unique_filename=True,
-            folder=os.path.dirname(name) or '',
-        )
-        return response.get('secure_url', response.get('public_id', name))
-
-    def url(self, name):
-        return name if is_url(name) else super().url(name)
-
-
-class RawCloudinaryStorage(MediaCloudinaryStorage):
-    def _save(self, name, content):
-        response = cloudinary.uploader.upload(
-            content, resource_type='raw', use_filename=True, unique_filename=True,
-            folder=os.path.dirname(name) or '',
-        )
-        return response.get('secure_url', response.get('public_id', name))
-
-    def url(self, name):
-        return name if is_url(name) else super().url(name)
+# أسماء قديمة قد تكون مذكورة في إعدادات أو migrations — كلها تشير للتخزين المحلي الآن
+HybridMediaStorage = LocalMediaStorage
+AutoCloudinaryStorage = LocalMediaStorage
+VideoCloudinaryStorage = LocalMediaStorage
+RawCloudinaryStorage = LocalMediaStorage

@@ -1,11 +1,10 @@
 """
-تنظيف الصور المخزّنة في قاعدة البيانات:
+تنظيف الملفات المرفوعة:
 عند استبدال صورة أو حذف السجل، تُحذف النسخة القديمة حتى لا تكبر القاعدة بدون داعي.
 """
 from django.db import models
 from django.db.models.signals import post_delete, pre_save
 
-from .storage import DB_PREFIX
 
 
 def _file_fields(instance):
@@ -13,9 +12,11 @@ def _file_fields(instance):
 
 
 def _remove(name):
-    if name and name.startswith(DB_PREFIX):
-        from .models import StoredFile
-        StoredFile.objects.filter(name=name).delete()
+    """حذف الملف القديم (من المجلد أو من القاعدة) — الروابط الخارجية لا تُلمس"""
+    if not name or name.startswith('http://') or name.startswith('https://'):
+        return
+    from django.core.files.storage import default_storage
+    default_storage.delete(name)
 
 
 def cleanup_replaced_files(sender, instance, raw=False, **kwargs):
@@ -42,7 +43,15 @@ def cleanup_deleted_files(sender, instance, **kwargs):
 
 
 def connect(app_config):
+    from django.db.models.signals import post_save
+    from .site_cache import CACHED_MODELS, clear_site_bundle, HOME_MODELS, clear_home_bundle
     for model in app_config.get_models():
+        if model.__name__ in CACHED_MODELS:
+            post_save.connect(clear_site_bundle, sender=model, dispatch_uid=f'iaj_cache_save_{model.__name__}')
+            post_delete.connect(clear_site_bundle, sender=model, dispatch_uid=f'iaj_cache_del_{model.__name__}')
+        if model.__name__ in HOME_MODELS:
+            post_save.connect(clear_home_bundle, sender=model, dispatch_uid=f'iaj_home_save_{model.__name__}')
+            post_delete.connect(clear_home_bundle, sender=model, dispatch_uid=f'iaj_home_del_{model.__name__}')
         if model.__name__ == 'StoredFile':
             continue
         if any(isinstance(f, models.FileField) for f in model._meta.get_fields()):

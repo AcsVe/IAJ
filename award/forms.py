@@ -15,3 +15,9 @@ class SubmissionForm(forms.ModelForm):
             'project_title': forms.TextInput(attrs={'class': 'form-control bg-white text-dark', 'placeholder': 'عنوان المشروع'}),
             'document': forms.FileInput(attrs={'class': 'form-control bg-white text-dark'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # المسارات المعطّلة لا تظهر في النموذج ولا تُقبل
+        from .models import Track
+        self.fields['track'].queryset = Track.objects.filter(is_active=True)
