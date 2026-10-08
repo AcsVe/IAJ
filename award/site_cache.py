@@ -31,12 +31,15 @@ def get_site_bundle():
         ticker_items = list(TickerItem.objects.filter(is_active=True))
     except Exception:
         ticker_items = []
-    hero_card = _first(HeroCard)
+    hero_card = _first(HeroCard) or HeroCard()   # بدون سجل ← إعدادات افتراضية (البطاقة ظاهرة)
+    default_fx = hero_card.text_effect or 'fade'
     hero_text_items = []
-    if hero_card and (hero_card.heading or hero_card.body_text):
-        hero_text_items.append({'heading': hero_card.heading, 'body': hero_card.body_text})
+    if hero_card.heading or hero_card.body_text:
+        hero_text_items.append({'heading': hero_card.heading, 'body': hero_card.body_text,
+                                'fx': default_fx, 'speed': 0.6, 'seconds': 0})
     try:
-        hero_text_items += [{'heading': t.heading, 'body': t.body_text}
+        hero_text_items += [{'heading': t.heading, 'body': t.body_text, 'fx': t.effect or default_fx,
+                             'speed': t.effect_speed or 0.6, 'seconds': t.seconds or 0}
                             for t in HeroTextSlide.objects.filter(is_active=True) if t.heading or t.body_text]
     except Exception:
         pass

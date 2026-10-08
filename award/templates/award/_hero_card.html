@@ -2,9 +2,9 @@
 <div class="hero-transparent-card{% if hero_text_items|length > 1 %} hc-multi{% endif %}"
      style="background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity|stringformat:'s' }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};"
      data-speed="{{ hero_card.reading_speed|default:14 }}" data-min="{{ hero_card.min_seconds|default:4 }}">
-    <div class="hc-slides hc-fx-{{ hero_card.text_effect|default:'fade' }}" aria-live="polite">
+    <div class="hc-slides" aria-live="polite">
         {% for t in hero_text_items %}
-        <div class="hc-slide{% if forloop.first %} active{% endif %}"{% if not forloop.first %} aria-hidden="true"{% endif %}>
+        <div class="hc-slide hc-fx-{{ t.fx }}{% if forloop.first %} active{% endif %}" style="--hc-t: {{ t.speed|stringformat:'s' }}s"{% if t.seconds %} data-sec="{{ t.seconds }}"{% endif %}{% if not forloop.first %} aria-hidden="true"{% endif %}>
             {% if t.heading %}<h3 style="color:{{ hero_card.font_color }} !important;">{{ t.heading }}</h3>{% endif %}
             {% if t.body %}<p style="color:{{ hero_card.font_color }} !important;">{{ t.body|linebreaksbr }}</p>{% endif %}
         </div>

@@ -785,6 +785,14 @@ class HeroTextSlide(models.Model):
     """نصوص إضافية تتبدّل داخل البطاقة الشفافة تحت الفيديو"""
     heading = models.CharField(max_length=300, blank=True, default='', verbose_name="العنوان")
     body_text = models.TextField(blank=True, default='', verbose_name="النص")
+    EFFECT_CHOICES = (('', 'نفس حركة البطاقة (الافتراضي)'),) + (
+        ('fade', 'تلاشي ناعم'), ('slide', 'انزلاق جانبي'), ('up', 'صعود من الأسفل'), ('down', 'نزول من الأعلى'),
+        ('zoom', 'تكبير'), ('blur', 'ضبابية ثم وضوح'), ('flip', 'قلب'), ('none', 'بدون حركة'))
+    effect = models.CharField(max_length=10, choices=EFFECT_CHOICES, blank=True, default='', verbose_name="حركة ظهور هذا النص")
+    SPEED_CHOICES = ((0.35, 'سريعة'), (0.6, 'متوسطة'), (1.0, 'بطيئة'), (1.6, 'بطيئة جداً'))
+    effect_speed = models.FloatField(choices=SPEED_CHOICES, default=0.6, verbose_name="سرعة الحركة")
+    seconds = models.PositiveSmallIntegerField(default=0, verbose_name="مدة بقاء النص (ثوانٍ)",
+                                               help_text="0 = تلقائي حسب طول النص (من إعدادات البطاقة).")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
     is_active = models.BooleanField(default=True, verbose_name="ظاهر؟")
 
@@ -802,7 +810,7 @@ class HeroTextSlide(models.Model):
 # ========================================= #
 
 class HeroCard(models.Model):
-    is_enabled = models.BooleanField(default=False, verbose_name="تفعيل البطاقة؟")
+    is_enabled = models.BooleanField(default=True, verbose_name="إظهار بطاقة النصوص تحت الفيديو؟")
     heading = models.CharField(max_length=300, blank=True, default='', verbose_name="العنوان")
     body_text = models.TextField(blank=True, default='', verbose_name="النص الداخلي")
     card_bg_color = models.CharField(max_length=7, default='#0a1632', verbose_name="لون خلفية البطاقة")
@@ -811,9 +819,10 @@ class HeroCard(models.Model):
     font_size = models.CharField(max_length=6, default='1.1rem', verbose_name="حجم الخط")
     font_weight = models.CharField(max_length=3, default='600', verbose_name="وزن الخط")
     border_radius = models.CharField(max_length=6, default='0px', verbose_name="استدارة الزوايا")
-    EFFECT_CHOICES = (('fade', 'تلاشي ناعم'), ('slide', 'انزلاق جانبي'), ('up', 'صعود من الأسفل'),
-                      ('zoom', 'تكبير'), ('blur', 'ضبابية ثم وضوح'), ('flip', 'قلب'))
-    text_effect = models.CharField(max_length=10, choices=EFFECT_CHOICES, default='fade', verbose_name="حركة الانتقال بين النصوص")
+    EFFECT_CHOICES = (('fade', 'تلاشي ناعم'), ('slide', 'انزلاق جانبي'), ('up', 'صعود من الأسفل'), ('down', 'نزول من الأعلى'),
+                      ('zoom', 'تكبير'), ('blur', 'ضبابية ثم وضوح'), ('flip', 'قلب'), ('none', 'بدون حركة'))
+    text_effect = models.CharField(max_length=10, choices=EFFECT_CHOICES, default='fade', verbose_name="الحركة الافتراضية بين النصوص",
+                                   help_text="لكل نص حركته الخاصة من «النصوص المتبدّلة»؛ هذه تُستخدم للنص الأول وللنصوص التي لم تُحدَّد لها حركة.")
     reading_speed = models.PositiveSmallIntegerField(default=14, verbose_name="سرعة القراءة (حرف في الثانية)",
                                                      help_text="مدة كل نص تُحسب من طوله: رقم أصغر = وقت أطول للقراءة. المقترح 12–18.")
     min_seconds = models.PositiveSmallIntegerField(default=4, verbose_name="أقل مدة لكل نص (ثوانٍ)")

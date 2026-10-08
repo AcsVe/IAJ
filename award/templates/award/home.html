@@ -285,18 +285,23 @@ section#{{ sid }} .timeline-date {
 
 /* ---------- نصوص متبدّلة داخل البطاقة الشفافة ---------- */
 .hc-slides { display: grid; }
-.hc-slide { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity .6s ease, transform .6s ease, filter .6s ease, visibility 0s linear .6s; }
-.hc-slide.active { opacity: 1; visibility: visible; transform: none; filter: none; transition: opacity .6s ease, transform .6s ease, filter .6s ease; }
-.hc-fx-slide .hc-slide:not(.active) { transform: translateX(-40px); }
-.hc-fx-slide .hc-slide.leaving { transform: translateX(40px); }
-.hc-fx-up .hc-slide:not(.active) { transform: translateY(24px); }
-.hc-fx-up .hc-slide.leaving { transform: translateY(-24px); }
-.hc-fx-zoom .hc-slide:not(.active) { transform: scale(.88); }
-.hc-fx-zoom .hc-slide.leaving { transform: scale(1.08); }
-.hc-fx-blur .hc-slide:not(.active) { filter: blur(10px); }
-.hc-fx-flip { perspective: 900px; }
-.hc-fx-flip .hc-slide:not(.active) { transform: rotateX(80deg); }
-.hc-fx-flip .hc-slide.leaving { transform: rotateX(-80deg); }
+.hc-slide { grid-area: 1 / 1; opacity: 0; visibility: hidden; --hc-t: .6s;
+    transition: opacity var(--hc-t) ease, transform var(--hc-t) ease, filter var(--hc-t) ease, visibility 0s linear var(--hc-t); }
+.hc-slide.active { opacity: 1; visibility: visible; transform: none; filter: none; transition: opacity var(--hc-t) ease, transform var(--hc-t) ease, filter var(--hc-t) ease; }
+/* حركة كل نص (تُختار لكل نص من لوحة التحكم) */
+.hc-slide.hc-fx-slide:not(.active) { transform: translateX(-40px); }
+.hc-slide.hc-fx-slide.leaving { transform: translateX(40px); }
+.hc-slide.hc-fx-up:not(.active) { transform: translateY(24px); }
+.hc-slide.hc-fx-up.leaving { transform: translateY(-24px); }
+.hc-slide.hc-fx-down:not(.active) { transform: translateY(-24px); }
+.hc-slide.hc-fx-down.leaving { transform: translateY(24px); }
+.hc-slide.hc-fx-zoom:not(.active) { transform: scale(.88); }
+.hc-slide.hc-fx-zoom.leaving { transform: scale(1.08); }
+.hc-slide.hc-fx-blur:not(.active) { filter: blur(10px); }
+.hc-slides { perspective: 900px; }
+.hc-slide.hc-fx-flip:not(.active) { transform: rotateX(80deg); }
+.hc-slide.hc-fx-flip.leaving { transform: rotateX(-80deg); }
+.hc-slide.hc-fx-none, .hc-slide.hc-fx-none.active { transition: none; }
 .hc-multi { position: relative; padding-bottom: 46px !important; }
 .hc-nav { position: absolute; left: 14px; bottom: 10px; display: flex; align-items: center; gap: 8px; direction: rtl; }
 .hc-nav[hidden] { display: none; }
@@ -687,7 +692,10 @@ section#{{ sid }} .timeline-date {
         var count = card.querySelector('.hc-count'), bar = card.querySelector('.hc-progress');
         var speed = Math.max(4, parseFloat(card.dataset.speed) || 14), minS = Math.max(2, parseFloat(card.dataset.min) || 4);
         var idx = 0, timer = null, paused = false;
-        function dur(sl) { var n = (sl.textContent || '').replace(/\s+/g, ' ').trim().length; return Math.min(30, Math.max(minS, 1.2 + n / speed)) * 1000; }
+        function dur(sl) {
+            var fixed = parseFloat(sl.getAttribute('data-sec'));   // مدة محددة لهذا النص من لوحة التحكم
+            if (fixed > 0) return fixed * 1000;
+            var n = (sl.textContent || '').replace(/\s+/g, ' ').trim().length; return Math.min(30, Math.max(minS, 1.2 + n / speed)) * 1000; }
         function schedule() {
             clearTimeout(timer); if (bar) bar.classList.remove('run');
             if (paused || document.hidden) return;
@@ -698,7 +706,7 @@ section#{{ sid }} .timeline-date {
         function go(n) {
             var old = slides[idx];
             old.classList.remove('active'); old.classList.add('leaving'); old.setAttribute('aria-hidden', 'true');
-            setTimeout(function () { old.classList.remove('leaving'); }, 650);
+            setTimeout(function () { old.classList.remove('leaving'); }, (parseFloat(getComputedStyle(old).getPropertyValue('--hc-t')) || .6) * 1000 + 50);
             idx = (n + slides.length) % slides.length;
             slides[idx].classList.add('active'); slides[idx].removeAttribute('aria-hidden');
             if (count) count.textContent = (idx + 1) + ' / ' + slides.length;

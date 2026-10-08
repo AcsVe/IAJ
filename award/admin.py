@@ -396,9 +396,33 @@ class SlideshowCardAdmin(admin.ModelAdmin):
 
 @admin.register(HeroTextSlide)
 class HeroTextSlideAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'order', 'is_active')
-    list_editable = ('order', 'is_active')
+    list_display = ('__str__', 'effect', 'effect_speed', 'seconds', 'order', 'is_active')
+    list_editable = ('effect', 'effect_speed', 'seconds', 'order', 'is_active')
+    list_filter = ('is_active', 'effect')
     search_fields = ('heading', 'body_text')
+    fieldsets = (
+        (None, {'fields': ('heading', 'body_text')}),
+        ('الحركة والمدة', {'fields': ('effect', 'effect_speed', 'seconds'),
+                           'description': 'اختر حركة ظهور هذا النص وسرعتها، ومدة بقائه قبل الانتقال للنص التالي.'}),
+        ('العرض', {'fields': ('order', 'is_active')}),
+    )
+    actions = ['make_active', 'make_inactive']
+
+    @admin.action(description='إظهار النصوص المحددة')
+    def make_active(self, request, qs):
+        for o in qs: o.is_active = True; o.save(update_fields=['is_active'])
+
+    @admin.action(description='إخفاء النصوص المحددة')
+    def make_inactive(self, request, qs):
+        for o in qs: o.is_active = False; o.save(update_fields=['is_active'])
+
+    def changelist_view(self, request, extra_context=None):
+        card = HeroCard.objects.first()
+        if card is not None and not card.is_enabled:
+            from django.contrib import messages
+            messages.warning(request, mark_safe('بطاقة النصوص <b>مخفية</b> حالياً، لذلك لا تظهر هذه النصوص في الموقع. '
+                                                'فعّلها من <a href="/admin/award/herocard/">البطاقة الشفافة في الهيرو</a> ← «إظهار بطاقة النصوص تحت الفيديو».'))
+        return super().changelist_view(request, extra_context)
 
 
 @admin.register(HeroCard)
@@ -406,7 +430,7 @@ class HeroCardAdmin(admin.ModelAdmin):
     fieldsets = (
         ('تفعيل / إيقاف', {
             'fields': ('is_enabled',),
-            'description': 'فعّل لإظهار بطاقة نص تحت الفيديو/الصورة الجانبية (أو فوق الصورة الرئيسية إن لم يوجد فيديو/صورة).',
+            'description': 'عند التفعيل تظهر بطاقة النصوص تحت الفيديو/الصورة الجانبية (أو فوق الصورة الرئيسية إن لم يوجد فيديو/صورة). عند الإلغاء تختفي كل النصوص.',
         }),
         ('محتوى البطاقة', {
             'fields': ('heading', 'body_text'),
@@ -414,7 +438,7 @@ class HeroCardAdmin(admin.ModelAdmin):
         }),
         ('عدة نصوص تتبدّل', {
             'fields': ('text_effect', 'reading_speed', 'min_seconds', 'show_arrows'),
-            'description': mark_safe('النص أعلاه هو الأول. لإضافة نصوص أخرى تتبدّل تلقائياً: '
+            'description': mark_safe('النص أعلاه هو الأول ويأخذ الحركة الافتراضية. لإضافة نصوص أخرى وتحديد <b>حركة ومدة لكل نص</b>: '
                                      '<a href="/admin/award/herotextslide/"><b>النصوص المتبدّلة تحت الفيديو</b></a>.'),
         }),
         ('تصميم البطاقة', {
