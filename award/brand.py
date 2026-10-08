@@ -32,6 +32,10 @@ def brand_colors():
         'menu_dark': shade(menu, -0.22),
         'menu_deep': shade(menu, -0.45),
         'nav': nav, 'nav_light': shade(nav, 0.14), 'nav_dark': shade(nav, -0.22),
+        # درجات داكنة من لون الهيدر — بدل الكحلي القديم في البطاقات والنوافذ والزجاجيات
+        'deep1_rgb': _rgb(shade(menu, -0.30)),
+        'deep2_rgb': _rgb(shade(menu, -0.50)),
+        'deep3_rgb': _rgb(shade(menu, -0.68)),
         'gold': gold,
         'gold_rgb': _rgb(gold),
     }

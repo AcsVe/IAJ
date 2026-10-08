@@ -29,6 +29,10 @@
   .iaj-preview-btn { background: #fff; color: #7a5a14; border: 2px solid #c5a059; border-radius: 4px; padding: 10px 15px;
       font-weight: 700; cursor: pointer; font-size: 14px; height: auto; }
   .iaj-preview-btn:hover { background: #fbf3df; }
+  /* شريط الأزرار العلوي مثبّت أثناء التمرير حتى لا يضيع */
+  .submit-row.iaj-sticky { position: sticky; top: 0; z-index: 60; margin-top: 0; box-shadow: 0 6px 16px rgba(0,0,0,.12);
+      background: var(--darkened-bg, #f8f8f8); border-bottom: 2px solid #c5a059; }
+  .submit-row.iaj-sticky .iaj-save-note { display: none; }
   .iaj-save-note { flex-basis: 100%; margin: 6px 0 0; font-size: 12.5px; color: var(--body-quiet-color, #666); }
   /* اختصارات الصفحة الرئيسية للوحة */
   .iaj-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 0 0 22px; }
@@ -54,3 +58,12 @@
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
+
+{% block footer %}{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var rows = document.querySelectorAll('#content-main form .submit-row');
+  if (rows.length > 1) rows[0].classList.add('iaj-sticky');   // الشريط العلوي (save_on_top) يبقى ظاهراً
+});
+</script>
+{% endblock %}

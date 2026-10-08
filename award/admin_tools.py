@@ -15,7 +15,8 @@ from . import preview_state
 from .roles import ROLE_LABELS, section_models, GROUP_EDITOR, GROUP_AWARD
 
 # الجداول التي يمكن معاينتها قبل الحفظ: محتوى الموقع + التصميم (لا شيء يرسل بريداً أو إشعارات)
-PREVIEW_MODELS = set(section_models('editor')) | {'ThemeSetting', 'PortalSetting'}
+# + الإعلانات والدورات (تظهر للزوار). الجداول الداخلية (الطلبات، التقييمات…) ليس لها صفحة في الموقع لمعاينتها
+PREVIEW_MODELS = set(section_models('editor')) | {'ThemeSetting', 'PortalSetting', 'AwardCycle', 'Announcement', 'HeroCard', 'SectionBackground'}
 
 
 def can_preview(opts):
@@ -176,6 +177,8 @@ def _target_path(obj):
         return f'/tracks/{pk}/'
     if name == 'TrackDetail':
         return f'/tracks/{obj.track_id}/'
+    if name == 'Announcement':
+        return f'/announcements/{pk}/'
     return {'Photo': '/photos/', 'MediaGallery': '/photos/', 'Video': '/videos/', 'SuccessStory': '/success-stories/',
             'Winner': '/winners/', 'WinnerCategory': '/winners/'}.get(name, '/')
 

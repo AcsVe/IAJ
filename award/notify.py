@@ -87,6 +87,9 @@ def _send(to, subject, html, text, logo=None):
 
 def send_email(to, subject, body, url='', button='', wait=False):
     """رسالة بقالب الجائزة. body نص عادي (الأسطر تُحفظ)."""
+    from .preview_state import active as _preview
+    if _preview():   # «معاينة قبل الحفظ»: لا رسائل ولا إشعارات
+        return None
     to = [t for t in ([to] if isinstance(to, str) else to) if t]
     if not to:
         return
@@ -109,6 +112,9 @@ def send_email(to, subject, body, url='', button='', wait=False):
 
 def notify(user, title, body='', url='', level='info', email=True, button=''):
     """إشعار لمستخدم: جرس داخل الموقع + بريد (إن كان مفعّلاً لديه)"""
+    from .preview_state import active as _preview
+    if _preview():   # «معاينة قبل الحفظ»: لا رسائل ولا إشعارات
+        return None
     from .models import Notification
     if not user:
         return
@@ -121,6 +127,9 @@ def notify(user, title, body='', url='', level='info', email=True, button=''):
 
 def notify_staff(title, body='', url='', email=True):
     """تنبيه الإدارة (كل المديرين) + بريد ADMIN_NOTIFY_EMAILS"""
+    from .preview_state import active as _preview
+    if _preview():   # «معاينة قبل الحفظ»: لا رسائل ولا إشعارات
+        return None
     from django.contrib.auth.models import User
     from .models import Notification
     from django.db.models import Q

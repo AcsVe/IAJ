@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Field(models.Model):
@@ -819,8 +820,13 @@ class HeroTextSlide(models.Model):
         ('fade', 'تلاشي ناعم'), ('slide', 'انزلاق جانبي'), ('up', 'صعود من الأسفل'), ('down', 'نزول من الأعلى'),
         ('zoom', 'تكبير'), ('blur', 'ضبابية ثم وضوح'), ('flip', 'قلب'), ('none', 'بدون حركة'))
     effect = models.CharField(max_length=10, choices=EFFECT_CHOICES, blank=True, default='', verbose_name="حركة ظهور هذا النص")
-    SPEED_CHOICES = ((0.35, 'سريعة'), (0.6, 'متوسطة'), (1.0, 'بطيئة'), (1.6, 'بطيئة جداً'))
-    effect_speed = models.FloatField(choices=SPEED_CHOICES, default=0.6, verbose_name="سرعة الحركة")
+    effect_speed = models.FloatField(default=0.6, validators=[MinValueValidator(0.1), MaxValueValidator(5)],
+                                     verbose_name="مدة حركة الظهور (ثوانٍ)",
+                                     help_text="كم ثانية تستغرق حركة دخول النص. مثال: 0.3 سريعة — 0.6 عادية — 1.5 بطيئة.")
+    roll_speed = models.PositiveSmallIntegerField(default=0, validators=[MaxValueValidator(200)],
+                                                  verbose_name="سرعة مرور النص الطويل (بكسل/ثانية)",
+                                                  help_text="للنص الأطول من الصندوق (يمرّ مثل شارة الأفلام). رقم أصغر = أبطأ. "
+                                                            "مثال: 12 بطيء — 22 عادي — 40 سريع. 0 = سرعة البطاقة العامة.")
     heading_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون العنوان (اختياري)",
                                      help_text="فارغ = لون البطاقة.")
     body_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون النص (اختياري)",
@@ -862,6 +868,14 @@ class HeroCard(models.Model):
     reading_speed = models.PositiveSmallIntegerField(default=14, verbose_name="سرعة القراءة (حرف في الثانية)",
                                                      help_text="مدة كل نص تُحسب من طوله: رقم أصغر = وقت أطول للقراءة. المقترح 12–18.")
     min_seconds = models.PositiveSmallIntegerField(default=4, verbose_name="أقل مدة لكل نص (ثوانٍ)")
+    effect_speed = models.FloatField(default=0.6, validators=[MinValueValidator(0.1), MaxValueValidator(5)],
+                                     verbose_name="مدة حركة الظهور للنص الأول (ثوانٍ)", help_text="مثال: 0.3 سريعة — 0.6 عادية — 1.5 بطيئة.")
+    roll_speed = models.PositiveSmallIntegerField(default=22, validators=[MinValueValidator(4), MaxValueValidator(200)],
+                                                  verbose_name="سرعة مرور النص الطويل (بكسل/ثانية)",
+                                                  help_text="العامة لكل النصوص. رقم أصغر = أبطأ. مثال: 12 بطيء — 22 عادي — 40 سريع.")
+    roll_pause = models.FloatField(default=2.5, validators=[MinValueValidator(0), MaxValueValidator(20)],
+                                   verbose_name="وقفة قبل بدء المرور وبعد انتهائه (ثوانٍ)",
+                                   help_text="ليقرأ الزائر أول النص قبل أن يتحرك، وآخره قبل الانتقال.")
     show_arrows = models.BooleanField(default=True, verbose_name="إظهار سهمي التنقل")
 
     class Meta:

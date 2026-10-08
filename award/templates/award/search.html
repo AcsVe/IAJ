@@ -1,6 +1,6 @@
 {% extends 'award/base.html' %}
 {% block content %}
-<section class="media-page-header" style="background: linear-gradient(160deg, var(--secondary, #122450), var(--primary) 60%, #050c1e); padding: 80px 0 40px; text-align: center;">
+<section class="media-page-header" style="background: linear-gradient(160deg, var(--secondary, #122450), var(--primary) 60%, rgb(var(--deep-3,5,12,30))); padding: 80px 0 40px; text-align: center;">
     <div class="container">
         <h1 style="color: var(--gold); font-weight: 900; font-size: 2.3rem;">البحث في الموقع</h1>
         <form action="{% url 'search' %}" method="get" class="search-page-form mx-auto mt-4" role="search">

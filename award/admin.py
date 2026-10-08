@@ -472,15 +472,16 @@ class SlideshowCardAdmin(admin.ModelAdmin):
 
 @admin.register(HeroTextSlide)
 class HeroTextSlideAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'effect', 'effect_speed', 'seconds', 'order', 'is_active')
-    list_editable = ('effect', 'effect_speed', 'seconds', 'order', 'is_active')
+    list_display = ('__str__', 'effect', 'effect_speed', 'roll_speed', 'seconds', 'order', 'is_active')
+    list_editable = ('effect', 'effect_speed', 'roll_speed', 'seconds', 'order', 'is_active')
     list_filter = ('is_active', 'effect')
     search_fields = ('heading', 'body_text')
     fieldsets = (
         (None, {'fields': ('heading', 'body_text')}),
         ('الألوان (اختياري)', {'fields': ('heading_color', 'body_color')}),
-        ('الحركة والمدة', {'fields': ('effect', 'effect_speed', 'seconds'),
-                           'description': 'اختر حركة ظهور هذا النص وسرعتها، ومدة بقائه قبل الانتقال للنص التالي.'}),
+        ('الحركة والسرعة والمدة (بالأرقام)', {'fields': ('effect', 'effect_speed', 'roll_speed', 'seconds'),
+                           'description': '«مدة حركة الظهور» = سرعة دخول النص. «سرعة مرور النص الطويل» = سرعة صعود النص الذي لا يتسع في الصندوق. '
+                                          '«مدة بقاء النص» = كم يبقى قبل الانتقال للتالي (لا تقل عن وقت مروره كاملاً).'}),
         ('العرض', {'fields': ('order', 'is_active')}),
     )
     actions = ['make_active', 'make_inactive']
@@ -514,7 +515,7 @@ class HeroCardAdmin(admin.ModelAdmin):
             'classes': ('wide',),
         }),
         ('عدة نصوص تتبدّل', {
-            'fields': ('text_effect', 'reading_speed', 'min_seconds', 'show_arrows'),
+            'fields': ('text_effect', 'effect_speed', 'roll_speed', 'roll_pause', 'reading_speed', 'min_seconds', 'show_arrows'),
             'description': mark_safe('النص أعلاه هو الأول ويأخذ الحركة الافتراضية. لإضافة نصوص أخرى وتحديد <b>حركة ومدة لكل نص</b>: '
                                      '<a href="/admin/award/herotextslide/"><b>النصوص المتبدّلة تحت الفيديو</b></a>.'),
         }),
@@ -671,5 +672,6 @@ def _color_formfield(self, db_field, request, **kwargs):
 
 
 admin.ModelAdmin.formfield_for_dbfield = _color_formfield
+admin.ModelAdmin.save_on_top = True   # أزرار المعاينة والحفظ أعلى النموذج أيضاً (ومثبّتة عند التمرير)
 
 from . import admin_portal  # noqa: E402,F401  التسجيل والتحكيم
