@@ -1081,12 +1081,29 @@ section#{{ sid }} .timeline-date {
 .timeline-h-connector { flex-shrink:0;width:30px;height:240px;position:relative;margin-top:-60px;z-index:1; }
 .timeline-h-connector svg { width:30px;height:240px; }
 .timeline-mobile-line { display:none; }
+/* تكبير الجدول الزمني على الشاشات الكبيرة: الدوائر والتواريخ والعناوين أوضح */
+@media (min-width: 1200px) {
+    .timeline-h-item { width: 168px; }
+    .timeline-h-item:nth-child(even) { margin-top: 150px; }
+    .timeline-h-node { width: 132px; height: 132px; border-width: 3px; }
+    .timeline-h-node::after { width: 106px; height: 106px; }
+    .timeline-h-node i { font-size: 2.3rem; }
+    .timeline-h-node img { width: 100px; height: 100px; }
+    .timeline-h-node-dot { width: 13px; height: 13px; }
+    .timeline-h-content { width: 168px; padding: 12px 4px; }
+    .timeline-date { font-size: 1.12rem; font-weight: 800; margin-bottom: 6px; letter-spacing: .3px; }
+    .timeline-title { font-size: 1.3rem; font-weight: 800; line-height: 1.55; }
+    .timeline-h-connector { width: 26px; height: 290px; margin-top: -72px; }
+    .timeline-h-connector svg { width: 26px; height: 290px; }
+}
 @media (max-width: 767px) {
     .timeline-h-track { flex-direction:column;align-items:center;padding:20px;min-width:unset;gap:0; }
     .timeline-h-item { flex-direction:row !important;width:100%;gap:14px;margin-top:0 !important;align-items:center;justify-content:flex-start !important; }
-    .timeline-h-item .timeline-h-node { width:70px;height:70px; }
-    .timeline-h-item .timeline-h-node::after { width:56px;height:56px; }
-    .timeline-h-item .timeline-h-node i { font-size:1.3rem; }
+    .timeline-h-item .timeline-h-node { width:80px;height:80px; }
+    .timeline-h-item .timeline-h-node::after { width:64px;height:64px; }
+    .timeline-h-item .timeline-h-node i { font-size:1.5rem; }
+    .timeline-date { font-size:.95rem; }
+    .timeline-title { font-size:1.08rem; }
     .timeline-h-item .timeline-h-node-dot { display:none; }
     .timeline-h-item .timeline-h-content { margin:0 !important;order:0 !important;text-align:right;flex:1; }
     .timeline-h-connector { display:none; }

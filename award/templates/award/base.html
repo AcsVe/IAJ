@@ -332,12 +332,17 @@
         .section-header h2 { font-weight: 900; color: var(--primary); font-size: 2.2rem; margin-bottom: 15px; }
         .section-header .gold-line { width: 80px; height: 3px; background-color: var(--gold); margin: 0 auto; }
         .section-header-white h2 { color: #fff; }
+        /* عناوين الصفحات الداخلية: شريط مضغوط حتى تظهر البيانات مباشرة تحت الهيدر */
+        .media-page-header { padding: 30px 0 26px !important; }
+        .media-page-header h1 { font-size: 2.1rem !important; margin-bottom: 4px !important; }
+        .media-page-header p { margin-bottom: 0 !important; }
+        .media-page-header + section, .media-page-header + .container { padding-top: 32px !important; }
         @media (max-width: 767px) {
             .section-header { margin-bottom: 35px; }
             .section-header h2 { font-size: 1.65rem; }
             footer { padding: 45px 0 90px; }
-            .media-page-header { padding: 45px 0 35px !important; }
-            .media-page-header h1 { font-size: 1.9rem !important; }
+            .media-page-header { padding: 22px 0 18px !important; }
+            .media-page-header h1 { font-size: 1.6rem !important; }
         }
 
         /* ===================== أسهم التنقل النابضة (أعلى / أسفل) ===================== */
@@ -369,6 +374,12 @@
         .scroll-nav #scrollUp.scroll-arrow:not(.is-hidden), .scroll-nav #scrollDown.scroll-arrow:not(.is-hidden) { transform: none !important; }
         .scroll-nav .scroll-arrow:hover { background-color: var(--primary) !important; }
         @media (max-width: 767px) { .scroll-nav #scrollUp.scroll-arrow, .scroll-nav #scrollDown.scroll-arrow { width: 42px !important; height: 42px !important; } }
+        .scroll-top { width: 40px; height: 40px; margin: 0 auto 2px; border-radius: 50%; border: 2px solid var(--gold); background: var(--primary);
+            color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: .95rem; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25); transition: opacity .3s, visibility .3s, transform .3s, background .2s, color .2s; }
+        .scroll-top:hover { background: var(--gold); color: #fff; }
+        .scroll-top.is-hidden { opacity: 0; visibility: hidden; transform: scale(.6); pointer-events: none; }
+        @media (max-width: 767px) { .scroll-top { width: 36px; height: 36px; } }
         @keyframes arrowPulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.7); opacity: 0; } }
         @keyframes arrowNudgeDown { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
         @keyframes arrowNudgeUp   { 0%, 100% { transform: translateY(2px); }  50% { transform: translateY(-3px); } }
@@ -590,7 +601,7 @@
           </ul>
         </li>
         <li class="nav-item d-none d-lg-flex align-items-center"><button type="button" class="nav-search-btn" data-open-search aria-label="بحث في الموقع" title="بحث"><i class="fas fa-magnifying-glass"></i></button></li>
-        {% if reg_deadline %}
+        {% if reg_deadline and request.path == '/' %}
         <li class="nav-item dropdown" id="countdownDropdown" style="position: relative;">
           <a class="nav-link countdown-toggle" href="#" aria-label="الوقت المتبقي للتسجيل">
             <span class="countdown-pulse" id="countdownBadge">الوقت المتبقي</span>
@@ -613,7 +624,7 @@
       </ul>
       <div class="cyc-hover cyc-title-wrap d-none d-lg-flex">
         <a href="{% url 'home' %}" class="nav-award-title nav-award-title-desktop">جائزة انتصار عباس جردانة</a>
-        {% if cycle_card %}<div class="cycle-card" role="tooltip">
+        {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">
           <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
           <div class="cyc-title">{{ cycle_card.title }}</div>
           <div class="cyc-dates"><i class="far fa-calendar ms-1"></i> التسجيل من {{ cycle_card.opens_at|date:"j/n/Y" }} إلى {{ cycle_card.closes_at|date:"j/n/Y" }}</div>
@@ -630,7 +641,7 @@
       {% if portal_role != 'judge' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':10' == '/accounts/' and reg_open and portal.show_register_btn is not False %}
       <span class="cyc-hover cyc-left">
         <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
-        {% if cycle_card %}<div class="cycle-card" role="tooltip">
+        {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">
           <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
           <div class="cyc-title">{{ cycle_card.title }}</div>
           <div class="cyc-dates"><i class="far fa-calendar ms-1"></i> التسجيل من {{ cycle_card.opens_at|date:"j/n/Y" }} إلى {{ cycle_card.closes_at|date:"j/n/Y" }}</div>
@@ -649,6 +660,7 @@
 </div>
 
 <div class="scroll-nav" aria-label="التنقل بين الأقسام">
+    <button type="button" id="scrollTop" class="scroll-top is-hidden" aria-label="العودة إلى بداية الصفحة" title="العودة إلى بداية الصفحة"><i class="fas fa-angles-up"></i></button>
     <button type="button" id="scrollUp" class="scroll-arrow is-hidden" aria-label="القسم السابق"><i class="fas fa-chevron-up"></i></button>
     <button type="button" id="scrollDown" class="scroll-arrow" aria-label="القسم التالي"><i class="fas fa-chevron-down"></i></button>
 </div>
@@ -777,12 +789,32 @@
             for (var i = 0; i < tops.length; i++) if (Math.abs(tops[i] - top) < 30) return;
             tops.push(top);
         }
+        // بدايات العناصر داخل القسم الطويل (بطاقات، صفوف، أعمدة…) حتى يتوقف السهم عند بداية عنصر كامل وليس في منتصفه
+        function itemTops(el) {
+            var list = [];
+            el.querySelectorAll('.row > [class*="col"], .card, article, figure, .pt-card, .pt-item, .timeline-h-item, li.pt-item, .td-row, h2, h3').forEach(function (c) {
+                if (c.offsetHeight < 50 || c.closest('.modal') || !c.offsetParent) return;
+                list.push(absTop(c) - 12);
+            });
+            return list.sort(function (a, b) { return a - b; });
+        }
         document.querySelectorAll('#pageContentWrapper > section, #pageContentWrapper section[id], #siteFooter').forEach(function (el) {
             if (el.offsetHeight < 40 || el.closest('.modal')) return;
             var top = absTop(el), h = el.offsetHeight;
             add(top);
-            for (var extra = top + vis * 0.9; extra < top + h - vis + 5; extra += vis * 0.9) add(extra);
-            if (h > vis + 30 && el.id !== 'siteFooter') add(top + h - vis);   // إظهار نهاية القسم
+            if (h <= vis + 30 || el.id === 'siteFooter') return;
+            var items = itemTops(el), cur = top, end = top + h - vis;
+            while (cur < end - 5) {
+                var next = null;
+                for (var i = 0; i < items.length; i++) {   // أبعد عنصر يبدأ داخل الشاشة الحالية
+                    if (items[i] > cur + 60 && items[i] <= cur + vis) next = items[i];
+                }
+                if (next === null) next = cur + vis * 0.9;
+                if (next > end) next = end;
+                add(next);
+                cur = next;
+            }
+            add(end);   // إظهار نهاية القسم
         });
         return tops.sort(function (a, b) { return a - b; });
     }
@@ -818,6 +850,8 @@
     }
     if (downBtn) downBtn.addEventListener('click', scrollNext);
     if (upBtn) upBtn.addEventListener('click', scrollPrev);
+    var topBtn = document.getElementById('scrollTop');
+    if (topBtn) topBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
     function closeDesktopDropdowns() {
         if (window.innerWidth < 992 || typeof bootstrap === 'undefined') return;
@@ -837,6 +871,7 @@
             var y = window.pageYOffset;
             if (navbar && isHome) navbar.classList.toggle('scrolled', y > 60);
             if (upBtn) upBtn.classList.toggle('is-hidden', y < 60);
+            var tb = document.getElementById('scrollTop'); if (tb) tb.classList.toggle('is-hidden', y < Math.max(300, window.innerHeight * 0.8));
             if (downBtn) downBtn.classList.toggle('is-hidden', y >= maxScroll() - 2);
             closeDesktopDropdowns();
             var cdd = document.getElementById('countdownDropdown');   // إخفاء بطاقة الوقت عند التمرير
