@@ -37,7 +37,7 @@
             --nav-glass: linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.03) 50%, rgba(0,0,0,.06) 100%),
                          linear-gradient(120deg, {{ brand.nav_light|default:"#1d2a48" }} 0%, var(--nav-dark) 50%, {{ brand.nav_dark|default:"#06101f" }} 100%);
         }
-        body.has-ticker { --ticker-h: 40px; --header-h: 130px; }
+        body.has-ticker { --ticker-h: 40px; --header-h: 118px; }
         html { scroll-behavior: smooth; }
         body { overflow-x: hidden; }
         @supports (overflow: clip) { html, body { overflow-x: clip; } }
@@ -126,7 +126,7 @@
         .navbar-royal .btn-gold { white-space: nowrap; flex-shrink: 0; }
         @media (min-width: 992px) and (max-width: 1399.98px) { .navbar-royal .btn-gold { padding: 10px 20px; } }
         @media (min-width: 992px) and (max-width: 1199.98px) { .nav-award-title-desktop { font-size: 1.15rem; margin: 0 8px; } .navbar-royal .nav-link { margin: 0 4px; font-size: .88rem; } }
-        .nav-award-title-mobile { flex: 1 1 0; min-width: 0; text-align: center; font-size: clamp(.92rem, 4.3vw, 1.15rem); margin: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .nav-award-title-mobile { flex: 1 1 0; min-width: 0; text-align: center; font-size: clamp(.85rem, 4.1vw, 1.12rem); margin: 0 6px; line-height: 1.25; white-space: normal; overflow: visible; text-overflow: clip; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         @media (max-width: 360px) { .nav-award-title-mobile { font-size: .95rem; } }
 
         /* ===== نظام الزجاج الملوّن (Glassmorphism) ===== */
@@ -345,7 +345,10 @@
         .fit-zoom { transform-origin: top center; }
 
         /* الصفحات الداخلية تبدأ تحت التيكر + النافبار */
-        body.not-home #pageContentWrapper { padding-top: var(--header-h); }
+        body.not-home #pageContentWrapper { padding-top: var(--header-h);
+            /* أي فراغ تحت الهيدر يأخذ لون الهيدر بدل الأبيض */
+            background: linear-gradient(var(--primary) 0, var(--primary) calc(var(--header-h) + 2px), transparent calc(var(--header-h) + 2px)); }
+        html { background: var(--primary); } body { min-height: 100vh; }
 
         /* ===================== Footer ===================== */
         footer { background-color: var(--primary); color: #ffffff; padding: 60px 0 30px; border-top: 4px solid var(--gold); }
