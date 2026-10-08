@@ -413,7 +413,7 @@ class AdminToolsTests(TestCase):
         self.client.force_login(self.admin)
         r = self.client.post(f'/admin/preview/award/herotextslide/?id={t.pk}', {
             'heading': 'جديد للمعاينة', 'body_text': 'نص', 'effect': 'zoom', 'effect_speed': '0.6',
-            'seconds': '0', 'order': '0', 'is_active': 'on'})
+            'seconds': '0', 'roll_speed': '0', 'heading_color': '', 'body_color': '', 'order': '0', 'is_active': 'on'})
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'جديد للمعاينة')
         self.assertContains(r, 'وضع المعاينة')
