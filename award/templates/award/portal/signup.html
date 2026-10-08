@@ -2,8 +2,8 @@
 {% block title %}حساب مدرسة جديد{% endblock %}
 {% block width %}pt-wide{% endblock %}
 {% block card %}
-<h1><i class="fas fa-school ms-2" style="color:var(--gold)"></i> حساب مدرسة جديد</h1>
-<p class="pt-sub">أنشئوا حساباً مرة واحدة، ثم قدّموا مشاريعكم وتابعوا حالتها من مكان واحد.</p>
+<h1><i class="fas fa-school ms-2" style="color:var(--gold)"></i> {{ portal.signup_title|default:"حساب مدرسة جديد" }}</h1>
+<p class="pt-sub">{{ portal.signup_intro }}</p>
 {% for e in form.non_field_errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
 <form method="post" novalidate>{% csrf_token %}
   <input type="hidden" name="next" value="{{ next }}">

@@ -24,7 +24,8 @@ def portal_context(request):
     if cyc == 'none':
         from .models import AwardCycle
         c = AwardCycle.current()
-        cyc = {'name': c.name, 'opens_at': c.opens_at, 'closes_at': c.closes_at} if c else None
+        cyc = {'name': c.name, 'opens_at': c.opens_at, 'closes_at': c.closes_at, 'title': c.card_title,
+               'show_card': c.show_card, 'note': c.card_note} if c else None
         cache.set('iaj_current_cycle', cyc, 60)
     now = timezone.now()
     if cyc and cyc['opens_at'] <= now <= cyc['closes_at']:
@@ -39,6 +40,15 @@ def portal_context(request):
         st = b.get('settings')
         data['reg_deadline'] = st.registration_deadline if st else None
         data['reg_open'] = True
+    if cyc and cyc.get('show_card'):
+        data['cycle_card'] = cyc
+    from .models import PortalSetting, SocialLink
+    data['portal'] = PortalSetting.get()
+    social = cache.get('iaj_social')
+    if social is None:
+        social = [s for s in SocialLink.objects.filter(is_active=True) if (s.url or '').strip()]
+        cache.set('iaj_social', social, 300)
+    data['social_links'] = social
     try:
         from .brand import brand_colors
         data['brand'] = brand_colors()

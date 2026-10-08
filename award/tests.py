@@ -34,6 +34,8 @@ class RegistrationFlowTest(TestCase):
         self._close = django.db.connection.close
         django.db.connection.close = lambda: None
 
+        from django.core.cache import cache
+        cache.clear()
         self.field = Field.objects.create(name_ar='العلوم', name_en='Science')
         self.track = Track.objects.create(field=self.field, name_ar='الطاقة', name_en='Energy')
         AwardCycle.objects.all().delete()
@@ -187,7 +189,7 @@ class RegistrationFlowTest(TestCase):
         self.client.login(username='admin', password='Adm1n-pass!')
         for path in ('/admin/', '/admin/award/submission/', '/admin/award/awardcycle/', '/admin/award/profile/',
                      '/admin/award/profile/add/', '/admin/award/assignment/', '/admin/award/criterion/',
-                     '/admin/award/notification/', '/admin/award/emaillog/', '/admin/award/governorate/', '/admin/award/governorate/1/change/', '/admin/award/directorate/', '/admin/award/area/', '/portal/profile/', f'/admin/award/awardcycle/{self.cycle.pk}/change/'):
+                     '/admin/award/notification/', '/admin/award/emaillog/', '/admin/award/governorate/', '/admin/award/sociallink/', f'/admin/award/portalsetting/{__import__("award.models").models.PortalSetting.get().pk}/change/', '/admin/award/governorate/1/change/', '/admin/award/directorate/', '/admin/award/area/', '/portal/profile/', f'/admin/award/awardcycle/{self.cycle.pk}/change/'):
             self.assertEqual(self.client.get(path).status_code, 200, path)
 
         # إضافة محكّم بدعوة

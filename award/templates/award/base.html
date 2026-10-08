@@ -119,7 +119,8 @@
         }
         .nav-award-title:hover { color: #fff !important; text-shadow: 0 2px 10px rgba(0,0,0,.55), 0 0 26px rgba(197,160,89,.75); }
         /* بجانب زر «سجل الآن» مباشرة (يسار القائمة) */
-        .nav-award-title-desktop { flex: 1 1 auto; justify-content: center; align-items: center; font-size: 1.6rem; margin: 0 14px; min-width: 0; }
+        .cyc-title-wrap { flex: 1 1 auto; justify-content: center; align-items: center; min-width: 0; }
+        .nav-award-title-desktop { display: block; max-width: 100%; text-align: center; font-size: 1.6rem; margin: 0 14px; min-width: 0; }
         @media (min-width: 1400px) { .nav-award-title-desktop { font-size: 2rem; } }
         @media (min-width: 1200px) and (max-width: 1399.98px) { .nav-award-title-desktop { font-size: 1.45rem; } .navbar-royal .nav-link { margin: 0 8px; } }
         .navbar-royal .btn-gold { white-space: nowrap; flex-shrink: 0; }
@@ -229,6 +230,41 @@
         .td-row:nth-child(even) .td-val { background: rgba(10,22,50,.02); }
         @media (max-width: 640px) { .td-row { grid-template-columns: 1fr; } .td-key { padding: 12px 14px 8px; } .td-val { padding: 10px 16px 14px; } }
         /* زر «سجل الآن» بنفس تأثيرات زر «باقي … يوماً»: زجاج متدرّج + نبض + نقطة نابضة + حواف مستديرة */
+        /* بطاقة الدورة: تظهر عند المرور على اسم الجائزة أو زر التسجيل — بنفس تصميم بطاقة «الوقت المتبقي» */
+        .cyc-hover { position: relative; }
+        .cycle-card { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 12px; z-index: 9999;
+            width: 320px; padding: 18px 18px 16px; text-align: center; border-radius: 18px; color: #fff; white-space: normal;
+            background: linear-gradient(160deg, rgba(18,36,80,.95) 0%, rgba(10,22,50,.93) 55%, rgba(70,55,20,.92) 100%);
+            border: 1px solid rgba(197,160,89,.5);
+            box-shadow: 0 24px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.14);
+            backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+            animation: ddIn .22s ease-out; }
+        .cycle-card::before { content: ''; position: absolute; top: -7px; left: 50%; margin-left: -7px; width: 14px; height: 14px; transform: rotate(45deg);
+            background: rgba(18,36,80,.95); border-left: 1px solid rgba(197,160,89,.5); border-top: 1px solid rgba(197,160,89,.5); }
+        .cycle-card::after { content: ''; position: absolute; top: -14px; left: 0; right: 0; height: 14px; }   /* جسر حتى لا تختفي عند تحريك الماوس */
+        .cyc-hover:hover .cycle-card, .cyc-hover:focus-within .cycle-card { display: block; }
+        .cyc-left .cycle-card { left: 0; transform: none; }
+        .cyc-left .cycle-card::before { left: 40px; }
+        .cycle-card .cyc-title { font-size: 1.25rem; font-weight: 900; color: #fff; line-height: 1.6; text-shadow: 0 2px 10px rgba(0,0,0,.4); }
+        .cycle-card .cyc-dates { margin-top: 8px; color: #e9dcc0; font-size: .9rem; font-weight: 700; }
+        .cycle-card .cyc-dates i { color: var(--gold); }
+        .cycle-card .cyc-note { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: rgba(197,160,89,.16); color: #fff; font-size: .9rem; }
+        .cycle-card .cd-cta { margin-top: 12px; }
+        @media (max-width: 991.98px) { .cycle-card { display: none !important; } }
+        /* أيقونة الدخول: دائرة ذهبية وبداخلها شخص أبيض */
+        .navbar-royal .nav-account .acc-ico { width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: #fff; display: inline-flex;
+            align-items: center; justify-content: center; font-size: .82rem; box-shadow: 0 2px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.4); flex-shrink: 0; }
+        .navbar-royal .nav-account .acc-ico i { color: #fff !important; font-size: .8rem; }
+        .navbar-royal .nav-account:hover .acc-ico { background: #fff; }
+        .navbar-royal .nav-account:hover .acc-ico i { color: var(--gold) !important; }
+        /* شريط التواصل الاجتماعي */
+        .social-bar { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; background: #fff; border-radius: 10px;
+            border-right: 3px solid var(--gold); border-left: 3px solid var(--gold); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+        .social-bar a { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+            color: var(--soc-c, var(--primary)); font-size: 1.15rem; text-decoration: none; transition: background .2s, color .2s, transform .2s; }
+        .social-bar a:hover { background: var(--gold); color: #fff; transform: translateY(-2px); }
+        .social-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .social-wrap .social-title { color: var(--gold); font-weight: 800; font-size: .95rem; }
         /* زر «دخول / حسابي»: زجاجي بإطار ذهبي ونبض خفيف حتى ينتبه له الزائر */
         .navbar-royal .nav-account { position:relative; display:inline-flex; align-items:center; gap:7px; flex-shrink:0; white-space:nowrap;
             margin:0 8px; padding:8px 18px; border-radius:999px; font-weight:800; font-size:.95rem; text-decoration:none; color:#fff;
@@ -249,7 +285,7 @@
         /* الشاشات المتوسطة: لا شيء يخرج عن الهيدر — العنوان يصغر ثم يختفي (الشعار يكفي) */
         @media (min-width: 992px) { .nav-award-title-desktop { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } }
         @media (min-width: 1200px) and (max-width: 1399.98px) { .nav-award-title-desktop { font-size: 1.2rem !important; margin: 0 8px !important; } .navbar-royal .nav-link { margin: 0 5px !important; } .navbar-royal .nav-register { padding: 8px 16px 8px 15px !important; } }
-        @media (min-width: 992px) and (max-width: 1199.98px) { .nav-award-title-desktop { display: none !important; } .navbar-royal .navbar-nav { margin-left: auto; } .navbar-royal .nav-register { padding: 8px 14px !important; font-size: .88rem; } }
+        @media (min-width: 992px) and (max-width: 1199.98px) { .cyc-title-wrap { display: none !important; } .navbar-royal .navbar-nav { margin-left: auto; } .navbar-royal .nav-register { padding: 8px 14px !important; font-size: .88rem; } }
         .navbar-royal .nav-bell { position:relative; color:#fff; font-size:1.15rem; flex-shrink:0; margin:0 6px; text-decoration:none; }
         .navbar-royal .nav-bell:hover { color: var(--gold); }
         .navbar-royal .nav-bell-n { position:absolute; top:-8px; left:-10px; background:#d93025; color:#fff; border-radius:12px; font-size:.7rem; font-weight:800; padding:1px 6px; line-height:1.4; }
@@ -575,16 +611,35 @@
         </li>
         {% endif %}
       </ul>
-      <a href="{% url 'home' %}" class="nav-award-title nav-award-title-desktop d-none d-lg-flex">جائزة انتصار عباس جردانة</a>
+      <div class="cyc-hover cyc-title-wrap d-none d-lg-flex">
+        <a href="{% url 'home' %}" class="nav-award-title nav-award-title-desktop">جائزة انتصار عباس جردانة</a>
+        {% if cycle_card %}<div class="cycle-card" role="tooltip">
+          <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
+          <div class="cyc-title">{{ cycle_card.title }}</div>
+          <div class="cyc-dates"><i class="far fa-calendar ms-1"></i> التسجيل من {{ cycle_card.opens_at|date:"j/n/Y" }} إلى {{ cycle_card.closes_at|date:"j/n/Y" }}</div>
+          {% if cycle_card.note %}<div class="cyc-note">{{ cycle_card.note|linebreaksbr }}</div>{% endif %}
+          {% if reg_open %}<a href="{% url 'submit_project' %}" class="cd-cta">قدّم مشروعك الآن <i class="fas fa-arrow-left me-1"></i></a>{% endif %}
+        </div>{% endif %}
+      </div>
       {% if user.is_authenticated %}
       <a href="{% url 'notifications' %}" class="nav-bell" title="الإشعارات" aria-label="الإشعارات"><i class="fas fa-bell"></i>{% if unread_notes %}<span class="nav-bell-n">{{ unread_notes }}</span>{% endif %}</a>
-      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' %}/admin/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account"><i class="fas fa-circle-user"></i> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' %}لوحة التحكم{% else %}حسابي{% endif %}</a>
-      {% else %}
-      <a href="{% url 'login' %}" class="nav-account"><i class="fas fa-right-to-bracket"></i> دخول</a>
+      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' %}/admin/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' %}لوحة التحكم{% else %}{{ portal.account_btn_text|default:"حسابي" }}{% endif %}</a>
+      {% elif not portal or portal.show_login_btn %}
+      <a href="{% url 'login' %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {{ portal.login_btn_text|default:"دخول" }}</a>
       {% endif %}
-      {% if portal_role != 'judge' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':10' == '/accounts/' and reg_open %}
-      <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
+      {% if portal_role != 'judge' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':10' == '/accounts/' and reg_open and portal.show_register_btn is not False %}
+      <span class="cyc-hover cyc-left">
+        <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
+        {% if cycle_card %}<div class="cycle-card" role="tooltip">
+          <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
+          <div class="cyc-title">{{ cycle_card.title }}</div>
+          <div class="cyc-dates"><i class="far fa-calendar ms-1"></i> التسجيل من {{ cycle_card.opens_at|date:"j/n/Y" }} إلى {{ cycle_card.closes_at|date:"j/n/Y" }}</div>
+          {% if cycle_card.note %}<div class="cyc-note">{{ cycle_card.note|linebreaksbr }}</div>{% endif %}
+          {% if reg_open %}<a href="{% url 'submit_project' %}" class="cd-cta">قدّم مشروعك الآن <i class="fas fa-arrow-left me-1"></i></a>{% endif %}
+        </div>{% endif %}
+      </span>
       {% endif %}
+      {% if portal.social_in_menu and social_links %}<div class="d-lg-none mt-3">{% include 'award/_social.html' %}</div>{% endif %}
     </div>
   </div>
 </nav>
@@ -610,6 +665,7 @@
             <div class="col-md-4 mb-4"><h5 class="footer-title">تواصل معنا</h5><div class="footer-links"><p><i class="fas fa-envelope ms-2" style="color: var(--gold);"></i> {{ footer.email }}</p><p><i class="fas fa-phone ms-2" style="color: var(--gold);"></i> <span dir="ltr">{{ footer.phone }}</span></p><p><i class="fas fa-map-marker-alt ms-2" style="color: var(--gold);"></i> {{ footer.address }}</p></div></div>
         </div>
         <hr style="border-color: rgba(197, 160, 89, 0.3); margin: 30px 0;">
+        {% if portal.social_in_footer and social_links %}<div class="text-center mb-4">{% include 'award/_social.html' %}</div>{% endif %}
         <div class="text-center" style="color: #888; font-size: 0.85rem;"><p class="mb-0">{{ footer.copyright_text }}</p></div>
     </div>
 </footer>

@@ -1,0 +1,6 @@
+<div class="social-wrap">
+  {% if portal.social_title %}<div class="social-title">{{ portal.social_title }}</div>{% endif %}
+  <nav class="social-bar" aria-label="التواصل الاجتماعي">
+    {% for s in social_links %}<a href="{{ s.href }}" target="_blank" rel="noopener" title="{{ s.get_platform_display }}" aria-label="{{ s.get_platform_display }}"{% if s.color %} style="--soc-c: {{ s.color }}"{% endif %}><i class="{{ s.icon_class }}"></i></a>{% endfor %}
+  </nav>
+</div>

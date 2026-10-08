@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlsafe_base64_encode
 
-from .models import (AwardCycle, Area, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
+from .models import (AwardCycle, Area, PortalSetting, SocialLink, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
                      StatusLog, Submission, SuccessPageContent, STATUS_CHOICES, ROLE_CHOICES)
 from .notify import notify, send_email
 from . import workflow
@@ -61,7 +61,9 @@ class AwardCycleAdmin(admin.ModelAdmin):
     inlines = [CriterionInline]
     actions = ['make_current', 'publish_results_action']
     fieldsets = (
-        (None, {'fields': (('name', 'year'), 'is_current', ('opens_at', 'closes_at'))}),
+        (None, {'fields': (('name', 'year', 'hijri_year'), 'is_current', ('opens_at', 'closes_at'))}),
+        ('بطاقة الدورة في الهيدر', {'fields': ('show_card', 'card_note'),
+                                    'description': 'تظهر عند المرور بالماوس على اسم الجائزة أو زر «سجل الآن»: الاسم + السنة الهجرية/الميلادية + مواعيد التسجيل.'}),
         ('قواعد التسجيل', {'fields': ('tracks', 'max_per_school', 'revision_days')}),
         ('التحكيم والنتائج', {'fields': ('judges_per_submission', 'blind_judging', 'results_published')}),
     )
@@ -653,3 +655,64 @@ class AreaAdmin(admin.ModelAdmin):
     list_filter = ('governorate',)
     show_facets = FACETS
     search_fields = ('name', 'governorate__name')
+
+
+# =====================================================
+#   التواصل الاجتماعي + إعدادات الحسابات والهيدر
+# =====================================================
+@admin.register(SocialLink)
+class SocialLinkAdmin(admin.ModelAdmin):
+    list_display = ('icon_preview', 'platform', 'url', 'is_active', 'order')
+    list_display_links = ('icon_preview', 'platform')
+    list_editable = ('url', 'is_active', 'order')
+    list_filter = ('is_active', 'platform')
+    show_facets = FACETS
+    search_fields = ('url', 'platform')
+    actions = ['show_links', 'hide_links']
+
+    class Media:
+        css = {'all': ('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',)}
+
+    @admin.display(description='الأيقونة')
+    def icon_preview(self, obj):
+        return format_html('<i class="{}" style="font-size:20px;color:{}"></i>', obj.icon_class, obj.color or '#0a1632')
+
+    @admin.action(description='إظهار الروابط المحددة')
+    def show_links(self, request, queryset):
+        for o in queryset:
+            o.is_active = True
+            o.save()
+        self.message_user(request, f'تم إظهار {queryset.count()} رابط. (الرابط الفارغ لا يظهر في الموقع)')
+
+    @admin.action(description='إخفاء الروابط المحددة')
+    def hide_links(self, request, queryset):
+        for o in queryset:
+            o.is_active = False
+            o.save()
+        self.message_user(request, f'تم إخفاء {queryset.count()} رابط.')
+
+    def delete_queryset(self, request, queryset):
+        from django.core.cache import cache
+        super().delete_queryset(request, queryset)
+        cache.delete('iaj_social')
+
+
+@admin.register(PortalSetting)
+class PortalSettingAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('أزرار الهيدر', {'fields': (('show_login_btn', 'login_btn_text'), 'account_btn_text', 'show_register_btn')}),
+        ('شريط التواصل الاجتماعي', {'fields': ('social_title', 'social_in_footer', 'social_in_menu'),
+                                     'description': 'الروابط نفسها من «روابط التواصل الاجتماعي».'}),
+        ('نصوص صفحات الحساب', {'fields': ('login_intro', 'signup_title', 'signup_intro', 'submit_intro', 'show_spam_hint')}),
+    )
+
+    def has_add_permission(self, request):
+        return not PortalSetting.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        from django.shortcuts import redirect
+        obj = PortalSetting.get()
+        return redirect(f'/admin/award/portalsetting/{obj.pk}/change/')

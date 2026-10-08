@@ -3,6 +3,7 @@
 <div class="pt-card">
   <h1>{% if creating %}تقديم مشروع جديد{% else %}{% if sub.status == 'revision' %}تعديل الطلب{% else %}إكمال الطلب{% endif %} {{ sub.ref }}{% endif %}</h1>
   <p class="pt-sub">{% if cycle %}{{ cycle.name }} — {{ cycle.year }}. {% endif %}يمكنكم <b>الحفظ كمسودة</b> والعودة لاحقاً، ولا يصل الطلب لفريق الجائزة إلا بعد <b>«إرسال الطلب»</b>.</p>
+  {% if portal.submit_intro %}<div class="pt-note">{{ portal.submit_intro|linebreaksbr }}</div>{% endif %}
   {% if sub.status == 'revision' and sub.school_note %}<div class="pt-note warn"><b>المطلوب تعديله:</b>
 {{ sub.school_note }}{% if sub.revision_deadline %}
 

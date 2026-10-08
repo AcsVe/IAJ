@@ -28,7 +28,8 @@ def _verify_required():
 
 
 def _spam_hint():
-    if not settings.EMAIL_ENABLED:
+    from .models import PortalSetting
+    if not settings.EMAIL_ENABLED or not PortalSetting.get().show_spam_hint:
         return ''
     from email.utils import parseaddr
     return (f' إذا لم تجدوا رسائلنا في البريد الوارد فتحقّقوا من مجلد Spam (البريد غير المرغوب) '

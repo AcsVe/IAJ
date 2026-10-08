@@ -842,6 +842,11 @@ class AwardCycle(models.Model):
                                                      help_text="عند طلب تعديل من المدرسة يُحدَّد آخر موعد تلقائياً.")
     judges_per_submission = models.PositiveSmallIntegerField(default=2, verbose_name="عدد المحكّمين لكل طلب",
                                                              help_text="يُستخدم عند «توزيع تلقائي على المحكّمين».")
+    hijri_year = models.CharField(max_length=10, blank=True, default='', verbose_name="السنة الهجرية",
+                                  help_text="مثال: 1448 — تظهر في بطاقة الدورة: «الدورة الرابعة عشرة (1448هـ/2026م)».")
+    show_card = models.BooleanField(default=True, verbose_name="إظهار بطاقة الدورة عند المرور على اسم الجائزة وزر التسجيل؟")
+    card_note = models.TextField(blank=True, default='', verbose_name="سطر إضافي في بطاقة الدورة (اختياري)",
+                                 help_text="مثال: «تم تمديد التسجيل حتى نهاية الشهر».")
     blind_judging = models.BooleanField(default=True, verbose_name="تحكيم بدون أسماء؟",
                                         help_text="المحكّم لا يرى اسم المدرسة ولا أسماء الطلبة والمشرف.")
     results_published = models.BooleanField(default=False, verbose_name="النتائج منشورة؟",
@@ -878,6 +883,11 @@ class AwardCycle(models.Model):
         from django.utils import timezone
         now = timezone.now()
         return bool(self.opens_at and self.closes_at and self.opens_at <= now <= self.closes_at)
+
+    @property
+    def card_title(self):
+        years = f"{self.hijri_year}هـ/{self.year}م" if self.hijri_year else f"{self.year}م"
+        return f"{self.name} ({years})"
 
     @property
     def phase(self):
@@ -1105,3 +1115,101 @@ class EmailLog(models.Model):
 
     def __str__(self):
         return f"{self.subject} → {self.to}"
+
+
+SOCIAL_PLATFORMS = (
+    ('facebook', 'Facebook'), ('x', 'X (Twitter)'), ('instagram', 'Instagram'), ('youtube', 'YouTube'),
+    ('linkedin', 'LinkedIn'), ('snapchat', 'Snapchat'), ('tiktok', 'TikTok'), ('whatsapp', 'WhatsApp'),
+    ('telegram', 'Telegram'), ('threads', 'Threads'), ('website', 'موقع إلكتروني'), ('email', 'بريد إلكتروني'),
+    ('other', 'أخرى'),
+)
+SOCIAL_ICONS = {
+    'facebook': 'fab fa-facebook-f', 'x': 'fab fa-x-twitter', 'instagram': 'fab fa-instagram',
+    'youtube': 'fab fa-youtube', 'linkedin': 'fab fa-linkedin-in', 'snapchat': 'fab fa-snapchat',
+    'tiktok': 'fab fa-tiktok', 'whatsapp': 'fab fa-whatsapp', 'telegram': 'fab fa-telegram',
+    'threads': 'fab fa-threads', 'website': 'fas fa-globe', 'email': 'fas fa-envelope', 'other': 'fas fa-link',
+}
+
+
+class SocialLink(models.Model):
+    platform = models.CharField(max_length=20, choices=SOCIAL_PLATFORMS, verbose_name="المنصة")
+    url = models.CharField(max_length=500, blank=True, default='', verbose_name="الرابط",
+                           help_text="مثال: https://www.instagram.com/iajaward — للبريد اكتب العنوان فقط، وللواتساب الرقم الدولي (9627xxxxxxxx).")
+    icon = models.CharField(max_length=60, blank=True, default='', verbose_name="أيقونة مخصصة (اختياري)",
+                            help_text="اتركها فارغة لاستخدام أيقونة المنصة. مثال: fab fa-facebook-f")
+    color = models.CharField(max_length=7, blank=True, default='', verbose_name="لون الأيقونة (اختياري)",
+                             help_text="فارغ = لون الموقع الأساسي.")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+    is_active = models.BooleanField(default=True, verbose_name="ظاهر؟")
+
+    class Meta:
+        verbose_name = "رابط تواصل اجتماعي"
+        verbose_name_plural = "روابط التواصل الاجتماعي"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.get_platform_display()
+
+    def save(self, *a, **kw):
+        super().save(*a, **kw)
+        from django.core.cache import cache
+        cache.delete('iaj_social')
+
+    def delete(self, *a, **kw):
+        from django.core.cache import cache
+        cache.delete('iaj_social')
+        return super().delete(*a, **kw)
+
+    @property
+    def icon_class(self):
+        return self.icon or SOCIAL_ICONS.get(self.platform, 'fas fa-link')
+
+    @property
+    def href(self):
+        u = (self.url or '').strip()
+        if self.platform == 'email' and u and not u.startswith('mailto:'):
+            return 'mailto:' + u
+        if self.platform == 'whatsapp' and u and not u.startswith('http'):
+            return 'https://wa.me/' + ''.join(c for c in u if c.isdigit())
+        if u and not u.startswith(('http://', 'https://', 'mailto:', 'tel:')):
+            return 'https://' + u
+        return u
+
+
+class PortalSetting(models.Model):
+    """إعدادات أزرار الدخول وبطاقة الدورة وشريط التواصل الاجتماعي ونصوص صفحات الحساب"""
+    show_login_btn = models.BooleanField(default=True, verbose_name="إظهار زر «دخول» في الهيدر")
+    login_btn_text = models.CharField(max_length=40, default='دخول', verbose_name="نص زر الدخول")
+    account_btn_text = models.CharField(max_length=40, default='حسابي', verbose_name="نص الزر بعد الدخول")
+    show_register_btn = models.BooleanField(default=True, verbose_name="إظهار زر «سجل الآن» في الهيدر")
+    social_in_footer = models.BooleanField(default=True, verbose_name="شريط التواصل في الفوتر")
+    social_in_menu = models.BooleanField(default=True, verbose_name="شريط التواصل في قائمة الموبايل")
+    social_title = models.CharField(max_length=100, blank=True, default='تابعونا', verbose_name="عنوان شريط التواصل (اختياري)")
+    login_intro = models.CharField(max_length=300, default='لحسابات المدارس والمحكّمين.', verbose_name="نص صفحة الدخول")
+    signup_title = models.CharField(max_length=100, default='حساب مدرسة جديد', verbose_name="عنوان صفحة التسجيل")
+    signup_intro = models.CharField(max_length=500, default='أنشئوا حساباً مرة واحدة، ثم قدّموا مشاريعكم وتابعوا حالتها من مكان واحد.',
+                                    verbose_name="نص صفحة التسجيل")
+    submit_intro = models.TextField(blank=True, default='', verbose_name="تعليمات أعلى نموذج تقديم المشروع (اختياري)",
+                                    help_text="مثال: شروط الملف، عدد الصفحات، آخر موعد…")
+    show_spam_hint = models.BooleanField(default=True, verbose_name="تنبيه المدارس لتفقّد مجلد Spam")
+
+    class Meta:
+        verbose_name = "إعدادات الحسابات والهيدر والتواصل"
+        verbose_name_plural = "إعدادات الحسابات والهيدر والتواصل"
+
+    def __str__(self):
+        return "إعدادات الحسابات والهيدر والتواصل"
+
+    @classmethod
+    def get(cls):
+        from django.core.cache import cache
+        obj = cache.get('iaj_portal_setting')
+        if obj is None:
+            obj = cls.objects.first() or cls.objects.create()
+            cache.set('iaj_portal_setting', obj, 300)
+        return obj
+
+    def save(self, *a, **kw):
+        super().save(*a, **kw)
+        from django.core.cache import cache
+        cache.delete('iaj_portal_setting')
