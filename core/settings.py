@@ -191,6 +191,8 @@ EMAIL_HOST = os.environ.get('EMAIL_HOST', '').strip()
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587') or 587)
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+if 'gmail' in EMAIL_HOST.lower() or 'google' in EMAIL_HOST.lower():
+    EMAIL_HOST_PASSWORD = ''.join(EMAIL_HOST_PASSWORD.split())   # كلمة مرور التطبيق من Google تُنسخ بمسافات
 EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True' if EMAIL_PORT == 465 else 'False') == 'True'
 EMAIL_USE_TLS = (not EMAIL_USE_SSL) and os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_TIMEOUT = 20
