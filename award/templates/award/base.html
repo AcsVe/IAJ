@@ -28,11 +28,14 @@
             --logo-s: {{ settings.logo_size_scrolled|default:44 }}px; /* بعد النزول */
             --logo-m: {{ settings.logo_size_mobile|default:38 }}px;   /* على الموبايل */
             font-size: {{ theme.font_size|default:"16px" }};
-            --menu: {{ brand.menu|default:"#0a1632" }};
+            --menu: var(--primary);
             --menu-rgb: {{ brand.menu_rgb|default:"10,22,50" }};
-            --menu-light: {{ brand.menu_light|default:"#3a4560" }};
             --menu-dark: {{ brand.menu_dark|default:"#06101f" }};
-            --menu-glass: linear-gradient(125deg, rgba({{ brand.menu_rgb|default:"10,22,50" }},.86) 0%, {{ brand.menu|default:"#0a1632" }}EE 45%, {{ brand.menu_dark|default:"#06101f" }}F0 80%, rgba({{ brand.gold_rgb|default:"197,160,89" }},.55) 100%);
+            /* زجاج متدرّج بنفس اللون: لمعة بيضاء خفيفة + درجة أفتح وأغمق قليلاً من نفس اللون */
+            --menu-glass: linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.04) 48%, rgba(0,0,0,.06) 100%),
+                          linear-gradient(120deg, {{ brand.menu_light|default:"#1d2a48" }} 0%, var(--primary) 50%, {{ brand.menu_dark|default:"#06101f" }} 100%);
+            --nav-glass: linear-gradient(180deg, rgba(255,255,255,.14) 0%, rgba(255,255,255,.03) 50%, rgba(0,0,0,.06) 100%),
+                         linear-gradient(120deg, {{ brand.nav_light|default:"#1d2a48" }} 0%, var(--nav-dark) 50%, {{ brand.nav_dark|default:"#06101f" }} 100%);
         }
         body.has-ticker { --ticker-h: 40px; --header-h: 130px; }
         html { scroll-behavior: smooth; }
@@ -59,7 +62,7 @@
         /* قوائم «الجائزة» و«المركز الإعلامي»: بطاقة زجاجية */
         .nav-main-dropdown .dropdown-menu {
             min-width: 250px; padding: 10px; margin-top: 10px !important; border-radius: 16px;
-            background: linear-gradient(160deg, rgba(var(--menu-rgb),.92) 0%, var(--menu-dark) 70%, rgba(60,48,20,.9) 100%);
+            background: linear-gradient(160deg, rgba(var(--menu-rgb),.94) 0%, rgba(var(--menu-rgb),.90) 45%, var(--menu-dark) 100%);
             border: 1px solid rgba(197,160,89,.45);
             box-shadow: 0 22px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
             backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -91,14 +94,14 @@
         /* الموبايل: قائمة نحيفة بلون داكن متناسق مع شريط الأخبار */
         @media (max-width: 991.98px) {
             .navbar-royal, .navbar-royal.scrolled, body.not-home .navbar-royal, .navbar-royal.menu-open {
-                background-color: var(--nav-dark) !important; padding: 6px 0 !important;
+                background-color: var(--nav-dark) !important; background-image: var(--nav-glass) !important; padding: 6px 0 !important;
                 box-shadow: 0 2px 10px rgba(0,0,0,.35);
             }
-            body.is-home .navbar-royal:not(.scrolled):not(.menu-open) { background-color: rgba(0,0,0,0.25) !important; box-shadow: none; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+            body.is-home .navbar-royal:not(.scrolled):not(.menu-open) { background-color: rgba(0,0,0,0.25) !important; background-image: none !important; box-shadow: none; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
             .navbar-royal .navbar-brand img { width: var(--logo-m, 38px) !important; height: var(--logo-m, 38px) !important; }
             .navbar-royal .navbar-toggler { padding: 4px 8px; }
             .navbar-royal .navbar-toggler-icon { width: 1.3em; height: 1.3em; }
-            .navbar-royal .navbar-collapse { background-color: var(--nav-dark); background-image: var(--menu-glass); margin: 6px 0 0; padding: 8px 16px 18px; border-top: 2px solid var(--gold); max-height: calc(100svh - var(--header-h)); overflow-y: auto; }
+            .navbar-royal .navbar-collapse { background-color: var(--nav-dark); background-image: var(--nav-glass); margin: 6px 0 0; padding: 8px 16px 18px; border-top: 2px solid var(--gold); max-height: calc(100svh - var(--header-h)); overflow-y: auto; }
             .navbar-royal .nav-link { margin: 0; padding: 12px 4px !important; border-bottom: 1px solid rgba(255,255,255,0.08); }
             .navbar-royal .nav-link::after { display: none; }
             .nav-main-dropdown .dropdown-menu { border: none; border-right: 2px solid var(--gold); background: rgba(255,255,255,0.04); }
@@ -226,12 +229,32 @@
         .td-row:nth-child(even) .td-val { background: rgba(10,22,50,.02); }
         @media (max-width: 640px) { .td-row { grid-template-columns: 1fr; } .td-key { padding: 12px 14px 8px; } .td-val { padding: 10px 16px 14px; } }
         /* زر «سجل الآن» بنفس تأثيرات زر «باقي … يوماً»: زجاج متدرّج + نبض + نقطة نابضة + حواف مستديرة */
-        .navbar-royal .nav-account { color:#fff; font-weight:700; text-decoration:none; white-space:nowrap; flex-shrink:0; margin:0 10px; font-size:.95rem; display:inline-flex; align-items:center; gap:6px; }
-        .navbar-royal .nav-account:hover { color: var(--gold); }
+        /* زر «دخول / حسابي»: زجاجي بإطار ذهبي ونبض خفيف حتى ينتبه له الزائر */
+        .navbar-royal .nav-account { position:relative; display:inline-flex; align-items:center; gap:7px; flex-shrink:0; white-space:nowrap;
+            margin:0 8px; padding:8px 18px; border-radius:999px; font-weight:800; font-size:.95rem; text-decoration:none; color:#fff;
+            background: linear-gradient(180deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.08) 100%);
+            border:1.5px solid var(--gold); box-shadow: 0 0 0 0 rgba(197,160,89,.55), inset 0 1px 0 rgba(255,255,255,.35);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            animation: accGlow 2.6s ease-out infinite; transition: background .25s, color .25s, transform .2s; }
+        .navbar-royal .nav-account i { color: var(--gold); font-size: 1.05rem; transition: color .25s; }
+        .navbar-royal .nav-account:hover { background: var(--gold); color: var(--primary); transform: translateY(-1px); }
+        .navbar-royal .nav-account:hover i { color: var(--primary); }
+        @keyframes accGlow { 0% { box-shadow: 0 0 0 0 rgba(197,160,89,.55), inset 0 1px 0 rgba(255,255,255,.35); }
+                             70% { box-shadow: 0 0 0 9px rgba(197,160,89,0), inset 0 1px 0 rgba(255,255,255,.35); }
+                             100% { box-shadow: 0 0 0 0 rgba(197,160,89,0), inset 0 1px 0 rgba(255,255,255,.35); } }
+        @media (prefers-reduced-motion: reduce) { .navbar-royal .nav-account { animation: none; } }
+        /* استغلال المساحة: الهيدر بعرض الشاشة على الكمبيوتر (الشعار يبدأ أقرب لحافة اليمين) */
+        @media (min-width: 992px) { .navbar-royal > .container { max-width: 100%; padding-right: 22px; padding-left: 18px; } }
+        @media (min-width: 992px) and (max-width: 1399.98px) { .navbar-royal .nav-account { padding: 7px 13px; margin: 0 5px; font-size: .9rem; } }
+        /* الشاشات المتوسطة: لا شيء يخرج عن الهيدر — العنوان يصغر ثم يختفي (الشعار يكفي) */
+        @media (min-width: 992px) { .nav-award-title-desktop { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } }
+        @media (min-width: 1200px) and (max-width: 1399.98px) { .nav-award-title-desktop { font-size: 1.2rem !important; margin: 0 8px !important; } .navbar-royal .nav-link { margin: 0 5px !important; } .navbar-royal .nav-register { padding: 8px 16px 8px 15px !important; } }
+        @media (min-width: 992px) and (max-width: 1199.98px) { .nav-award-title-desktop { display: none !important; } .navbar-royal .navbar-nav { margin-left: auto; } .navbar-royal .nav-register { padding: 8px 14px !important; font-size: .88rem; } }
         .navbar-royal .nav-bell { position:relative; color:#fff; font-size:1.15rem; flex-shrink:0; margin:0 6px; text-decoration:none; }
         .navbar-royal .nav-bell:hover { color: var(--gold); }
         .navbar-royal .nav-bell-n { position:absolute; top:-8px; left:-10px; background:#d93025; color:#fff; border-radius:12px; font-size:.7rem; font-weight:800; padding:1px 6px; line-height:1.4; }
-        @media (max-width: 991.98px) { .navbar-royal .nav-account, .navbar-royal .nav-bell { display:flex; padding:12px 4px; margin:0; border-bottom:1px solid rgba(255,255,255,0.08); } .navbar-royal .nav-bell-n { position:static; margin-right:8px; } }
+        @media (max-width: 991.98px) { .navbar-royal .nav-bell { display:flex; padding:12px 4px; margin:0; border-bottom:1px solid rgba(255,255,255,0.08); } .navbar-royal .nav-bell-n { position:static; margin-right:8px; }
+            .navbar-royal .nav-account { display:flex; justify-content:center; margin:12px 0 0; padding:11px 18px; } }
         .navbar-royal .nav-register {
             position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
             border-radius: 999px !important; padding: 9px 26px 9px 24px; font-weight: 800; letter-spacing: .3px;
