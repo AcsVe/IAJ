@@ -28,6 +28,11 @@
             --logo-s: {{ settings.logo_size_scrolled|default:44 }}px; /* بعد النزول */
             --logo-m: {{ settings.logo_size_mobile|default:38 }}px;   /* على الموبايل */
             font-size: {{ theme.font_size|default:"16px" }};
+            --menu: {{ brand.menu|default:"#0a1632" }};
+            --menu-rgb: {{ brand.menu_rgb|default:"10,22,50" }};
+            --menu-light: {{ brand.menu_light|default:"#3a4560" }};
+            --menu-dark: {{ brand.menu_dark|default:"#06101f" }};
+            --menu-glass: linear-gradient(125deg, rgba({{ brand.menu_rgb|default:"10,22,50" }},.86) 0%, {{ brand.menu|default:"#0a1632" }}EE 45%, {{ brand.menu_dark|default:"#06101f" }}F0 80%, rgba({{ brand.gold_rgb|default:"197,160,89" }},.55) 100%);
         }
         body.has-ticker { --ticker-h: 40px; --header-h: 130px; }
         html { scroll-behavior: smooth; }
@@ -40,7 +45,8 @@
         .navbar-royal { background-color: transparent; padding: 18px 0; transition: background-color .35s ease, padding .35s ease, box-shadow .35s ease; z-index: 1050; top: var(--ticker-h); }
         .navbar-royal.scrolled,
         body.not-home .navbar-royal,
-        .navbar-royal.menu-open { background-color: var(--primary); padding: 10px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .navbar-royal.menu-open { background-color: var(--menu); background-image: var(--menu-glass); padding: 10px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,.14);
+            backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%); border-bottom: 1px solid rgba(var(--menu-rgb),.5); }
         /* الشعار: حجم ثابت لا يصغر مهما ازدحم الشريط العلوي */
         .navbar-royal .navbar-brand { flex-shrink: 0; }
         .navbar-royal .navbar-brand .site-logo { flex-shrink: 0; width: var(--logo-d, 50px); height: var(--logo-d, 50px); min-width: var(--logo-d, 50px);
@@ -53,7 +59,7 @@
         /* قوائم «الجائزة» و«المركز الإعلامي»: بطاقة زجاجية */
         .nav-main-dropdown .dropdown-menu {
             min-width: 250px; padding: 10px; margin-top: 10px !important; border-radius: 16px;
-            background: linear-gradient(160deg, rgba(18,36,80,.94) 0%, rgba(10,22,50,.92) 60%, rgba(60,48,20,.9) 100%);
+            background: linear-gradient(160deg, rgba(var(--menu-rgb),.92) 0%, var(--menu-dark) 70%, rgba(60,48,20,.9) 100%);
             border: 1px solid rgba(197,160,89,.45);
             box-shadow: 0 22px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
             backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -92,7 +98,7 @@
             .navbar-royal .navbar-brand img { width: var(--logo-m, 38px) !important; height: var(--logo-m, 38px) !important; }
             .navbar-royal .navbar-toggler { padding: 4px 8px; }
             .navbar-royal .navbar-toggler-icon { width: 1.3em; height: 1.3em; }
-            .navbar-royal .navbar-collapse { background-color: var(--nav-dark); margin: 6px 0 0; padding: 8px 16px 18px; border-top: 2px solid var(--gold); max-height: calc(100svh - var(--header-h)); overflow-y: auto; }
+            .navbar-royal .navbar-collapse { background-color: var(--nav-dark); background-image: var(--menu-glass); margin: 6px 0 0; padding: 8px 16px 18px; border-top: 2px solid var(--gold); max-height: calc(100svh - var(--header-h)); overflow-y: auto; }
             .navbar-royal .nav-link { margin: 0; padding: 12px 4px !important; border-bottom: 1px solid rgba(255,255,255,0.08); }
             .navbar-royal .nav-link::after { display: none; }
             .nav-main-dropdown .dropdown-menu { border: none; border-right: 2px solid var(--gold); background: rgba(255,255,255,0.04); }
@@ -429,7 +435,7 @@
         body.style-glass .navbar-royal.scrolled,
         body.style-glass.not-home .navbar-royal,
         body.style-glass .navbar-royal.menu-open {
-            background: linear-gradient(120deg, rgba(10,22,50,.92) 0%, rgba(18,36,80,.88) 60%, rgba(120,95,45,.80) 100%) !important;
+            background: var(--menu-glass) !important;
             backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%);
             border-bottom: 1px solid rgba(197,160,89,.35);
         }

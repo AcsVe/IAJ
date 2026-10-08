@@ -93,6 +93,12 @@ def send_email(to, subject, body, url='', button='', wait=False):
     logo = _logo_png()
     ctx = {'subject': subject, 'body': body, 'url': absolute(url), 'button': button or 'فتح في الموقع',
            'site_url': absolute('/'), 'has_logo': bool(logo)}
+    try:
+        from .brand import brand_colors
+        ctx['brand'] = brand_colors()
+    except Exception:
+        ctx['brand'] = {'menu': '#0a1632', 'menu_light': '#3a4560', 'menu_dark': '#06101f', 'menu_deep': '#040914',
+                        'menu_rgb': '10,22,50', 'gold': '#c5a059', 'gold_rgb': '197,160,89'}
     html = render_to_string('award/email/message.html', ctx)
     text = body + (f"\n\n{ctx['url']}" if url else '') + '\n\n— جائزة انتصار عباس جردانة'
     if wait:

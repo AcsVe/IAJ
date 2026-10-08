@@ -39,6 +39,11 @@ def portal_context(request):
         st = b.get('settings')
         data['reg_deadline'] = st.registration_deadline if st else None
         data['reg_open'] = True
+    try:
+        from .brand import brand_colors
+        data['brand'] = brand_colors()
+    except Exception:
+        pass
     user = getattr(request, 'user', None)
     if user is not None and user.is_authenticated:
         prof = getattr(user, 'profile', None)
