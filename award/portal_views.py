@@ -24,7 +24,15 @@ User = get_user_model()
 
 
 def _verify_required():
-    return settings.EMAIL_ENABLED and getattr(settings, 'REQUIRE_EMAIL_VERIFICATION', True)
+    return settings.EMAIL_ENABLED and getattr(settings, 'REQUIRE_EMAIL_VERIFICATION', False)
+
+
+def _spam_hint():
+    if not settings.EMAIL_ENABLED:
+        return ''
+    from email.utils import parseaddr
+    return (f' إذا لم تجدوا رسائلنا في البريد الوارد فتحقّقوا من مجلد Spam (البريد غير المرغوب) '
+            f'واضغطوا «ليست رسالة غير مرغوب فيها»، وأضيفوا {parseaddr(settings.DEFAULT_FROM_EMAIL)[1]} إلى جهات الاتصال.')
 
 
 def _role(user):
@@ -79,7 +87,12 @@ def signup(request):
         user.is_active = True
         user.save(update_fields=['is_active'])
         login(request, user, backend='award.auth.EmailOrUsernameBackend')
-        messages.success(request, 'تم إنشاء حسابكم بنجاح. يمكنكم الآن تقديم مشروعكم.')
+        if settings.EMAIL_ENABLED:
+            send_email(user.email, 'أهلاً بكم في جائزة انتصار عباس جردانة',
+                       f"مرحباً {user.first_name or ''}،\nتم إنشاء حساب مدرستكم بنجاح. من حسابكم تقدّمون المشاريع وتتابعون حالتها.\n"
+                       "أضيفوا عنوان المرسل إلى جهات الاتصال حتى تصلكم إشعارات الجائزة إلى البريد الوارد.",
+                       '/portal/', 'الدخول إلى حسابي')
+        messages.success(request, 'تم إنشاء حسابكم بنجاح. يمكنكم الآن تقديم مشروعكم.' + _spam_hint())
         return redirect(nxt)
     return render(request, 'award/portal/signup.html', {'form': form, 'next': nxt})
 
@@ -225,7 +238,7 @@ def _save_submission(request, form, sub, creating):
     form.save_m2m()
     if action == 'submit':
         workflow.change_status(sub, 'submitted', by=request.user)
-        messages.success(request, f'تم إرسال الطلب {sub.ref} بنجاح. ستصلكم الإشعارات عند كل تحديث.')
+        messages.success(request, f'تم إرسال الطلب {sub.ref} بنجاح. ستجدون كل تحديث هنا في حسابكم، وتصلكم نسخة بالبريد.' + _spam_hint())
     else:
         if creating:
             workflow.StatusLog.objects.create(submission=sub, new_status='draft', by=request.user)

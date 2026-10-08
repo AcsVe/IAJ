@@ -219,6 +219,8 @@ else:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'logs', 'emails')
 
+# تفعيل الحساب برابط في البريد قبل الدخول؟ (False = يدخل فوراً، فلا يتعطل لو ذهبت الرسالة إلى Spam)
+REQUIRE_EMAIL_VERIFICATION = os.environ.get('REQUIRE_EMAIL_VERIFICATION', 'False') == 'True'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/portal/'
 LOGOUT_REDIRECT_URL = '/'
