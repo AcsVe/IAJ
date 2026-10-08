@@ -74,6 +74,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'award.middleware.AdminArabicMiddleware',   # لوحة Django بالعربية RTL
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -176,7 +177,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ذاكرة مؤقتة داخل السيرفر (للإعدادات العامة والصور المخزّنة)
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'award.preview_state.PreviewAwareLocMemCache',   # كاش الذاكرة + تجاهله أثناء «المعاينة»
         'LOCATION': 'iaj',
         'OPTIONS': {'MAX_ENTRIES': 600},
     }

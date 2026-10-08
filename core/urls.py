@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from award import admin_tools
 from django.urls import path
 from award import views, portal_views as pv, manage_views as mv
 from award.portal_forms import SafePasswordResetForm
@@ -12,6 +13,9 @@ _reset = dict(
 
 urlpatterns = [
     path('admin/search/', views.admin_global_search, name='admin_global_search'),
+    path('admin/status/', admin_tools.site_status, name='admin_site_status'),
+    path('admin/guide/', admin_tools.roles_guide, name='admin_roles_guide'),
+    path('admin/preview/<str:app_label>/<str:model_name>/', admin_tools.preview, name='admin_preview'),
     path('admin/', admin.site.urls),
     path('search/', views.search, name='search'),
     path('tracks/<int:pk>/', views.track_detail, name='track_detail'),

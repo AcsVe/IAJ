@@ -211,8 +211,51 @@ class JudgeAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
 
 
+class FontSelect(forms.Select):
+    """قائمة خطوط + نموذج حيّ بالخط المختار تحتها"""
+
+    def render(self, name, value, attrs=None, renderer=None):
+        from .fonts import all_font_urls
+        html = super().render(name, value, attrs, renderer)
+        sid = (attrs or {}).get('id', name)
+        links = ''.join(f'<link rel="stylesheet" href="{u}">' for _n, u in all_font_urls())
+        script = (
+            '<script>(function(){if(window.__iajFonts)return;window.__iajFonts=1;'
+            f'document.head.insertAdjacentHTML("beforeend",{links!r});'
+            'function upd(sel){var f=sel.value||(document.getElementById("id_font_body")||{}).value||"Cairo";'
+            'var s=document.getElementById(sel.id+"_sample");if(s)s.style.fontFamily="\'"+f+"\', Cairo, sans-serif";}'
+            'document.addEventListener("DOMContentLoaded",function(){var all=document.querySelectorAll("select.iaj-font");'
+            'all.forEach(function(sel){[].forEach.call(sel.options,function(o){if(o.value)o.style.fontFamily="\'"+o.value+"\'";});'
+            'upd(sel);sel.addEventListener("change",function(){all.forEach(upd);});});});})();</script>')
+        sample = (f'<div id="{sid}_sample" class="iaj-font-sample" style="margin-top:6px;padding:8px 12px;border:1px dashed #c5a059;'
+                  'border-radius:8px;font-size:20px;line-height:1.6;max-width:520px">جائزة انتصار عباس جردانة للثقافة والتعليم — 1448هـ / 2026م</div>')
+        return mark_safe(html + sample + script)
+
+    def __init__(self, attrs=None, choices=()):
+        attrs = {**(attrs or {}), 'class': 'iaj-font'}
+        super().__init__(attrs, choices)
+
+
 @admin.register(ThemeSetting)
 class ThemeSettingAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('الألوان', {'fields': ('primary_color', 'secondary_color', 'gold_color')}),
+        ('الخطوط — اختر خطاً لكل عنصر', {
+            'fields': ('font_body', 'font_headings', 'font_site_title', 'font_nav', 'font_ticker', 'font_hero',
+                       'font_cards', 'font_buttons', 'font_numbers', 'font_footer', 'font_size'),
+            'description': 'تحت كل قائمة نموذج حيّ للخط. «نفس خط النص الأساسي» = يتبع الخط الأول. '
+                           'استخدم زر «👁 معاينة قبل الحفظ» بالأسفل لرؤية الموقع بالخطوط الجديدة قبل نشرها.',
+        }),
+        ('النمط العام', {'fields': ('site_style', 'flip_style')}),
+        ('CSS مخصص (للمدير التقني)', {'fields': ('custom_css',), 'classes': ('collapse',)}),
+    )
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name.startswith('font_') and db_field.name != 'font_size':
+            from .fonts import FONT_CHOICES, INHERIT_CHOICES
+            kwargs['widget'] = FontSelect(choices=FONT_CHOICES if db_field.name == 'font_body' else INHERIT_CHOICES)
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
+
     def has_add_permission(self, request):
         return not ThemeSetting.objects.exists()
 
@@ -519,56 +562,7 @@ class StoredFileAdmin(admin.ModelAdmin):
 # =====================================================================
 #   تنظيم لوحة التحكم: أقسام واضحة بترتيب ظهورها في الموقع
 # =====================================================================
-ADMIN_SECTIONS = [
-    ('١. أعلى الصفحة الرئيسية', [
-        ('HomeContent',       'النص المتحرك وكل نصوص الصفحة الرئيسية'),
-        ('SiteSetting',       'الشعار + مدة الشرائح + العداد'),
-        ('SectionBackground', 'صورة أعلى الصفحة وخلفيات الأقسام'),
-        ('HeroSlide',         'بطاقة الفيديو والصور — الشرائح'),
-        ('HeroCard',          'النص تحت بطاقة الفيديو/الصور'),
-        ('HeroTextSlide',     'النصوص المتبدّلة تحت الفيديو'),
-        ('TickerItem',        'شريط الأخبار — الرسائل'),
-        ('TickerSetting',     'شريط الأخبار — السرعة والألوان'),
-    ]),
-    ('٢. أقسام الجائزة', [
-        ('Principle',      'مبادئ الجائزة (بطاقات «عن الجائزة»)'),
-        ('Field',          'المجالات (البطاقات المقلوبة)'),
-        ('Track',          'المسارات داخل كل مجال'),
-        ('TimelineEvent',  'الجدول الزمني'),
-        ('Judge',          'لجنة التحكيم'),
-        ('Sponsor',        'الرعاة والشركاء'),
-        ('WinnerCategory', 'فئات الفائزين'),
-        ('Winner',         'الفائزون'),
-    ]),
-    ('٣. المركز الإعلامي', [
-        ('News',         'الأخبار'),
-        ('Photo',        'معرض الصور'),
-        ('Video',        'مكتبة الفيديو'),
-        ('SuccessStory', 'قصص النجاح'),
-    ]),
-    ('٤. التسجيل والتحكيم', [
-        ('AwardCycle',   'دورات الجائزة (مواعيد التسجيل ونشر النتائج)'),
-        ('Submission',   'طلبات الترشح'),
-        ('Profile',      'حسابات المدارس والمحكّمين'),
-        ('Assignment',   'إسناد الطلبات للمحكّمين والتقييمات'),
-        ('JudgingCommittee', 'لجان التحكيم'),
-        ('SubmissionMessage', 'مراسلات الطلبات'),
-        ('Announcement', 'الإعلانات (بطاقات نصية ووسائط)'),
-        ('Criterion',    'معايير التحكيم'),
-        ('Notification', 'الإشعارات المرسلة'),
-        ('EmailLog',     'سجل رسائل البريد'),
-        ('Governorate',  'المحافظات (مع ألويتها ومديرياتها)'),
-        ('Directorate',  'مديريات التربية والتعليم'),
-        ('Area',         'الألوية والمدن'),
-    ]),
-    ('٥. التصميم والإعدادات العامة', [
-        ('ThemeSetting',  'الألوان والخطوط و CSS مخصص'),
-        ('FooterContent', 'الفوتر (أسفل الصفحة)'),
-        ('SocialLink',    'روابط التواصل الاجتماعي'),
-        ('PortalSetting', 'أزرار الهيدر (دخول/سجل) ونصوص صفحات الحساب'),
-        ('StoredFile',    'الصور المخزّنة (للاطلاع)'),
-    ]),
-]
+from .roles import ADMIN_SECTIONS, ROLE_LABELS  # الأقسام والأدوار معرّفة في roles.py
 
 _original_get_app_list = admin.AdminSite.get_app_list
 
@@ -580,7 +574,8 @@ def _grouped_app_list(self, request, app_label=None):
         return apps
     by_name = {m['object_name']: m for m in award['models']}
     grouped, used = [], set()
-    for title, items in ADMIN_SECTIONS:
+    for title, role, items in ADMIN_SECTIONS:
+        title = f'{title}  ·  {ROLE_LABELS[role]}'
         models_ = []
         for obj_name, label in items:
             m = by_name.get(obj_name)
@@ -603,7 +598,7 @@ def _grouped_app_list(self, request, app_label=None):
 admin.AdminSite.get_app_list = _grouped_app_list
 admin.site.site_header = 'لوحة تحكم جائزة انتصار عباس جردانة'
 admin.site.site_title = 'لوحة التحكم'
-admin.site.index_title = 'إدارة محتوى الموقع'
+admin.site.index_title = 'لوحة Django'
 
 
 @admin.register(Principle)

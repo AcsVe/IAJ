@@ -124,7 +124,8 @@ def notify_staff(title, body='', url='', email=True):
     from django.contrib.auth.models import User
     from .models import Notification
     from django.db.models import Q
-    staff = list(User.objects.filter(Q(is_staff=True) | Q(profile__role='manager'), is_active=True).distinct())
+    from .roles import award_manager_users
+    staff = list(award_manager_users())   # المدير التقني + مديرو الجائزة (وليس محرري المحتوى)
     Notification.objects.bulk_create([Notification(user=u, title=title[:255], body=body, url=url) for u in staff])
     if email:
         to = settings.ADMIN_NOTIFY_EMAILS or [u.email for u in staff if u.email]

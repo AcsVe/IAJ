@@ -1,0 +1,10 @@
+{% extends "admin/index.html" %}
+{% block content %}
+<div class="iaj-quick">
+  <a href="{% url 'admin_site_status' %}"><b>🔎 حالة الموقع</b><span>ما الظاهر وما المخفي ولماذا — مع رابط الإصلاح</span></a>
+  <a href="{% url 'admin_roles_guide' %}"><b>🧭 دليل الأدوار والمصطلحات</b><span>من يدير ماذا، وأين، ومعنى كل مسمى</span></a>
+  {% if user.is_superuser or perms.award.view_submission %}<a href="/manage/"><b>🏆 لوحة إدارة الجائزة</b><span>الطلبات والتحكيم والنتائج والإعلانات (مدير الجائزة)</span></a>{% endif %}
+  <a href="/" target="_blank" rel="noopener"><b>🌐 عرض الموقع</b><span>يفتح الموقع كما يراه الزوار</span></a>
+</div>
+{{ block.super }}
+{% endblock %}

@@ -15,6 +15,9 @@ def _remove(name):
     """حذف الملف القديم (من المجلد أو من القاعدة) — الروابط الخارجية لا تُلمس"""
     if not name or name.startswith('http://') or name.startswith('https://'):
         return
+    from .preview_state import active
+    if active():          # المعاينة قبل الحفظ: لا نحذف شيئاً
+        return
     from django.core.files.storage import default_storage
     default_storage.delete(name)
 

@@ -4,6 +4,7 @@
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
 {% block extrastyle %}{{ block.super }}
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   #header { flex-wrap: wrap; gap: 10px; }
   .iaj-admin-search { display: flex; align-items: center; flex: 1 1 260px; max-width: 460px; margin: 0 16px; position: relative; }
@@ -19,6 +20,23 @@
   [dir="rtl"] .iaj-admin-search button { right: auto; left: 6px; }
   .iaj-admin-search input:focus + button { color: #222; }
   @media (max-width: 767px) { .iaj-admin-search { order: 3; flex-basis: 100%; max-width: none; margin: 4px 0 0; } }
+  /* اتجاه عربي سليم في كل اللوحة */
+  html[dir="rtl"] body { font-family: 'Cairo', Tahoma, 'Segoe UI', Arial, sans-serif; }
+  html[dir="rtl"] input, html[dir="rtl"] textarea, html[dir="rtl"] select { text-align: right; }
+  html[dir="rtl"] input[type="url"], html[dir="rtl"] input[type="email"], html[dir="rtl"] .vURLField { direction: ltr; text-align: left; }
+  /* أزرار المعاينة والحفظ */
+  .submit-row { align-items: center; flex-wrap: wrap; }
+  .iaj-preview-btn { background: #fff; color: #7a5a14; border: 2px solid #c5a059; border-radius: 4px; padding: 10px 15px;
+      font-weight: 700; cursor: pointer; font-size: 14px; height: auto; }
+  .iaj-preview-btn:hover { background: #fbf3df; }
+  .iaj-save-note { flex-basis: 100%; margin: 6px 0 0; font-size: 12.5px; color: var(--body-quiet-color, #666); }
+  /* اختصارات الصفحة الرئيسية للوحة */
+  .iaj-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 0 0 22px; }
+  .iaj-quick a { display: block; padding: 14px 16px; border-radius: 12px; text-decoration: none !important;
+      border: 1px solid var(--hairline-color, #ddd); background: var(--darkened-bg, #f8f8f8); }
+  .iaj-quick a:hover { border-color: #c5a059; box-shadow: 0 4px 14px rgba(197,160,89,.25); }
+  .iaj-quick b { display: block; font-size: 15px; color: var(--body-fg, #333); margin-bottom: 4px; }
+  .iaj-quick span { font-size: 12.5px; color: var(--body-quiet-color, #666); }
 </style>
 {% endblock %}
 

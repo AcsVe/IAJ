@@ -370,8 +370,11 @@ class Judge(models.Model):
     def __str__(self): 
         return self.name
     
+from .fonts import FONT_CHOICES, INHERIT_CHOICES  # noqa: E402
+
+
 class ThemeSetting(models.Model):
-    primary_color = models.CharField(max_length=7, default='#0a1632', verbose_name="اللون الأساسي (الأزرق الداكن)")
+    primary_color = models.CharField(max_length=7, default='#0a1632', verbose_name="اللون الأساسي (لون الهيدر والقوائم)")
     secondary_color = models.CharField(max_length=7, default='#122450', verbose_name="اللون الثانوي")
     gold_color = models.CharField(max_length=7, default='#c5a059', verbose_name="اللون الذهبي")
     font_size = models.CharField(max_length=4, default='16px', verbose_name="حجم الخط الأساسي (مثال: 16px أو 18px)")
@@ -380,6 +383,17 @@ class ThemeSetting(models.Model):
                                   help_text="يمكنك الرجوع للنمط الكلاسيكي في أي وقت.")
     FLIP_CHOICES = (('navy', 'كحلي مع ذهبي'), ('gold', 'معكوس: ذهبي مع كحلي'))
     flip_style = models.CharField(max_length=10, choices=FLIP_CHOICES, default='navy', verbose_name="ألوان البطاقات القلابة (المجالات)")
+    # -- الخطوط: خط لكل عنصر (القائمة في award/fonts.py) --
+    font_body = models.CharField(max_length=40, blank=True, default='Cairo', choices=FONT_CHOICES, verbose_name="خط النص الأساسي لكل الموقع")
+    font_headings = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط عناوين الأقسام والصفحات")
+    font_site_title = models.CharField(max_length=40, blank=True, default='Noto Kufi Arabic', choices=INHERIT_CHOICES, verbose_name="خط اسم الجائزة في الهيدر")
+    font_nav = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط روابط القائمة الرئيسية")
+    font_ticker = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط شريط الأخبار")
+    font_hero = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط نصوص أعلى الصفحة وبطاقة النصوص")
+    font_cards = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط البطاقات (المجالات، الجوائز، الجدول الزمني)")
+    font_buttons = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط الأزرار")
+    font_numbers = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط العداد التنازلي والأرقام")
+    font_footer = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط الفوتر (أسفل الصفحة)")
     custom_css = models.TextField(blank=True, null=True, verbose_name="CSS مخصص (لتغيير ألوان صفحات أو أحجام خطوط معينة)", help_text="اكتب أو الصق أكواد CSS هنا لتغيير تصميم الموقع بدون لمس الكود الأساسي")
 
     class Meta:

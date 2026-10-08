@@ -394,3 +394,37 @@ class ManagerConsoleTest(TestCase):
     def test_school_cannot_open_manage(self):
         self.client.login(username='s@x.org', password='Sch-pass-2026')
         self.assertEqual(self.client.get('/manage/').status_code, 404)
+
+
+class AdminToolsTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        from django.contrib.auth.models import User, Group
+        from award.roles import sync_role_groups, GROUP_EDITOR
+        sync_role_groups()
+        self.admin = User.objects.create_superuser('boss', 'b@x.com', 'pw-123456!')
+        self.editor = User.objects.create_user('ed', 'e@x.com', 'pw-123456!', is_staff=True)
+        self.editor.groups.add(Group.objects.get(name=GROUP_EDITOR))
+
+    def test_preview_does_not_save(self):
+        from award.models import HeroTextSlide
+        t = HeroTextSlide.objects.create(heading='قديم', body_text='نص')
+        self.client.force_login(self.admin)
+        r = self.client.post(f'/admin/preview/award/herotextslide/?id={t.pk}', {
+            'heading': 'جديد للمعاينة', 'body_text': 'نص', 'effect': 'zoom', 'effect_speed': '0.6',
+            'seconds': '0', 'order': '0', 'is_active': 'on'})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'جديد للمعاينة')
+        self.assertContains(r, 'وضع المعاينة')
+        t.refresh_from_db()
+        self.assertEqual(t.heading, 'قديم')
+
+    def test_status_guide_and_roles(self):
+        self.client.force_login(self.admin)
+        self.assertEqual(self.client.get('/admin/status/').status_code, 200)
+        self.assertEqual(self.client.get('/admin/guide/').status_code, 200)
+        self.client.force_login(self.editor)
+        self.assertEqual(self.client.get('/admin/award/news/').status_code, 200)
+        self.assertEqual(self.client.get('/admin/award/submission/').status_code, 403)
+        self.assertEqual(self.client.get('/manage/').status_code, 404)

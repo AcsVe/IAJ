@@ -113,7 +113,10 @@ class LocalMediaStorage(FileSystemStorage):
             if isinstance(data, str):
                 data = data.encode()
             content = ContentFile(optimize_image(data, os.path.splitext(name)[1].lower()))
-        return norm(super()._save(name, content))
+        saved = norm(super()._save(name, content))
+        from .preview_state import note_new_file
+        note_new_file(saved)        # ملف رُفع أثناء «المعاينة» — يُحذف لاحقاً تلقائياً
+        return saved
 
     # ---------- قراءة ----------
     def url(self, name):

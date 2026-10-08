@@ -43,10 +43,13 @@ def get_site_bundle():
                             for t in HeroTextSlide.objects.filter(is_active=True) if t.heading or t.body_text]
     except Exception:
         pass
+    from .fonts import theme_fonts
+    theme = _first(ThemeSetting)
     data = {
+        'site_fonts': theme_fonts(theme),
         'hero_text_items': hero_text_items,
         'settings': _first(SiteSetting),
-        'theme': _first(ThemeSetting),
+        'theme': theme,
         'content': _first(HomeContent),
         'footer': _first(FooterContent),
         'hero_card': hero_card,

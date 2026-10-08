@@ -427,7 +427,7 @@ def notification_go(request, pk):
 def _judge_required(view):
     @login_required
     def wrapper(request, *a, **kw):
-        if _role(request.user) != 'judge' and not request.user.is_staff:
+        if _role(request.user) != 'judge' and not is_manager(request.user):
             raise Http404
         return view(request, *a, **kw)
     wrapper.__name__ = view.__name__
@@ -513,12 +513,9 @@ def judge_review(request, pk):
 #   صلاحية ملفات الطلبات (تُستدعى من serve_media)
 # =====================================================
 def is_manager(user):
-    if not user.is_authenticated:
-        return False
-    if user.is_staff:
-        return True
-    prof = getattr(user, 'profile', None)
-    return bool(prof and prof.role == 'manager')
+    """مدير الجائزة (لوحة /manage/) — انظر award/roles.py"""
+    from .roles import is_award_manager
+    return is_award_manager(user)
 
 
 def can_view_private_file(user, path):

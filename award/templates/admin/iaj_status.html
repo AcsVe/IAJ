@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+  .st-sum { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+  .st-sum span { padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 13px; }
+  .st-ok { background: #e3f4e6; color: #1e6b2e; } .st-off { background: #fbe4e2; color: #9b2218; } .st-info { background: #eef1f6; color: #3d4b63; }
+  .st-group { border: 1px solid var(--hairline-color, #ddd); border-radius: 10px; overflow: hidden; margin: 0 0 18px; }
+  .st-group h2 { margin: 0; padding: 10px 14px; font-size: 15px; background: var(--darkened-bg, #f8f8f8); }
+  .st-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--hairline-color, #eee); }
+  .st-row b { display: block; font-size: 14px; } .st-row small { color: var(--body-quiet-color, #666); font-size: 12.5px; line-height: 1.7; }
+  .st-badge { text-align: center; padding: 4px 8px; border-radius: 14px; font-size: 12px; font-weight: 700; }
+  .st-row a.st-fix { white-space: nowrap; font-size: 12.5px; }
+  @media (max-width: 700px) { .st-row { grid-template-columns: 1fr; } }
+</style>
+<p>هذه الصفحة تجمع كل ما يتحكم بظهور شيء في الموقع. <b>«مخفي/متوقف»</b> لا يعني خللاً بالضرورة — اقرأ السبب، واضغط «تعديل» إن أردت تغييره.</p>
+<div class="st-sum">
+  <span class="st-ok">ظاهر/يعمل: {{ counts.ok }}</span>
+  <span class="st-off">مخفي/متوقف: {{ counts.off }}</span>
+  <span class="st-info">للعلم: {{ counts.info }}</span>
+</div>
+{% for title, rows in groups %}
+<div class="st-group">
+  <h2>{{ title }}</h2>
+  {% for state, label, note, url in rows %}
+  <div class="st-row">
+    <span class="st-badge st-{{ state }}">{% if state == 'ok' %}✔ ظاهر{% elif state == 'off' %}✖ مخفي/متوقف{% else %}ℹ للعلم{% endif %}</span>
+    <div><b>{{ label }}</b><small>{{ note }}</small></div>
+    {% if url %}<a class="st-fix" href="{{ url }}">تعديل ←</a>{% else %}<span></span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+{% endblock %}

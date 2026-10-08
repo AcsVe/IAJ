@@ -16,3 +16,10 @@ def ar_date(value):
         return f"{value.day} {AR_MONTHS[value.month - 1]} {value.year}"
     except Exception:
         return value
+
+
+@register.filter
+def iaj_can_preview(opts):
+    """هل يمكن معاينة هذا الجدول قبل الحفظ؟ (محتوى الموقع والتصميم)"""
+    from award.admin_tools import can_preview
+    return can_preview(opts)

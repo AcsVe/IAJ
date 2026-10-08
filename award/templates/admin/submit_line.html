@@ -1,0 +1,25 @@
+{% load i18n admin_urls award_extras %}
+{# أزرار أسفل نموذج التعديل: معاينة قبل الحفظ + حفظ ونشر #}
+<div class="submit-row">
+{% block submit-row %}
+{% with pv=opts|iaj_can_preview %}
+{% if pv and show_save %}
+  <button type="submit" class="iaj-preview-btn" formaction="{% url 'admin_preview' opts.app_label opts.model_name %}{% if original.pk %}?id={{ original.pk }}{% endif %}" formtarget="_blank" formnovalidate
+          title="يفتح صفحة الموقع بتعديلك في تبويب جديد — بدون حفظ ولا نشر">👁 معاينة قبل الحفظ</button>
+{% endif %}
+{% if show_save %}<input type="submit" value="{% if pv %}✔ حفظ ونشر في الموقع{% else %}{% translate 'Save' %}{% endif %}" class="default" name="_save">{% endif %}
+{% if show_save_as_new %}<input type="submit" value="{% translate 'Save as new' %}" name="_saveasnew">{% endif %}
+{% if show_save_and_add_another %}<input type="submit" value="{% translate 'Save and add another' %}" name="_addanother">{% endif %}
+{% if show_save_and_continue %}<input type="submit" value="{% if pv %}حفظ ونشر ومتابعة التعديل{% elif can_change %}{% translate 'Save and continue editing' %}{% else %}{% translate 'Save and view' %}{% endif %}" name="_continue">{% endif %}
+{% if show_close %}
+    {% url opts|admin_urlname:'changelist' as changelist_url %}
+    <a href="{% add_preserved_filters changelist_url %}" class="closelink">{% translate 'Close' %}</a>
+{% endif %}
+{% if show_delete_link and original %}
+    {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
+    <a href="{% add_preserved_filters delete_url %}" class="deletelink">{% translate "Delete" %}</a>
+{% endif %}
+{% if pv and show_save %}<p class="iaj-save-note">«المعاينة» لا تغيّر شيئاً في الموقع. «حفظ ونشر» يطبّق التعديل فوراً على الموقع للجميع.</p>{% endif %}
+{% endwith %}
+{% endblock %}
+</div>
