@@ -67,21 +67,116 @@ class TrackDetail(models.Model):
         return [l.strip(' •-–\t') for l in (self.content or '').splitlines() if l.strip(' •-–\t')]
 
 STATUS_CHOICES = (
-    ('pending', 'قيد المراجعة'), ('reviewed', 'تمت المراجعة'), 
-    ('accepted', 'مقبول'), ('rejected', 'مرفوض'),
+    ('draft', 'مسودة'),
+    ('submitted', 'مُرسل — بانتظار التدقيق'),
+    ('screening', 'قيد التدقيق'),
+    ('revision', 'مطلوب تعديل'),
+    ('judging', 'قيد التحكيم'),
+    ('accepted', 'مقبول'),
+    ('rejected', 'غير مقبول'),
+    ('winner', 'فائز'),
+    ('withdrawn', 'مسحوب'),
 )
+FINAL_STATUSES = ('accepted', 'rejected', 'winner')
+EDITABLE_STATUSES = ('draft', 'revision')
+
+
+def submission_upload(instance, filename):
+    """ملفات الطلبات في مجلد خاص لا يُفتح إلا لأصحاب الصلاحية"""
+    import os
+    base, ext = os.path.splitext(os.path.basename(filename))
+    folder = instance.ref or (f'u{instance.owner_id}' if instance.owner_id else 'new')
+    return f'private/submissions/{folder}/{base[:60]}{ext.lower()}'
+
+
 class Submission(models.Model):
+    ref = models.CharField(max_length=30, unique=True, null=True, blank=True, verbose_name="رقم الطلب")
+    cycle = models.ForeignKey('AwardCycle', on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='submissions', verbose_name="الدورة")
+    owner = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='submissions', verbose_name="حساب المدرسة")
     school_name = models.CharField(max_length=255, verbose_name="اسم المدرسة")
     contact_person = models.CharField(max_length=255, verbose_name="ضابط الارتباط")
     email = models.EmailField(verbose_name="البريد الإلكتروني")
-    phone = models.CharField(max_length=20, verbose_name="رقم الهاتف")
+    phone = models.CharField(max_length=30, verbose_name="رقم الهاتف")
     field = models.ForeignKey(Field, on_delete=models.SET_NULL, null=True, verbose_name="المجال")
     track = models.ForeignKey(Track, on_delete=models.SET_NULL, null=True, verbose_name="المسار")
     project_title = models.CharField(max_length=500, verbose_name="عنوان المشروع/البحث")
-    document = models.FileField(max_length=500, upload_to='submissions/', verbose_name="ملف البحث (PDF)")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="الحالة")
-    submitted_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ التقدم")
-    def __str__(self): return f"{self.school_name} - {self.project_title}"
+    abstract = models.TextField(blank=True, default='', verbose_name="ملخص المشروع",
+                                help_text="فقرة تشرح فكرة المشروع وأهدافه ونتائجه.")
+    team_members = models.TextField(blank=True, default='', verbose_name="أسماء الطلبة المشاركين",
+                                    help_text="كل اسم في سطر.")
+    supervisor = models.CharField(max_length=255, blank=True, default='', verbose_name="المعلم المشرف")
+    document = models.FileField(max_length=500, upload_to=submission_upload, blank=True,
+                                verbose_name="ملف البحث (PDF)")
+    attachment = models.FileField(max_length=500, upload_to=submission_upload, blank=True,
+                                  verbose_name="مرفق إضافي (اختياري)",
+                                  help_text="صور، عرض تقديمي، ملف مضغوط…")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name="الحالة")
+    school_note = models.TextField(blank=True, default='', verbose_name="ملاحظة للمدرسة (تظهر لها)",
+                                   help_text="مثلاً: المطلوب تعديله. تُرسل مع إشعار تغيير الحالة.")
+    internal_note = models.TextField(blank=True, default='', verbose_name="ملاحظات داخلية (للإدارة فقط)")
+    revision_deadline = models.DateTimeField(null=True, blank=True, verbose_name="آخر موعد للتعديل")
+    submitted_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإنشاء")
+    sent_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ الإرسال")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخر تحديث")
+
+    class Meta:
+        verbose_name = "طلب ترشح"
+        verbose_name_plural = "طلبات الترشح"
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.ref or '#'+str(self.pk)} — {self.school_name} — {self.project_title}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if not self.ref:
+            year = self.cycle.year if self.cycle_id and self.cycle else self.submitted_at.year
+            self.ref = f'IAJ-{year}-{self.pk:04d}'
+            Submission.objects.filter(pk=self.pk).update(ref=self.ref)
+
+    def get_absolute_url(self):
+        return f'/portal/submissions/{self.pk}/'
+
+    # ---------- ما تراه المدرسة ----------
+    @property
+    def results_hidden(self):
+        """النتيجة النهائية لا تظهر للمدرسة قبل «نشر النتائج» في الدورة"""
+        return self.status in FINAL_STATUSES and not (self.cycle and self.cycle.results_published)
+
+    @property
+    def public_status(self):
+        return 'judging' if self.results_hidden else self.status
+
+    @property
+    def public_status_label(self):
+        return dict(STATUS_CHOICES).get(self.public_status, self.public_status)
+
+    @property
+    def can_edit(self):
+        if self.status == 'draft':
+            return bool(self.cycle and self.cycle.is_open)
+        if self.status == 'revision':
+            from django.utils import timezone
+            return not self.revision_deadline or timezone.now() <= self.revision_deadline
+        return False
+
+    @property
+    def can_withdraw(self):
+        return self.status in ('draft', 'submitted', 'screening', 'revision')
+
+    # ---------- التحكيم ----------
+    @property
+    def avg_score(self):
+        totals = [a.total for a in self.assignments.all() if a.is_done]
+        return round(sum(totals) / len(totals), 1) if totals else None
+
+    @property
+    def judging_progress(self):
+        items = list(self.assignments.all())
+        return f"{sum(1 for a in items if a.is_done)}/{len(items)}" if items else '—'
+
 
 class SiteSetting(models.Model):
     hero_background = models.ImageField(max_length=500, upload_to='site_media/', verbose_name="خلفية الصفحة الرئيسية (صورة)", blank=True, null=True)
@@ -725,3 +820,238 @@ class StoredFile(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# ========================================= #
+#   الدورات، الحسابات، التحكيم، الإشعارات    #
+# ========================================= #
+
+class AwardCycle(models.Model):
+    name = models.CharField(max_length=200, verbose_name="اسم الدورة", help_text="مثال: الدورة الأولى")
+    year = models.PositiveIntegerField(verbose_name="السنة")
+    opens_at = models.DateTimeField(verbose_name="بداية التسجيل")
+    closes_at = models.DateTimeField(verbose_name="نهاية التسجيل",
+                                     help_text="بعدها لا تُقبل طلبات جديدة. العداد التنازلي في الموقع يستخدم هذا الموعد.")
+    is_current = models.BooleanField(default=False, verbose_name="الدورة الحالية؟",
+                                     help_text="دورة واحدة فقط تكون حالية — اختيارها يلغي غيرها.")
+    tracks = models.ManyToManyField(Track, blank=True, verbose_name="المسارات المتاحة",
+                                    help_text="اتركها فارغة = كل المسارات المفعّلة.")
+    max_per_school = models.PositiveSmallIntegerField(default=0, verbose_name="أقصى عدد طلبات للمدرسة",
+                                                      help_text="0 = بلا حد.")
+    revision_days = models.PositiveSmallIntegerField(default=7, verbose_name="مهلة التعديل (أيام)",
+                                                     help_text="عند طلب تعديل من المدرسة يُحدَّد آخر موعد تلقائياً.")
+    judges_per_submission = models.PositiveSmallIntegerField(default=2, verbose_name="عدد المحكّمين لكل طلب",
+                                                             help_text="يُستخدم عند «توزيع تلقائي على المحكّمين».")
+    blind_judging = models.BooleanField(default=True, verbose_name="تحكيم بدون أسماء؟",
+                                        help_text="المحكّم لا يرى اسم المدرسة ولا أسماء الطلبة والمشرف.")
+    results_published = models.BooleanField(default=False, verbose_name="النتائج منشورة؟",
+                                            help_text="قبل النشر ترى المدارس «قيد التحكيم» حتى لو حدّدتم النتيجة. "
+                                                      "عند النشر تُرسل الإشعارات للجميع.")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "دورة"
+        verbose_name_plural = "دورات الجائزة"
+        ordering = ['-year', '-opens_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.year})" + (' — الحالية' if self.is_current else '')
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_current:
+            AwardCycle.objects.exclude(pk=self.pk).filter(is_current=True).update(is_current=False)
+        from django.core.cache import cache
+        cache.delete('iaj_current_cycle')
+
+    def delete(self, *args, **kwargs):
+        from django.core.cache import cache
+        cache.delete('iaj_current_cycle')
+        return super().delete(*args, **kwargs)
+
+    @classmethod
+    def current(cls):
+        return cls.objects.filter(is_current=True).first()
+
+    @property
+    def is_open(self):
+        from django.utils import timezone
+        now = timezone.now()
+        return bool(self.opens_at and self.closes_at and self.opens_at <= now <= self.closes_at)
+
+    @property
+    def phase(self):
+        from django.utils import timezone
+        now = timezone.now()
+        if now < self.opens_at:
+            return 'upcoming'
+        if now <= self.closes_at:
+            return 'open'
+        return 'results' if self.results_published else 'closed'
+
+    def available_tracks(self):
+        qs = self.tracks.filter(is_active=True) if self.pk and self.tracks.exists() else Track.objects.filter(is_active=True)
+        return qs.select_related('field')
+
+
+ROLE_CHOICES = (('school', 'مدرسة'), ('judge', 'محكّم'))
+
+
+class Profile(models.Model):
+    user = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='profile', verbose_name="المستخدم")
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='school', verbose_name="النوع")
+    school_name = models.CharField(max_length=255, blank=True, default='', verbose_name="اسم المدرسة")
+    contact_person = models.CharField(max_length=255, blank=True, default='', verbose_name="الاسم / ضابط الارتباط")
+    phone = models.CharField(max_length=30, blank=True, default='', verbose_name="الهاتف")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="المدينة / المنطقة")
+    specialty = models.CharField(max_length=255, blank=True, default='', verbose_name="التخصص (للمحكّم)")
+    judge_fields = models.ManyToManyField(Field, blank=True, verbose_name="مجالات التحكيم",
+                                          help_text="التوزيع التلقائي يُسند للمحكّم طلبات هذه المجالات فقط (فارغ = كل المجالات).")
+    email_notifications = models.BooleanField(default=True, verbose_name="استلام الإشعارات بالبريد")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ التسجيل")
+
+    class Meta:
+        verbose_name = "حساب"
+        verbose_name_plural = "حسابات المدارس والمحكّمين"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.display_name
+
+    @property
+    def display_name(self):
+        return self.school_name or self.contact_person or self.user.get_full_name() or self.user.email or self.user.username
+
+
+class StatusLog(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='logs')
+    old_status = models.CharField(max_length=20, blank=True, default='', verbose_name="من")
+    new_status = models.CharField(max_length=20, verbose_name="إلى")
+    note = models.TextField(blank=True, default='', verbose_name="ملاحظة")
+    by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="بواسطة")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "سجل حالة"
+        verbose_name_plural = "سجل الحالات"
+        ordering = ['created_at', 'id']
+
+    @property
+    def old_label(self):
+        return dict(STATUS_CHOICES).get(self.old_status, self.old_status or '—')
+
+    @property
+    def new_label(self):
+        return dict(STATUS_CHOICES).get(self.new_status, self.new_status)
+
+
+class Criterion(models.Model):
+    cycle = models.ForeignKey(AwardCycle, on_delete=models.CASCADE, null=True, blank=True,
+                              related_name='criteria', verbose_name="الدورة",
+                              help_text="فارغ = يُستخدم في كل الدورات.")
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, null=True, blank=True, verbose_name="خاص بمسار",
+                              help_text="فارغ = لكل المسارات.")
+    name = models.CharField(max_length=255, verbose_name="المعيار")
+    description = models.TextField(blank=True, default='', verbose_name="شرح للمحكّم")
+    max_score = models.PositiveSmallIntegerField(default=10, verbose_name="الدرجة القصوى")
+    weight = models.DecimalField(max_digits=4, decimal_places=2, default=1, verbose_name="الوزن",
+                                 help_text="1 = عادي، 2 = ضعف الأهمية.")
+    order = models.IntegerField(default=0, verbose_name="الترتيب")
+
+    class Meta:
+        verbose_name = "معيار تحكيم"
+        verbose_name_plural = "معايير التحكيم"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.name} (/{self.max_score})"
+
+    @classmethod
+    def for_submission(cls, sub):
+        from django.db.models import Q
+        qs = cls.objects.filter(Q(cycle__isnull=True) | Q(cycle_id=sub.cycle_id))
+        return qs.filter(Q(track__isnull=True) | Q(track_id=sub.track_id))
+
+
+RECOMMEND_CHOICES = (('', '—'), ('strong', 'أوصي بشدة'), ('yes', 'أوصي'), ('maybe', 'محايد'), ('no', 'لا أوصي'))
+
+
+class Assignment(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='assignments', verbose_name="الطلب")
+    judge = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='assignments', verbose_name="المحكّم")
+    assigned_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإسناد")
+    comment = models.TextField(blank=True, default='', verbose_name="ملاحظات المحكّم العامة")
+    recommendation = models.CharField(max_length=10, blank=True, default='', choices=RECOMMEND_CHOICES, verbose_name="التوصية")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ إنهاء التقييم")
+
+    class Meta:
+        verbose_name = "إسناد تحكيم"
+        verbose_name_plural = "إسناد الطلبات للمحكّمين"
+        unique_together = ('submission', 'judge')
+        ordering = ['-assigned_at']
+
+    def __str__(self):
+        return f"{self.submission.ref} ← {self.judge.get_full_name() or self.judge.email}"
+
+    @property
+    def is_done(self):
+        return self.completed_at is not None
+
+    @property
+    def total(self):
+        """الدرجة من 100 (مع الأوزان)"""
+        num = den = 0
+        for sc in self.scores.all():
+            c = sc.criterion
+            w = float(c.weight or 1)
+            num += float(sc.value) / (c.max_score or 1) * w
+            den += w
+        return round(num / den * 100, 1) if den else 0
+
+
+class Score(models.Model):
+    assignment = models.ForeignKey(Assignment, on_delete=models.CASCADE, related_name='scores')
+    criterion = models.ForeignKey(Criterion, on_delete=models.CASCADE, verbose_name="المعيار")
+    value = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="الدرجة")
+    note = models.CharField(max_length=500, blank=True, default='', verbose_name="ملاحظة")
+
+    class Meta:
+        verbose_name = "درجة"
+        verbose_name_plural = "الدرجات"
+        unique_together = ('assignment', 'criterion')
+
+
+class Notification(models.Model):
+    LEVELS = (('info', 'معلومة'), ('success', 'نجاح'), ('warning', 'تنبيه'))
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='notifications', verbose_name="المستخدم")
+    title = models.CharField(max_length=255, verbose_name="العنوان")
+    body = models.TextField(blank=True, default='', verbose_name="النص")
+    url = models.CharField(max_length=500, blank=True, default='', verbose_name="الرابط")
+    level = models.CharField(max_length=10, choices=LEVELS, default='info')
+    is_read = models.BooleanField(default=False, verbose_name="مقروء؟")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "إشعار"
+        verbose_name_plural = "الإشعارات"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class EmailLog(models.Model):
+    STATUS = (('sent', 'أُرسل'), ('saved', 'محفوظ (البريد غير مضبوط)'), ('failed', 'فشل'))
+    to = models.CharField(max_length=500, verbose_name="إلى")
+    subject = models.CharField(max_length=255, verbose_name="الموضوع")
+    status = models.CharField(max_length=10, choices=STATUS, verbose_name="الحالة")
+    error = models.TextField(blank=True, default='', verbose_name="الخطأ")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "رسالة بريد"
+        verbose_name_plural = "سجل رسائل البريد"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.subject} → {self.to}"

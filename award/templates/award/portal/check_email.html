@@ -1,0 +1,9 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block card %}
+<div class="text-center">
+<i class="fas fa-envelope-open-text" style="font-size:3rem;color:var(--gold)"></i>
+<h1 class="mt-3">تحقّقوا من بريدكم</h1>
+<p class="pt-sub">أرسلنا رابط التفعيل إلى <b dir="ltr">{{ email }}</b>. افتحوا الرسالة واضغطوا «تفعيل الحساب».</p>
+<p class="pt-help">لم تصل؟ راجعوا مجلد الرسائل غير المرغوبة (Spam)، أو <a href="{% url 'resend_activation' %}">أعيدوا الإرسال</a>.</p>
+</div>
+{% endblock %}

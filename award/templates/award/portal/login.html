@@ -1,0 +1,18 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block title %}تسجيل الدخول{% endblock %}
+{% block card %}
+<h1><i class="fas fa-right-to-bracket ms-2" style="color:var(--gold)"></i> تسجيل الدخول</h1>
+<p class="pt-sub">لحسابات المدارس والمحكّمين.</p>
+{% if error %}<div class="pt-alert pt-alert-error">{{ error }}{% if inactive %} <a href="{% url 'resend_activation' %}">إعادة إرسال رسالة التفعيل</a>{% endif %}</div>{% endif %}
+<form method="post" novalidate>{% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="mb-3"><label class="form-label">البريد الإلكتروني</label>
+    <input type="email" name="email" value="{{ email }}" class="form-control" dir="ltr" autocomplete="username" required autofocus></div>
+  <div class="mb-3"><label class="form-label">كلمة المرور</label>
+    <div class="pt-pw"><input type="password" name="password" class="form-control" autocomplete="current-password" required>
+    <button type="button" onclick="var i=this.previousElementSibling;i.type=i.type==='password'?'text':'password'" aria-label="إظهار"><i class="fas fa-eye"></i></button></div></div>
+  <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="remember" id="rem" checked><label class="form-check-label" for="rem">تذكّرني على هذا الجهاز</label></div>
+  <button class="pt-btn pt-btn-gold pt-btn-block" type="submit">دخول <i class="fas fa-arrow-left"></i></button>
+</form>
+<div class="pt-links"><a href="{% url 'password_reset' %}">نسيت كلمة المرور؟</a><a href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">مدرسة جديدة؟ أنشئ حساباً</a></div>
+{% endblock %}

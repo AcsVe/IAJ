@@ -91,6 +91,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'award.context_processors.ticker_context',
                 'award.context_processors.site_context',
+                'award.context_processors.portal_context',
             ],
         },
     },
@@ -142,7 +143,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = os.environ.get('TIME_ZONE', 'Asia/Amman')
 USE_I18N = True
 USE_TZ = True
 
@@ -180,3 +181,34 @@ CACHES = {
         'OPTIONS': {'MAX_ENTRIES': 600},
     }
 }
+
+
+# =====================================================
+#   البريد الإلكتروني (إشعارات التسجيل)
+#   بدون EMAIL_HOST في .env تُحفظ الرسائل في logs/emails بدل إرسالها
+# =====================================================
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '').strip()
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587') or 587)
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True' if EMAIL_PORT == 465 else 'False') == 'True'
+EMAIL_USE_TLS = (not EMAIL_USE_SSL) and os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_TIMEOUT = 20
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'جائزة انتصار عباس جردانة <noreply@iajaward.org>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+# بريد (أو أكثر، بفاصلة) يستلم تنبيه «طلب جديد» — فارغ = بريد كل مدير في لوحة التحكم
+ADMIN_NOTIFY_EMAILS = [e.strip() for e in os.environ.get('ADMIN_NOTIFY_EMAILS', '').split(',') if e.strip()]
+if EMAIL_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'logs', 'emails')
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/portal/'
+LOGOUT_REDIRECT_URL = '/'
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3   # روابط التفعيل/الاستعادة صالحة 3 أيام
+AUTHENTICATION_BACKENDS = ['award.auth.EmailOrUsernameBackend']
+
+# رفع ملفات الطلبات
+SUBMISSION_MAX_MB = int(os.environ.get('SUBMISSION_MAX_MB', '25') or 25)

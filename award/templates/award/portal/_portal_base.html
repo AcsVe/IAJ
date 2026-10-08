@@ -1,0 +1,9 @@
+{% extends 'award/base.html' %}
+{% block extra_head %}{% include 'award/portal/_styles.html' %}{% endblock %}
+{% block content %}
+<section class="pt-page"><div class="container pt-wrap">
+  {% include 'award/portal/_tabs.html' %}
+  {% include 'award/portal/_messages.html' %}
+  {% block portal %}{% endblock %}
+</div></section>
+{% endblock %}

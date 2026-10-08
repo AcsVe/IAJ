@@ -1,0 +1,67 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card" style="border-top:0">
+  <h1>أهلاً، {{ prof.display_name }}</h1>
+  <p class="pt-sub mb-0">من هنا تقدّمون مشاريعكم وتتابعون حالتها خطوة بخطوة.</p>
+</div>
+
+{% if cycle %}
+<div class="pt-cycle">
+  <div>
+    <div><b>{{ cycle.name }} — {{ cycle.year }}</b></div>
+    <div class="mt-1">
+      {% if cycle.phase == 'upcoming' %}يبدأ التسجيل في {{ cycle.opens_at|date:"Y-m-d" }}
+      {% elif cycle.phase == 'open' %}التسجيل مفتوح حتى <b style="font-size:1rem">{{ cycle.closes_at|date:"Y-m-d H:i" }}</b>
+      {% elif cycle.phase == 'results' %}تم إعلان النتائج
+      {% else %}انتهى التسجيل — الطلبات في مرحلة التدقيق والتحكيم{% endif %}
+    </div>
+  </div>
+  {% if can_new %}<a href="{% url 'submission_new' %}" class="pt-btn pt-btn-gold"><i class="fas fa-plus"></i> تقديم مشروع جديد</a>
+  {% else %}<span style="opacity:.85">{{ new_block_reason }}</span>{% endif %}
+</div>
+{% endif %}
+
+<div class="pt-stats">
+  <div class="pt-stat"><b>{{ counts.all }}</b><span>كل الطلبات</span></div>
+  <div class="pt-stat"><b>{{ counts.active }}</b><span>مُرسلة</span></div>
+  <div class="pt-stat"><b>{{ counts.draft }}</b><span>مسودات</span></div>
+  <div class="pt-stat"><b style="color:#e8710a">{{ counts.revision }}</b><span>مطلوب تعديل</span></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="pt-card">
+      <h2><i class="fas fa-folder-open ms-1" style="color:var(--gold)"></i> طلباتي ({{ counts.all }})</h2>
+      {% if subs %}
+      <ul class="pt-list">
+        {% for s in subs %}
+        <li class="pt-item">
+          <div>
+            <a class="t" href="{{ s.get_absolute_url }}">{{ s.project_title }}</a>
+            <div class="m">{{ s.ref }} · {{ s.track|default:"—" }}{% if s.cycle %} · {{ s.cycle.name }}{% endif %}
+              {% if s.status == 'revision' and s.revision_deadline %} · <b style="color:#e8710a">عدّلوا قبل {{ s.revision_deadline|date:"Y-m-d" }}</b>{% endif %}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="pt-status st-{{ s.public_status }}">{{ s.public_status_label }}</span>
+            {% if s.can_edit %}<a class="pt-btn pt-btn-light" style="padding:7px 14px" href="{% url 'submission_edit' s.pk %}"><i class="fas fa-pen"></i> {% if s.status == 'revision' %}تعديل{% else %}إكمال{% endif %}</a>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="pt-empty"><i class="fas fa-lightbulb"></i>لم تقدّموا أي مشروع بعد.
+        {% if can_new %}<div class="mt-3"><a href="{% url 'submission_new' %}" class="pt-btn pt-btn-gold">قدّموا مشروعكم الأول</a></div>{% endif %}</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="pt-card pt-notes">
+      <h2><i class="fas fa-bell ms-1" style="color:var(--gold)"></i> آخر الإشعارات</h2>
+      {% for n in notes %}
+        <a class="pt-n{% if not n.is_read %} unread{% endif %}" href="{% url 'notification_go' n.pk %}"><b>{{ n.title }}</b><br><small class="text-muted">{{ n.created_at|date:"Y-m-d H:i" }}</small></a>
+      {% empty %}<p class="text-muted">لا توجد إشعارات.</p>{% endfor %}
+      {% if notes %}<div class="mt-2"><a href="{% url 'notifications' %}">كل الإشعارات ←</a></div>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

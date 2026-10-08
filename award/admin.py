@@ -140,15 +140,6 @@ class TrackAdmin(admin.ModelAdmin):
         js = ('award/js/quill_init.js',)
 
 
-@admin.register(Submission)
-class SubmissionAdmin(admin.ModelAdmin):
-    list_display = ('school_name', 'project_title', 'status', 'submitted_at')
-    list_filter = ('status', 'field', 'track')
-    list_display_links = ('school_name',)
-    search_fields = ('school_name', 'project_title', 'email')
-    readonly_fields = ('submitted_at',)
-
-
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):
     fieldsets = (
@@ -531,9 +522,14 @@ ADMIN_SECTIONS = [
         ('Video',        'مكتبة الفيديو'),
         ('SuccessStory', 'قصص النجاح'),
     ]),
-    ('٤. طلبات الترشح', [
-        ('Submission',         'الطلبات المستلمة'),
-        ('SuccessPageContent', 'رسالة ما بعد إرسال الطلب'),
+    ('٤. التسجيل والتحكيم', [
+        ('AwardCycle',   'دورات الجائزة (مواعيد التسجيل ونشر النتائج)'),
+        ('Submission',   'طلبات الترشح'),
+        ('Profile',      'حسابات المدارس والمحكّمين'),
+        ('Assignment',   'إسناد الطلبات للمحكّمين والتقييمات'),
+        ('Criterion',    'معايير التحكيم'),
+        ('Notification', 'الإشعارات المرسلة'),
+        ('EmailLog',     'سجل رسائل البريد'),
     ]),
     ('٥. التصميم والإعدادات العامة', [
         ('ThemeSetting',  'الألوان والخطوط و CSS مخصص'),
@@ -601,3 +597,5 @@ def _auto_search_fields():
 
 
 _auto_search_fields()
+
+from . import admin_portal  # noqa: E402,F401  التسجيل والتحكيم

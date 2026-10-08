@@ -1,0 +1,12 @@
+<nav class="pt-tabs">
+  {% if portal_role == 'judge' %}
+  <a href="{% url 'judge_home' %}" class="{% if tab == 'home' %}on{% endif %}"><i class="fas fa-scale-balanced ms-1"></i> طلبات التحكيم</a>
+  {% else %}
+  <a href="{% url 'portal_home' %}{% if portal_role == 'staff' %}?school=1{% endif %}" class="{% if tab == 'home' %}on{% endif %}"><i class="fas fa-folder-open ms-1"></i> طلباتي</a>
+  {% endif %}
+  <a href="{% url 'notifications' %}" class="{% if tab == 'notes' %}on{% endif %}"><i class="fas fa-bell ms-1"></i> الإشعارات{% if unread_notes %}<span class="badge">{{ unread_notes }}</span>{% endif %}</a>
+  <a href="{% url 'profile_edit' %}" class="{% if tab == 'profile' %}on{% endif %}"><i class="fas fa-id-card ms-1"></i> بياناتي</a>
+  <a href="{% url 'password_change' %}" class="{% if tab == 'password' %}on{% endif %}"><i class="fas fa-key ms-1"></i> كلمة المرور</a>
+  {% if user.is_staff %}<a href="/admin/"><i class="fas fa-gauge ms-1"></i> لوحة التحكم</a>{% endif %}
+  <form method="post" action="{% url 'logout' %}" class="d-inline">{% csrf_token %}<button type="submit"><i class="fas fa-right-from-bracket ms-1"></i> خروج</button></form>
+</nav>

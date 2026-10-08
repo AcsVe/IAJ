@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="max-width:760px">
+  {% if intro %}<p style="background:#fff8e6;border-right:4px solid #c5a059;padding:10px 14px;border-radius:6px">{{ intro }}</p>{% endif %}
+  <p><b>المحدّد: {{ count }}</b></p>
+  <form method="post">{% csrf_token %}
+    {% for obj in queryset|slice:":2000" %}<input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}">{% endfor %}
+    <input type="hidden" name="action" value="{{ action }}">
+    <input type="hidden" name="select_across" value="{{ select_across }}">
+    <input type="hidden" name="apply" value="1">
+    <fieldset class="module aligned">
+      {% for f in form %}
+      <div class="form-row">
+        <div>
+          <label for="{{ f.id_for_label }}" style="font-weight:700">{{ f.label }}</label>
+          {{ f }}
+          {% if f.help_text %}<div class="help">{{ f.help_text }}</div>{% endif %}
+          {% for e in f.errors %}<div class="errornote">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </fieldset>
+    <details style="margin:12px 0"><summary>عرض العناصر المحدّدة</summary>
+      <ul>{% for obj in queryset|slice:":200" %}<li>{{ obj }}</li>{% endfor %}</ul>
+    </details>
+    <div class="submit-row" style="justify-content:flex-start;gap:10px">
+      <input type="submit" class="default" value="تنفيذ">
+      <a href="" class="button cancel-link" onclick="history.back();return false;">إلغاء</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

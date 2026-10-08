@@ -1,4 +1,5 @@
 from django.http import Http404, HttpResponse, HttpResponseNotModified
+from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_GET
 
@@ -8,7 +9,6 @@ from .models import (
     SectionBackground, Sponsor, SlideshowCard, News, Video, SuccessStory,
     HeroCard, Winner, WinnerCategory, Photo, StoredFile,
 )
-from .forms import SubmissionForm
 from .site_cache import get_site_bundle, clear_site_bundle, get_home_bundle
 
 
@@ -46,25 +46,9 @@ def home(request):
 
 
 def submit_project(request):
-    ctx = _site_objects()
-    if request.method == 'POST':
-        form = SubmissionForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            ctx['success_content'] = get_or_none(SuccessPageContent)
-            return render(request, 'award/success.html', ctx)
-    else:
-        initial = {}
-        for key in ('field', 'track'):
-            val = request.GET.get(key, '')
-            if val.isdigit():
-                initial[key] = int(val)
-        form = SubmissionForm(initial=initial)
-    ctx['form'] = form
-    import json
-    from .models import Track
-    ctx['track_map'] = json.dumps({str(t.pk): str(t.field_id) for t in Track.objects.filter(is_active=True).only('pk', 'field_id')})
-    return render(request, 'award/submit.html', ctx)
+    """«سجّل الآن» — يمر عبر حساب المدرسة"""
+    from .portal_views import submit_entry
+    return submit_entry(request)
 
 
 def news_list(request):
@@ -118,8 +102,9 @@ def winners_page(request):
 def statistics_page(request):
     """صفحة الإحصائيات"""
     return render(request, 'award/statistics.html', {
-        'total_submissions': Submission.objects.count(),
-        'accepted_submissions': Submission.objects.filter(status='accepted').count(),
+        'total_submissions': Submission.objects.exclude(status__in=('draft', 'withdrawn')).count(),
+        'accepted_submissions': Submission.objects.filter(status__in=('accepted', 'winner')).filter(
+            Q(cycle__isnull=True) | Q(cycle__results_published=True)).count(),
     })
 
 
@@ -199,6 +184,13 @@ def serve_media(request, path):
     full = _os.path.realpath(_os.path.join(root, path))
     if not full.startswith(root + _os.sep) or not _os.path.isfile(full):
         raise Http404("الملف غير موجود")
+    # ملفات الطلبات خاصة: الإدارة + المدرسة صاحبة الطلب + المحكّم المُسند إليه فقط
+    rel = _os.path.relpath(full, root).replace(_os.sep, '/')
+    private = rel.startswith('private/') or rel.startswith('submissions/')
+    if private:
+        from .portal_views import can_view_private_file
+        if not can_view_private_file(request.user, rel):
+            raise Http404("الملف غير موجود")
 
     st = _os.stat(full)
     size = st.st_size
@@ -213,7 +205,7 @@ def serve_media(request, path):
     headers = {
         'ETag': etag,
         'Last-Modified': _http_date(st.st_mtime),
-        'Cache-Control': 'public, max-age=2592000',
+        'Cache-Control': 'private, no-store' if private else 'public, max-age=2592000',
         'Accept-Ranges': 'bytes',
         'X-Content-Type-Options': 'nosniff',
     }

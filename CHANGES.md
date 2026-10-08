@@ -49,3 +49,12 @@ Commands:
 - New page /tracks/<id>/ with breadcrumb, table, explanation, apply box, other tracks in the same field. Search results link to it.
 - Sponsors heading uses the standard section heading (text + colors from admin).
 - Each track: enable/disable (hidden everywhere when disabled; bulk actions too) and an optional scrolling notice strip (text + speed) shown in the track modal and page.
+
+## Registration, notifications, judging
+- School accounts (email login, activation email, password reset), portal at `/portal/`: drafts, submit, revision requests, withdraw, status steps and timeline.
+- Award cycles (`AwardCycle`): open/close dates drive the countdown, per-cycle tracks, max per school, revision days, blind judging, results publishing (final results hidden from schools until published).
+- Judges portal `/judge/`: weighted criteria scoring, live total, recommendation; admin sees averages. Auto-assign balances load by field.
+- Notifications: in-site bell + HTML email (background thread, `EmailLog`), staff alerted on new/updated submissions. SMTP from `.env`; without it, emails go to `logs/emails`.
+- Submission files are private (`media/private/`): staff, owner, assigned judge only.
+- Admin: bulk status change with note, auto-assign, message schools/accounts, CSV export, add judge with email invite, facet counts on all filters.
+- `TIME_ZONE` now Asia/Amman. Tests: `python manage.py test award`. Email check: `test_email.bat`.

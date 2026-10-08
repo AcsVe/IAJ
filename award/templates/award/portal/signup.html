@@ -1,0 +1,20 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block title %}حساب مدرسة جديد{% endblock %}
+{% block card %}
+<h1><i class="fas fa-school ms-2" style="color:var(--gold)"></i> حساب مدرسة جديد</h1>
+<p class="pt-sub">أنشئوا حساباً مرة واحدة، ثم قدّموا مشاريعكم وتابعوا حالتها والإشعارات من مكان واحد.</p>
+{% for e in form.non_field_errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
+<form method="post" novalidate>{% csrf_token %}
+  <input type="hidden" name="next" value="{{ next }}">
+  {% with f=form.school_name %}{% include 'award/portal/_field.html' %}{% endwith %}
+  {% with f=form.contact_person %}{% include 'award/portal/_field.html' %}{% endwith %}
+  <div class="row"><div class="col-md-6">{% with f=form.email %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+  <div class="col-md-6">{% with f=form.phone %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+  {% with f=form.city %}{% include 'award/portal/_field.html' %}{% endwith %}
+  <div class="row"><div class="col-md-6">{% with f=form.password1 %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+  <div class="col-md-6">{% with f=form.password2 %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+  <div class="hp" aria-hidden="true">{{ form.website }}</div>
+  <button class="pt-btn pt-btn-gold pt-btn-block mt-2" type="submit">إنشاء الحساب <i class="fas fa-arrow-left"></i></button>
+</form>
+<div class="pt-links"><span>لديكم حساب؟ <a href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">تسجيل الدخول</a></span></div>
+{% endblock %}

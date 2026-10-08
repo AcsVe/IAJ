@@ -1,0 +1,6 @@
+<div class="mb-3">
+  <label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}{% if f.field.required %} <span style="color:#c62828">*</span>{% endif %}</label>
+  {{ f }}
+  {% if f.help_text %}<span class="pt-help">{{ f.help_text|safe }}</span>{% endif %}
+  {% for e in f.errors %}<div class="pt-err">{{ e }}</div>{% endfor %}
+</div>

@@ -1,0 +1,1 @@
+{% if messages %}{% for m in messages %}<div class="pt-alert pt-alert-{{ m.tags|default:'info' }}">{{ m }}</div>{% endfor %}{% endif %}

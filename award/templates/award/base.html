@@ -220,6 +220,12 @@
         .td-row:nth-child(even) .td-val { background: rgba(10,22,50,.02); }
         @media (max-width: 640px) { .td-row { grid-template-columns: 1fr; } .td-key { padding: 12px 14px 8px; } .td-val { padding: 10px 16px 14px; } }
         /* زر «سجل الآن» بنفس تأثيرات زر «باقي … يوماً»: زجاج متدرّج + نبض + نقطة نابضة + حواف مستديرة */
+        .navbar-royal .nav-account { color:#fff; font-weight:700; text-decoration:none; white-space:nowrap; flex-shrink:0; margin:0 10px; font-size:.95rem; display:inline-flex; align-items:center; gap:6px; }
+        .navbar-royal .nav-account:hover { color: var(--gold); }
+        .navbar-royal .nav-bell { position:relative; color:#fff; font-size:1.15rem; flex-shrink:0; margin:0 6px; text-decoration:none; }
+        .navbar-royal .nav-bell:hover { color: var(--gold); }
+        .navbar-royal .nav-bell-n { position:absolute; top:-8px; left:-10px; background:#d93025; color:#fff; border-radius:12px; font-size:.7rem; font-weight:800; padding:1px 6px; line-height:1.4; }
+        @media (max-width: 991.98px) { .navbar-royal .nav-account, .navbar-royal .nav-bell { display:flex; padding:12px 4px; margin:0; border-bottom:1px solid rgba(255,255,255,0.08); } .navbar-royal .nav-bell-n { position:static; margin-right:8px; } }
         .navbar-royal .nav-register {
             position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
             border-radius: 999px !important; padding: 9px 26px 9px 24px; font-weight: 800; letter-spacing: .3px;
@@ -519,7 +525,7 @@
           </ul>
         </li>
         <li class="nav-item d-none d-lg-flex align-items-center"><button type="button" class="nav-search-btn" data-open-search aria-label="بحث في الموقع" title="بحث"><i class="fas fa-magnifying-glass"></i></button></li>
-        {% if settings and settings.registration_deadline %}
+        {% if reg_deadline %}
         <li class="nav-item dropdown" id="countdownDropdown" style="position: relative;">
           <a class="nav-link countdown-toggle" href="#" aria-label="الوقت المتبقي للتسجيل">
             <span class="countdown-pulse" id="countdownBadge">الوقت المتبقي</span>
@@ -541,7 +547,13 @@
         {% endif %}
       </ul>
       <a href="{% url 'home' %}" class="nav-award-title nav-award-title-desktop d-none d-lg-flex">جائزة انتصار عباس جردانة</a>
-      {% if request.path != '/submit/' %}
+      {% if user.is_authenticated %}
+      <a href="{% url 'notifications' %}" class="nav-bell" title="الإشعارات" aria-label="الإشعارات"><i class="fas fa-bell"></i>{% if unread_notes %}<span class="nav-bell-n">{{ unread_notes }}</span>{% endif %}</a>
+      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' %}/admin/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account"><i class="fas fa-circle-user"></i> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' %}لوحة التحكم{% else %}حسابي{% endif %}</a>
+      {% else %}
+      <a href="{% url 'login' %}" class="nav-account"><i class="fas fa-right-to-bracket"></i> دخول</a>
+      {% endif %}
+      {% if portal_role != 'judge' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':10' == '/accounts/' and reg_open %}
       <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
       {% endif %}
     </div>
@@ -780,9 +792,9 @@
         document.addEventListener('click', function (e) { if (!dd.contains(e.target)) dd.classList.remove('show'); });
     }
     var cdEl = document.getElementById('countdownNav');
-    {% if settings and settings.registration_deadline %}
+    {% if reg_deadline %}
     if (cdEl) {
-        var target = new Date("{{ settings.registration_deadline|date:'c' }}");
+        var target = new Date("{{ reg_deadline|date:'c' }}");
         var badge = document.getElementById('countdownBadge');
         var daysWord = function (n) { return n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : (n >= 3 && n <= 10) ? n + ' أيام' : n + ' يوماً'; };
         var pad = function (n) { return (n < 10 ? '0' : '') + n; };

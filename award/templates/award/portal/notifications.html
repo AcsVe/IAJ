@@ -1,0 +1,15 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card pt-notes">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+    <h2 class="mb-0">الإشعارات ({{ items|length }}){% if unread_notes %} — غير مقروء: {{ unread_notes }}{% endif %}</h2>
+    {% if unread_notes %}<form method="post">{% csrf_token %}<button class="pt-btn pt-btn-light" style="padding:7px 14px"><i class="fas fa-check-double"></i> تعليم الكل كمقروء</button></form>{% endif %}
+  </div>
+  {% for n in items %}
+    <a class="pt-n{% if not n.is_read %} unread{% endif %}" href="{% url 'notification_go' n.pk %}">
+      <b>{{ n.title }}</b> <small class="text-muted me-2">{{ n.created_at|date:"Y-m-d H:i" }}</small>
+      {% if n.body %}<p>{{ n.body }}</p>{% endif %}
+    </a>
+  {% empty %}<div class="pt-empty"><i class="fas fa-bell-slash"></i>لا توجد إشعارات بعد.</div>{% endfor %}
+</div>
+{% endblock %}

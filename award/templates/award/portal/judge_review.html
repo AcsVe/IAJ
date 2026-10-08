@@ -1,0 +1,49 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card">
+  <div class="d-flex justify-content-between flex-wrap gap-2">
+    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0">{{ sub.ref }} · {{ sub.field|default:"" }} / {{ sub.track|default:"" }}</p></div>
+    <div class="text-center"><div class="pt-total" id="liveTotal">{{ a.total }}</div><small class="text-muted">من 100</small></div>
+  </div>
+  <dl class="pt-kv mt-3">
+    {% if not blind %}<dt>المدرسة</dt><dd>{{ sub.school_name }}</dd>
+    <dt>الطلبة</dt><dd>{{ sub.team_members|default:"—" }}</dd><dt>المشرف</dt><dd>{{ sub.supervisor|default:"—" }}</dd>{% endif %}
+    <dt>ملخص المشروع</dt><dd>{{ sub.abstract|default:"—" }}</dd>
+    <dt>الملفات</dt><dd>{% if sub.document %}<a href="{{ sub.document.url }}" target="_blank"><i class="fas fa-file-pdf"></i> ملف البحث</a>{% endif %}
+      {% if sub.attachment %} &nbsp; <a href="{{ sub.attachment.url }}" target="_blank"><i class="fas fa-paperclip"></i> المرفق</a>{% endif %}</dd>
+  </dl>
+</div>
+
+<div class="pt-card">
+  <h2>التقييم {% if a.is_done %}<span class="pt-status st-accepted" style="font-size:.85rem">منتهٍ {{ a.completed_at|date:"Y-m-d" }}</span>{% endif %}</h2>
+  {% for e in errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
+  {% if locked %}<div class="pt-note">انتهت مرحلة التحكيم لهذا الطلب — التقييم للعرض فقط.</div>{% endif %}
+  {% if not rows %}<div class="pt-note warn">لم تُضَف معايير تحكيم بعد. تواصل مع إدارة الجائزة.</div>{% endif %}
+  <form method="post" id="scoreForm">{% csrf_token %}
+    {% for r in rows %}
+    <div class="pt-crit"><div class="row g-2">
+      <div class="col-md-6"><b style="color:var(--primary)">{{ r.c.name }}</b> <small class="text-muted">(من {{ r.c.max_score }}{% if r.c.weight != 1 %} · الوزن {{ r.c.weight|floatformat:"-2" }}{% endif %})</small>
+        {% if r.c.description %}<div class="pt-help">{{ r.c.description|linebreaksbr }}</div>{% endif %}</div>
+      <div class="col-md-2 col-4"><input type="number" class="form-control pt-score" name="c{{ r.c.pk }}" value="{{ r.value|default_if_none:''|floatformat:'-2' }}" min="0" max="{{ r.c.max_score }}" step="0.5" data-max="{{ r.c.max_score }}" data-w="{{ r.c.weight|stringformat:'s' }}" {% if locked %}disabled{% endif %}></div>
+      <div class="col-md-4 col-8"><input type="text" class="form-control" name="n{{ r.c.pk }}" value="{{ r.note }}" placeholder="ملاحظة (اختياري)" {% if locked %}disabled{% endif %}></div>
+    </div></div>
+    {% endfor %}
+    <div class="row g-3 mt-1">
+      <div class="col-md-8"><label class="form-label">ملاحظات عامة</label><textarea name="comment" rows="4" class="form-control" {% if locked %}disabled{% endif %}>{{ a.comment }}</textarea></div>
+      <div class="col-md-4"><label class="form-label">التوصية</label><select name="recommendation" class="form-select" {% if locked %}disabled{% endif %}>
+        <option value="">—</option>{% for v, l in rec_choices %}<option value="{{ v }}"{% if a.recommendation == v %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    </div>
+    {% if not locked and rows %}
+    <div class="d-flex flex-wrap gap-2 mt-4">
+      <button name="action" value="finish" class="pt-btn pt-btn-gold" onclick="return confirm('إنهاء التقييم وإرساله للإدارة؟')"><i class="fas fa-check"></i> {% if a.is_done %}تحديث التقييم{% else %}إنهاء التقييم{% endif %}</button>
+      <button name="action" value="save" class="pt-btn pt-btn-light"><i class="fas fa-floppy-disk"></i> حفظ دون إنهاء</button>
+      <a href="{% url 'judge_home' %}" class="pt-btn pt-btn-light">رجوع</a>
+    </div>{% endif %}
+  </form>
+</div>
+<script>
+(function(){var ins=document.querySelectorAll('.pt-score'),out=document.getElementById('liveTotal');
+function calc(){var n=0,d=0;ins.forEach(function(i){var w=parseFloat(i.dataset.w)||1,m=parseFloat(i.dataset.max)||1,v=parseFloat(i.value);if(!isNaN(v)){n+=Math.min(v,m)/m*w}d+=w});out.textContent=d?(Math.round(n/d*1000)/10):0}
+ins.forEach(function(i){i.addEventListener('input',calc)});calc();})();
+</script>
+{% endblock %}

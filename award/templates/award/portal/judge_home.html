@@ -1,0 +1,22 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card" style="border-top:0"><h1>لوحة المحكّم</h1>
+<p class="pt-sub mb-0">قيّم الطلبات المسندة إليك حسب المعايير. يمكنك الحفظ والعودة لاحقاً، ثم «إنهاء التقييم».</p></div>
+<div class="pt-stats">
+  <div class="pt-stat"><b>{{ counts.all }}</b><span>كل الطلبات</span></div>
+  <div class="pt-stat"><b style="color:#e8710a">{{ counts.todo }}</b><span>بانتظار التقييم</span></div>
+  <div class="pt-stat"><b style="color:#188038">{{ counts.done }}</b><span>منتهية</span></div>
+</div>
+<div class="pt-card">
+  <h2>الطلبات المسندة إليك ({{ counts.all }})</h2>
+  {% if items %}<ul class="pt-list">
+  {% for a in items %}<li class="pt-item">
+    <div><a class="t" href="{% url 'judge_review' a.pk %}">{{ a.submission.project_title }}</a>
+      <div class="m">{{ a.submission.ref }} · {{ a.submission.track|default:"—" }} · أُسند {{ a.assigned_at|date:"Y-m-d" }}</div></div>
+    <div class="d-flex align-items-center gap-2">
+      {% if a.is_done %}<span class="pt-status st-accepted">منتهٍ — {{ a.total }}/100</span>{% else %}<span class="pt-status st-revision">بانتظار التقييم</span>{% endif %}
+      <a class="pt-btn pt-btn-light" style="padding:7px 14px" href="{% url 'judge_review' a.pk %}">{% if a.is_done %}عرض{% else %}تقييم{% endif %}</a>
+    </div></li>{% endfor %}
+  </ul>{% else %}<div class="pt-empty"><i class="fas fa-inbox"></i>لم يُسند إليك أي طلب بعد. سيصلك إشعار عند الإسناد.</div>{% endif %}
+</div>
+{% endblock %}

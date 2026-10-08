@@ -1,0 +1,14 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card pt-narrow">
+  <h2>بيانات الحساب</h2>
+  <p class="pt-sub">البريد الإلكتروني: <b dir="ltr">{{ user.email }}</b></p>
+  <form method="post" novalidate>{% csrf_token %}
+    {% for f in form %}{% if f.name == 'email_notifications' %}
+      <div class="form-check mb-3">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label>
+        <span class="pt-help">الإشعارات داخل الموقع تبقى تعمل دائماً.</span></div>
+    {% else %}{% include 'award/portal/_field.html' %}{% endif %}{% endfor %}
+    <button class="pt-btn pt-btn-gold">حفظ</button>
+  </form>
+</div>
+{% endblock %}

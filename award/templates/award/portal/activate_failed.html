@@ -1,0 +1,10 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block card %}
+<div class="text-center">
+<i class="fas fa-link-slash" style="font-size:3rem;color:#e8710a"></i>
+<h1 class="mt-3">رابط التفعيل غير صالح</h1>
+<p class="pt-sub">ربما انتهت صلاحيته أو استُخدم من قبل.</p>
+<a class="pt-btn pt-btn-gold" href="{% url 'resend_activation' %}">إرسال رابط جديد</a>
+<a class="pt-btn pt-btn-light" href="{% url 'login' %}">تسجيل الدخول</a>
+</div>
+{% endblock %}

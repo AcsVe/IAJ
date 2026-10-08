@@ -1,0 +1,52 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0">{{ sub.ref }}{% if sub.cycle %} · {{ sub.cycle.name }} {{ sub.cycle.year }}{% endif %}</p></div>
+    <span class="pt-status st-{{ sub.public_status }}" style="font-size:1rem">{{ sub.public_status_label }}</span>
+  </div>
+  {% if sub.status != 'withdrawn' %}
+  <div class="pt-steps mt-4">{% for s in steps %}<div class="pt-step {{ s.state }}{% if s.warn %} warn{% endif %}">{{ s.label }}</div>{% endfor %}</div>
+  {% endif %}
+
+  {% if sub.status == 'draft' %}<div class="pt-note">هذا الطلب <b>مسودة</b> ولم يصل لفريق الجائزة بعد. أكملوه ثم اضغطوا «إرسال الطلب».</div>{% endif %}
+  {% if sub.status == 'revision' %}<div class="pt-note warn"><b>مطلوب تعديل:</b>
+{{ sub.school_note|default:"يرجى مراجعة الطلب وإعادة إرساله." }}{% if sub.revision_deadline %}
+
+<b>آخر موعد: {{ sub.revision_deadline|date:"Y-m-d H:i" }}</b>{% endif %}</div>
+  {% elif sub.school_note and not sub.results_hidden and sub.status in 'accepted rejected winner' %}<div class="pt-note"><b>ملاحظة فريق الجائزة:</b>
+{{ sub.school_note }}</div>{% endif %}
+
+  <div class="d-flex flex-wrap gap-2 mb-2">
+    {% if sub.can_edit %}<a href="{% url 'submission_edit' sub.pk %}" class="pt-btn pt-btn-gold"><i class="fas fa-pen"></i> {% if sub.status == 'revision' %}تعديل وإعادة الإرسال{% else %}إكمال وإرسال{% endif %}</a>{% endif %}
+    {% if sub.can_withdraw %}
+    <form method="post" action="{% url 'submission_withdraw' sub.pk %}" onsubmit="return confirm('{% if sub.status == 'draft' %}حذف هذه المسودة نهائياً؟{% else %}سحب الطلب من المسابقة؟ لا يمكن التراجع.{% endif %}')">{% csrf_token %}
+      <button class="pt-btn pt-btn-danger"><i class="fas fa-{% if sub.status == 'draft' %}trash{% else %}rotate-left{% endif %}"></i> {% if sub.status == 'draft' %}حذف المسودة{% else %}سحب الطلب{% endif %}</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8"><div class="pt-card">
+    <h2>تفاصيل الطلب</h2>
+    <dl class="pt-kv">
+      <dt>المجال</dt><dd>{{ sub.field|default:"—" }}</dd>
+      <dt>المسار</dt><dd>{{ sub.track|default:"—" }}</dd>
+      <dt>ملخص المشروع</dt><dd>{{ sub.abstract|default:"—" }}</dd>
+      <dt>الطلبة</dt><dd>{{ sub.team_members|default:"—" }}</dd>
+      <dt>المعلم المشرف</dt><dd>{{ sub.supervisor|default:"—" }}</dd>
+      <dt>ضابط الارتباط</dt><dd>{{ sub.contact_person }} — <span dir="ltr">{{ sub.phone }}</span></dd>
+      <dt>ملف البحث</dt><dd>{% if sub.document %}<a href="{{ sub.document.url }}" target="_blank"><i class="fas fa-file-pdf"></i> فتح الملف</a>{% else %}<span style="color:#c62828">لم يُرفع بعد</span>{% endif %}</dd>
+      <dt>المرفق</dt><dd>{% if sub.attachment %}<a href="{{ sub.attachment.url }}" target="_blank"><i class="fas fa-paperclip"></i> فتح المرفق</a>{% else %}—{% endif %}</dd>
+      <dt>تاريخ الإرسال</dt><dd>{{ sub.sent_at|date:"Y-m-d H:i"|default:"—" }}</dd>
+    </dl>
+  </div></div>
+  <div class="col-lg-4"><div class="pt-card">
+    <h2>سجل الطلب</h2>
+    <ul class="pt-timeline">
+      {% for l in logs %}<li><b>{{ l.new_label }}</b><br><small>{{ l.created_at|date:"Y-m-d H:i" }}</small>{% if l.note and l.new_status == 'revision' %}<div class="pt-help" style="white-space:pre-line">{{ l.note }}</div>{% endif %}</li>
+      {% empty %}<li><small>—</small></li>{% endfor %}
+    </ul>
+  </div></div>
+</div>
+{% endblock %}

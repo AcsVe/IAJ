@@ -1,0 +1,50 @@
+{% extends 'award/portal/_portal_base.html' %}
+{% block portal %}
+<div class="pt-card">
+  <h1>{% if creating %}تقديم مشروع جديد{% else %}{% if sub.status == 'revision' %}تعديل الطلب{% else %}إكمال الطلب{% endif %} {{ sub.ref }}{% endif %}</h1>
+  <p class="pt-sub">{% if cycle %}{{ cycle.name }} — {{ cycle.year }}. {% endif %}يمكنكم <b>الحفظ كمسودة</b> والعودة لاحقاً، ولا يصل الطلب لفريق الجائزة إلا بعد <b>«إرسال الطلب»</b>.</p>
+  {% if sub.status == 'revision' and sub.school_note %}<div class="pt-note warn"><b>المطلوب تعديله:</b>
+{{ sub.school_note }}{% if sub.revision_deadline %}
+
+<b>آخر موعد: {{ sub.revision_deadline|date:"Y-m-d H:i" }}</b>{% endif %}</div>{% endif %}
+  {% if form.errors %}<div class="pt-alert pt-alert-error"><i class="fas fa-circle-exclamation ms-1"></i> يرجى تصحيح الحقول المشار إليها.</div>{% endif %}
+  {% for e in form.non_field_errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
+
+  <form method="post" enctype="multipart/form-data" novalidate id="subForm">{% csrf_token %}
+    <h2 class="mt-3" style="font-size:1.15rem">١. المسار</h2>
+    <div class="row"><div class="col-md-6">{% with f=form.field %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-6">{% with f=form.track %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+
+    <h2 class="mt-3" style="font-size:1.15rem">٢. المشروع</h2>
+    {% with f=form.project_title %}{% include 'award/portal/_field.html' %}{% endwith %}
+    {% with f=form.abstract %}{% include 'award/portal/_field.html' %}{% endwith %}
+    <div class="row"><div class="col-md-6">{% with f=form.team_members %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-6">{% with f=form.supervisor %}{% include 'award/portal/_field.html' %}{% endwith %}
+      {% with f=form.contact_person %}{% include 'award/portal/_field.html' %}{% endwith %}
+      {% with f=form.phone %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+
+    <h2 class="mt-3" style="font-size:1.15rem">٣. الملفات</h2>
+    <div class="row"><div class="col-md-6">{% with f=form.document %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-6">{% with f=form.attachment %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <button type="submit" name="action" value="submit" class="pt-btn pt-btn-gold" onclick="return confirm('إرسال الطلب لفريق الجائزة؟ لن تتمكنوا من تعديله بعد الإرسال إلا إذا طُلب منكم ذلك.')"><i class="fas fa-paper-plane"></i> إرسال الطلب</button>
+      <button type="submit" name="action" value="draft" class="pt-btn pt-btn-light"><i class="fas fa-floppy-disk"></i> حفظ كمسودة</button>
+      <a href="{% if sub %}{{ sub.get_absolute_url }}{% else %}{% url 'portal_home' %}{% endif %}" class="pt-btn pt-btn-light">إلغاء</a>
+    </div>
+  </form>
+</div>
+<script>
+(function(){
+  var map={{ track_map|safe }},field=document.getElementById('id_field'),track=document.getElementById('id_track');
+  if(!field||!track)return;
+  var all=[].slice.call(track.options).map(function(o){return{v:o.value,t:o.text}});
+  function refresh(){var f=field.value,keep=track.value;track.innerHTML='';all.forEach(function(o){if(!o.v||!f||String(map[o.v])===f){var op=new Option(o.t,o.v);if(o.v===keep)op.selected=true;track.add(op)}})}
+  track.addEventListener('change',function(){if(track.value&&map[track.value]&&field.value!==map[track.value]){field.value=map[track.value];refresh()}});
+  field.addEventListener('change',refresh);refresh();
+  var dirty=false,form=document.getElementById('subForm');
+  form.addEventListener('input',function(){dirty=true});form.addEventListener('submit',function(){dirty=false});
+  window.addEventListener('beforeunload',function(e){if(dirty){e.preventDefault();e.returnValue=''}});
+})();
+</script>
+{% endblock %}
