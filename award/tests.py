@@ -58,14 +58,21 @@ class RegistrationFlowTest(TestCase):
         self.assertIn('/accounts/signup/', r['Location'])
 
         # 2) إنشاء حساب مدرسة (بدون بريد مضبوط = تفعيل فوري)
-        r = c.post('/accounts/signup/', {
-            'school_name': 'مدرسة الأمل', 'contact_person': 'سارة أحمد', 'email': 'School@Example.com',
-            'phone': '0790000000', 'password1': 'Strong-Pass-2026', 'password2': 'Strong-Pass-2026',
-            'next': '/portal/submissions/new/'})
+        from .models import Governorate, Area, Directorate
+        gov = Governorate.objects.get(name='إربد')
+        other = Governorate.objects.get(name='العقبة')
+        area = Area.objects.get(governorate=gov, name='الرمثا')
+        base = {'school_name': 'مدرسة الأمل', 'contact_person': 'سارة أحمد', 'email': 'School@Example.com',
+                'phone': '0790000000', 'password1': 'Strong-Pass-2026', 'password2': 'Strong-Pass-2026',
+                'next': '/portal/submissions/new/'}
+        r = c.post('/accounts/signup/', {**base, 'governorate': other.pk, 'area': area.pk, 'directorate': area.directorate_id})
+        self.assertContains(r, 'لا يتبع المحافظة')
+        r = c.post('/accounts/signup/', {**base, 'governorate': gov.pk, 'area': area.pk, 'directorate': area.directorate_id})
         self.assertEqual(r.status_code, 302, r.content.decode()[:2000])
         school = User.objects.get(email='school@example.com')
         self.assertTrue(school.is_active)
         self.assertEqual(school.profile.role, 'school')
+        self.assertEqual(school.profile.directorate.name, 'لواء الرمثا')
 
         # 3) مسودة ثم إرسال بدون ملف ← خطأ
         data = {'field': self.field.pk, 'track': self.track.pk, 'project_title': 'ألواح شمسية للمدرسة',
@@ -180,7 +187,7 @@ class RegistrationFlowTest(TestCase):
         self.client.login(username='admin', password='Adm1n-pass!')
         for path in ('/admin/', '/admin/award/submission/', '/admin/award/awardcycle/', '/admin/award/profile/',
                      '/admin/award/profile/add/', '/admin/award/assignment/', '/admin/award/criterion/',
-                     '/admin/award/notification/', '/admin/award/emaillog/', f'/admin/award/awardcycle/{self.cycle.pk}/change/'):
+                     '/admin/award/notification/', '/admin/award/emaillog/', '/admin/award/governorate/', '/admin/award/governorate/1/change/', '/admin/award/directorate/', '/admin/award/area/', '/portal/profile/', f'/admin/award/awardcycle/{self.cycle.pk}/change/'):
             self.assertEqual(self.client.get(path).status_code, 200, path)
 
         # إضافة محكّم بدعوة

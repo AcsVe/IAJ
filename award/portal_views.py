@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from .models import (AwardCycle, Assignment, Criterion, Notification, Profile, Score, Submission,
                      EDITABLE_STATUSES, RECOMMEND_CHOICES)
 from .notify import send_email, notify_staff
-from .portal_forms import SchoolSignupForm, ProfileForm, PortalSubmissionForm
+from .portal_forms import SchoolSignupForm, ProfileForm, PortalSubmissionForm, location_json
 from . import workflow
 
 User = get_user_model()
@@ -94,7 +94,7 @@ def signup(request):
                        '/portal/', 'الدخول إلى حسابي')
         messages.success(request, 'تم إنشاء حسابكم بنجاح. يمكنكم الآن تقديم مشروعكم.' + _spam_hint())
         return redirect(nxt)
-    return render(request, 'award/portal/signup.html', {'form': form, 'next': nxt})
+    return render(request, 'award/portal/signup.html', {'form': form, 'next': nxt, 'loc_json': location_json()})
 
 
 def activate(request, uidb64, token):
@@ -343,7 +343,7 @@ def profile_edit(request):
             request.user.save(update_fields=['first_name'])
         messages.success(request, 'تم حفظ البيانات.')
         return redirect('profile_edit')
-    return render(request, 'award/portal/profile.html', {'tab': 'profile', 'form': form, 'prof': prof})
+    return render(request, 'award/portal/profile.html', {'tab': 'profile', 'form': form, 'prof': prof, 'loc_json': location_json()})
 
 
 # =====================================================

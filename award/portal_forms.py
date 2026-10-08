@@ -5,9 +5,41 @@ from django.conf import settings
 from django.contrib.auth import password_validation
 from django.contrib.auth.models import User
 
-from .models import Field, Profile, Submission
+from .models import Area, Directorate, Field, Governorate, Profile, Submission
 
 INPUT = {'class': 'form-control'}
+
+
+def location_json():
+    """بيانات القوائم المترابطة: المحافظة ← الألوية + المديريات"""
+    import json
+    data = {'g': {}, 'general': [[d.pk, d.name] for d in Directorate.objects.filter(governorate__isnull=True, is_active=True)]}
+    for g in Governorate.objects.all():
+        data['g'][str(g.pk)] = {'areas': [], 'dirs': []}
+    for a in Area.objects.all():
+        data['g'].setdefault(str(a.governorate_id), {'areas': [], 'dirs': []})['areas'].append([a.pk, a.name, a.directorate_id])
+    for d in Directorate.objects.filter(governorate__isnull=False, is_active=True):
+        data['g'].setdefault(str(d.governorate_id), {'areas': [], 'dirs': []})['dirs'].append([d.pk, d.name])
+    return json.dumps(data, ensure_ascii=False)
+
+
+class LocationMixin:
+    """حقول المحافظة / اللواء / المديرية — مترابطة ومتحقّق منها"""
+    def _add_location_fields(self, required=True):
+        self.fields['governorate'] = forms.ModelChoiceField(Governorate.objects.all(), label='المحافظة', required=required,
+                                                            empty_label='— اختر المحافظة —', widget=forms.Select(attrs={'class': 'form-select', 'data-loc': 'gov'}))
+        self.fields['area'] = forms.ModelChoiceField(Area.objects.all(), label='اللواء / المدينة', required=required,
+                                                     empty_label='— اختر اللواء —', widget=forms.Select(attrs={'class': 'form-select', 'data-loc': 'area'}))
+        self.fields['directorate'] = forms.ModelChoiceField(Directorate.objects.filter(is_active=True), label='مديرية التربية والتعليم',
+                                                            required=required, empty_label='— اختر المديرية —',
+                                                            widget=forms.Select(attrs={'class': 'form-select', 'data-loc': 'dir'}))
+
+    def _clean_location(self, data):
+        g, a, d = data.get('governorate'), data.get('area'), data.get('directorate')
+        if g and a and a.governorate_id != g.pk:
+            self.add_error('area', 'هذا اللواء لا يتبع المحافظة المختارة.')
+        if g and d and d.governorate_id not in (None, g.pk):
+            self.add_error('directorate', 'هذه المديرية لا تتبع المحافظة المختارة.')
 SELECT = {'class': 'form-select'}
 
 
@@ -18,15 +50,18 @@ def _w(widget_cls, ph='', **extra):
     return widget_cls(attrs=attrs)
 
 
-class SchoolSignupForm(forms.Form):
+class SchoolSignupForm(LocationMixin, forms.Form):
     school_name = forms.CharField(label='اسم المدرسة', max_length=255, widget=_w(forms.TextInput, 'اسم المدرسة كما سيظهر في الشهادات'))
     contact_person = forms.CharField(label='ضابط الارتباط', max_length=255, widget=_w(forms.TextInput, 'الاسم الكامل'))
     email = forms.EmailField(label='البريد الإلكتروني', widget=_w(forms.EmailInput, 'name@example.com', autocomplete='email', dir='ltr'))
     phone = forms.CharField(label='رقم الهاتف', max_length=30, widget=_w(forms.TextInput, '07xxxxxxxx', dir='ltr', inputmode='tel'))
-    city = forms.CharField(label='المدينة / المنطقة', max_length=100, required=False, widget=_w(forms.TextInput, 'اختياري'))
     password1 = forms.CharField(label='كلمة المرور', widget=_w(forms.PasswordInput, '8 أحرف على الأقل', autocomplete='new-password'))
     password2 = forms.CharField(label='تأكيد كلمة المرور', widget=_w(forms.PasswordInput, 'أعد كتابتها', autocomplete='new-password'))
     website = forms.CharField(required=False, widget=forms.TextInput(attrs={'tabindex': '-1', 'autocomplete': 'off'}))  # فخ للروبوتات
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._add_location_fields()
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
@@ -36,6 +71,7 @@ class SchoolSignupForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+        self._clean_location(data)
         if data.get('website'):
             raise forms.ValidationError('تعذّر التسجيل.')
         p1, p2 = data.get('password1'), data.get('password2')
@@ -54,25 +90,44 @@ class SchoolSignupForm(forms.Form):
         user = User.objects.create_user(username=d['email'], email=d['email'], password=d['password1'],
                                         first_name=d['contact_person'][:150], is_active=False)
         Profile.objects.create(user=user, role='school', school_name=d['school_name'],
-                               contact_person=d['contact_person'], phone=d['phone'], city=d.get('city', ''))
+                               contact_person=d['contact_person'], phone=d['phone'],
+                               governorate=d.get('governorate'), area=d.get('area'), directorate=d.get('directorate'),
+                               city=d['area'].name if d.get('area') else '')
         return user
 
 
-class ProfileForm(forms.ModelForm):
+class ProfileForm(LocationMixin, forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['school_name', 'contact_person', 'phone', 'city', 'email_notifications']
+        fields = ['school_name', 'contact_person', 'phone', 'governorate', 'area', 'directorate', 'email_notifications']
         widgets = {
             'school_name': _w(forms.TextInput), 'contact_person': _w(forms.TextInput),
-            'phone': _w(forms.TextInput, dir='ltr'), 'city': _w(forms.TextInput),
+            'phone': _w(forms.TextInput, dir='ltr'),
             'email_notifications': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
+        is_school = self.instance.role != 'judge'
+        self._add_location_fields(required=is_school)
+        for f in ('governorate', 'area', 'directorate'):
+            self.fields[f].initial = getattr(self.instance, f + '_id')
         if self.instance.role == 'judge':
             self.fields['school_name'].label = 'الجهة'
             self.fields['contact_person'].label = 'الاسم'
+
+    def clean(self):
+        data = super().clean()
+        self._clean_location(data)
+        return data
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        if obj.area_id:
+            obj.city = obj.area.name
+        if commit:
+            obj.save()
+        return obj
 
 
 def _check_file(f, exts, label):

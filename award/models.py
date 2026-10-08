@@ -894,6 +894,53 @@ class AwardCycle(models.Model):
         return qs.select_related('field')
 
 
+class Governorate(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="المحافظة")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+
+    class Meta:
+        verbose_name = "محافظة"
+        verbose_name_plural = "المحافظات"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class Directorate(models.Model):
+    governorate = models.ForeignKey(Governorate, on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name='directorates', verbose_name="المحافظة",
+                                    help_text="فارغ = يظهر في كل المحافظات (مثل: وكالة الغوث، أخرى).")
+    name = models.CharField(max_length=150, verbose_name="مديرية التربية والتعليم")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+    is_active = models.BooleanField(default=True, verbose_name="ظاهرة؟")
+
+    class Meta:
+        verbose_name = "مديرية تربية"
+        verbose_name_plural = "مديريات التربية والتعليم"
+        ordering = ['governorate__order', 'order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class Area(models.Model):
+    governorate = models.ForeignKey(Governorate, on_delete=models.CASCADE, related_name='areas', verbose_name="المحافظة")
+    name = models.CharField(max_length=100, verbose_name="اللواء / المدينة")
+    directorate = models.ForeignKey(Directorate, on_delete=models.SET_NULL, null=True, blank=True,
+                                    verbose_name="المديرية التابعة لها (اختياري)",
+                                    help_text="عند اختيار هذه المدينة تُختار المديرية تلقائياً (يمكن للمدرسة تغييرها).")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+
+    class Meta:
+        verbose_name = "لواء / مدينة"
+        verbose_name_plural = "الألوية والمدن"
+        ordering = ['governorate__order', 'order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 ROLE_CHOICES = (('school', 'مدرسة'), ('judge', 'محكّم'))
 
 
@@ -903,7 +950,10 @@ class Profile(models.Model):
     school_name = models.CharField(max_length=255, blank=True, default='', verbose_name="اسم المدرسة")
     contact_person = models.CharField(max_length=255, blank=True, default='', verbose_name="الاسم / ضابط الارتباط")
     phone = models.CharField(max_length=30, blank=True, default='', verbose_name="الهاتف")
-    city = models.CharField(max_length=100, blank=True, default='', verbose_name="المدينة / المنطقة")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="المدينة / المنطقة (نص)")
+    governorate = models.ForeignKey(Governorate, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="المحافظة")
+    area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="اللواء / المدينة")
+    directorate = models.ForeignKey(Directorate, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="مديرية التربية")
     specialty = models.CharField(max_length=255, blank=True, default='', verbose_name="التخصص (للمحكّم)")
     judge_fields = models.ManyToManyField(Field, blank=True, verbose_name="مجالات التحكيم",
                                           help_text="التوزيع التلقائي يُسند للمحكّم طلبات هذه المجالات فقط (فارغ = كل المجالات).")

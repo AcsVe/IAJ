@@ -1,13 +1,15 @@
 {% extends 'award/portal/_portal_base.html' %}
 {% block portal %}
-<div class="pt-card pt-narrow">
+<div class="pt-card pt-narrow pt-wide">
   <h2>بيانات الحساب</h2>
   <p class="pt-sub">البريد الإلكتروني: <b dir="ltr">{{ user.email }}</b></p>
   <form method="post" novalidate>{% csrf_token %}
-    {% for f in form %}{% if f.name == 'email_notifications' %}
-      <div class="form-check mb-3">{{ f }} <label class="form-check-label" for="{{ f.id_for_label }}">{{ f.label }}</label>
-        <span class="pt-help">الإشعارات داخل الموقع تبقى تعمل دائماً.</span></div>
-    {% else %}{% include 'award/portal/_field.html' %}{% endif %}{% endfor %}
+    {% with f=form.school_name %}{% include 'award/portal/_field.html' %}{% endwith %}
+    {% with f=form.contact_person %}{% include 'award/portal/_field.html' %}{% endwith %}
+    {% with f=form.phone %}{% include 'award/portal/_field.html' %}{% endwith %}
+    {% include 'award/portal/_location.html' %}
+    <div class="form-check mb-3">{{ form.email_notifications }} <label class="form-check-label" for="{{ form.email_notifications.id_for_label }}">{{ form.email_notifications.label }}</label>
+      <span class="pt-help">الإشعارات داخل الموقع تبقى تعمل دائماً.</span></div>
     <button class="pt-btn pt-btn-gold">حفظ</button>
   </form>
 </div>

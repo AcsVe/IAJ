@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlsafe_base64_encode
 
-from .models import (AwardCycle, Assignment, Criterion, EmailLog, Notification, Profile, Score,
+from .models import (AwardCycle, Area, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
                      StatusLog, Submission, SuccessPageContent, STATUS_CHOICES, ROLE_CHOICES)
 from .notify import notify, send_email
 from . import workflow
@@ -178,7 +178,8 @@ def _intermediate(modeladmin, request, queryset, form, title, action, intro=''):
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ('ref', 'school_name', 'project_title', 'track', 'status_col', 'judging_col', 'avg_col', 'sent_at')
     list_display_links = ('ref', 'school_name')
-    list_filter = ('cycle', 'status', 'field', 'track')
+    list_filter = ('cycle', 'status', 'field', 'track', ('owner__profile__governorate', admin.RelatedOnlyFieldListFilter),
+                   ('owner__profile__directorate', admin.RelatedOnlyFieldListFilter))
     show_facets = FACETS
     search_fields = ('ref', 'school_name', 'project_title', 'email', 'contact_person', 'phone', 'team_members')
     list_per_page = 50
@@ -320,10 +321,13 @@ class SubmissionAdmin(admin.ModelAdmin):
         resp['Content-Disposition'] = f'attachment; filename="submissions-{timezone.localdate()}.csv"'
         resp.write('﻿')
         w = csv.writer(resp)
-        w.writerow(['رقم الطلب', 'الدورة', 'المدرسة', 'ضابط الارتباط', 'البريد', 'الهاتف', 'المجال', 'المسار',
+        w.writerow(['رقم الطلب', 'الدورة', 'المدرسة', 'المحافظة', 'اللواء', 'المديرية', 'ضابط الارتباط', 'البريد', 'الهاتف', 'المجال', 'المسار',
                     'عنوان المشروع', 'المشرف', 'الطلبة', 'الحالة', 'تاريخ الإرسال', 'التحكيم', 'المتوسط'])
-        for s in queryset.select_related('cycle', 'field', 'track').prefetch_related('assignments__scores__criterion'):
-            w.writerow([s.ref, s.cycle or '', s.school_name, s.contact_person, s.email, s.phone, s.field or '',
+        for s in queryset.select_related('cycle', 'field', 'track', 'owner__profile__governorate', 'owner__profile__area',
+                                         'owner__profile__directorate').prefetch_related('assignments__scores__criterion'):
+            pr = getattr(s.owner, 'profile', None) if s.owner_id else None
+            w.writerow([s.ref, s.cycle or '', s.school_name, getattr(pr, 'governorate', '') or '', getattr(pr, 'area', '') or '',
+                        getattr(pr, 'directorate', '') or '', s.contact_person, s.email, s.phone, s.field or '',
                         s.track or '', s.project_title, s.supervisor, ' | '.join(s.team_members.splitlines()),
                         s.get_status_display(), timezone.localtime(s.sent_at).strftime('%Y-%m-%d %H:%M') if s.sent_at else '',
                         s.judging_progress, s.avg_score if s.avg_score is not None else ''])
@@ -356,7 +360,8 @@ class ProfileAddForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ('role', 'email', 'contact_person', 'school_name', 'phone', 'city', 'specialty', 'judge_fields', 'send_invite')
+        fields = ('role', 'email', 'contact_person', 'school_name', 'phone', 'governorate', 'area', 'directorate',
+                  'specialty', 'judge_fields', 'send_invite')
 
     def clean_email(self):
         e = self.cleaned_data['email'].strip().lower()
@@ -378,9 +383,9 @@ def _send_invite(request, user):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('display_name', 'role', 'email_col', 'phone', 'city', 'active_col', 'subs_col', 'created_at')
+    list_display = ('display_name', 'role', 'email_col', 'phone', 'governorate', 'directorate', 'active_col', 'subs_col', 'created_at')
     list_display_links = ('display_name',)
-    list_filter = ('role', 'user__is_active', 'city')
+    list_filter = ('role', 'user__is_active', 'governorate', ('directorate', admin.RelatedOnlyFieldListFilter))
     show_facets = FACETS
     search_fields = ('school_name', 'contact_person', 'user__email', 'phone', 'city', 'specialty')
     filter_horizontal = ('judge_fields',)
@@ -388,12 +393,13 @@ class ProfileAdmin(admin.ModelAdmin):
     readonly_fields = ('email_col', 'active_col', 'created_at', 'last_login_col')
     fieldsets = (
         (None, {'fields': ('role', 'email_col', 'active_col', 'last_login_col')}),
-        ('البيانات', {'fields': ('school_name', 'contact_person', 'phone', 'city', 'email_notifications')}),
+        ('البيانات', {'fields': ('school_name', 'contact_person', 'phone', 'email_notifications')}),
+        ('الموقع', {'fields': ('governorate', 'area', 'directorate')}),
         ('للمحكّم', {'fields': ('specialty', 'judge_fields')}),
     )
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user').annotate(
+        return super().get_queryset(request).select_related('user', 'governorate', 'directorate').annotate(
             _subs=Count('user__submissions', filter=~Q(user__submissions__status='draft')))
 
     def get_form(self, request, obj=None, **kwargs):
@@ -404,7 +410,7 @@ class ProfileAdmin(admin.ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         if obj is None:
             return ((None, {'fields': ('role', 'email', 'send_invite')}),
-                    ('البيانات', {'fields': ('contact_person', 'school_name', 'phone', 'city')}),
+                    ('البيانات', {'fields': ('contact_person', 'school_name', 'phone', 'governorate', 'area', 'directorate')}),
                     ('للمحكّم', {'fields': ('specialty', 'judge_fields')}))
         return self.fieldsets
 
@@ -573,3 +579,77 @@ class EmailLogAdmin(admin.ModelAdmin):
     def status_col(self, obj):
         c = {'sent': '#188038', 'saved': '#e8710a', 'failed': '#d93025'}.get(obj.status, '#666')
         return format_html('<b style="color:{}">{}</b>', c, obj.get_status_display())
+
+
+# =====================================================
+#   المحافظات والألوية ومديريات التربية (تظهر في نموذج تسجيل المدرسة)
+# =====================================================
+class AreaInline(admin.TabularInline):
+    model = Area
+    extra = 0
+    fields = ('order', 'name', 'directorate')
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'directorate':
+            gid = request.resolver_match.kwargs.get('object_id') if request.resolver_match else None
+            qs = Directorate.objects.all()
+            if gid:
+                qs = qs.filter(Q(governorate_id=gid) | Q(governorate__isnull=True))
+            kwargs['queryset'] = qs
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+class DirectorateInline(admin.TabularInline):
+    model = Directorate
+    extra = 0
+    fields = ('order', 'name', 'is_active')
+
+
+@admin.register(Governorate)
+class GovernorateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'order', 'areas_n', 'dirs_n', 'schools_n')
+    list_editable = ('order',)
+    list_display_links = ('name',)
+    search_fields = ('name',)
+    inlines = [DirectorateInline, AreaInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _a=Count('areas', distinct=True), _d=Count('directorates', distinct=True),
+            _s=Count('profile', filter=Q(profile__role='school'), distinct=True))
+
+    @admin.display(description='الألوية', ordering='_a')
+    def areas_n(self, obj): return obj._a
+
+    @admin.display(description='المديريات', ordering='_d')
+    def dirs_n(self, obj): return obj._d
+
+    @admin.display(description='المدارس المسجّلة', ordering='_s')
+    def schools_n(self, obj): return obj._s
+
+
+@admin.register(Directorate)
+class DirectorateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'governorate', 'is_active', 'order', 'schools_n')
+    list_editable = ('is_active', 'order')
+    list_display_links = ('name',)
+    list_filter = ('governorate', 'is_active')
+    show_facets = FACETS
+    search_fields = ('name', 'governorate__name')
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('governorate').annotate(
+            _s=Count('profile', filter=Q(profile__role='school')))
+
+    @admin.display(description='المدارس المسجّلة', ordering='_s')
+    def schools_n(self, obj): return obj._s
+
+
+@admin.register(Area)
+class AreaAdmin(admin.ModelAdmin):
+    list_display = ('name', 'governorate', 'directorate', 'order')
+    list_editable = ('order',)
+    list_display_links = ('name',)
+    list_filter = ('governorate',)
+    show_facets = FACETS
+    search_fields = ('name', 'governorate__name')

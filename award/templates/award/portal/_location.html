@@ -1,0 +1,30 @@
+<div class="row g-3">
+  <div class="col-md-6">{% with f=form.governorate %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+  <div class="col-md-6">{% with f=form.area %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+  <div class="col-12">{% with f=form.directorate %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+</div>
+<script>
+(function () {
+  var LOC = {{ loc_json|safe }};
+  var g = document.querySelector('[data-loc=gov]'), a = document.querySelector('[data-loc=area]'), d = document.querySelector('[data-loc=dir]');
+  if (!g || !a || !d) return;
+  function fill(sel, items, placeholder, keep) {
+    sel.innerHTML = '';
+    sel.add(new Option(placeholder, ''));
+    items.forEach(function (it) { var o = new Option(it[1], it[0]); if (String(it[0]) === String(keep)) o.selected = true; sel.add(o); });
+    sel.disabled = !items.length;
+  }
+  function refresh(first) {
+    var info = LOC.g[g.value] || { areas: [], dirs: [] };
+    var keepA = first ? a.value : '', keepD = first ? d.value : '';
+    fill(a, info.areas, g.value ? '— اختر اللواء / المدينة —' : '— اختر المحافظة أولاً —', keepA);
+    fill(d, g.value ? info.dirs.concat(LOC.general) : [], g.value ? '— اختر المديرية —' : '— اختر المحافظة أولاً —', keepD);
+  }
+  g.addEventListener('change', function () { refresh(false); });
+  a.addEventListener('change', function () {   // اختيار المديرية التابعة للواء تلقائياً
+    var info = LOC.g[g.value] || { areas: [] };
+    info.areas.forEach(function (it) { if (String(it[0]) === a.value && it[2]) d.value = String(it[2]); });
+  });
+  refresh(true);
+})();
+</script>
