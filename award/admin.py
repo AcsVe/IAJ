@@ -211,6 +211,30 @@ class JudgeAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
 
 
+class ColorWidget(forms.TextInput):
+    """حقل لون: مربع اختيار اللون + الكود (#rrggbb). فارغ = اللون الافتراضي"""
+
+    def render(self, name, value, attrs=None, renderer=None):
+        attrs = {**(attrs or {}), 'class': 'iaj-color-text', 'placeholder': 'افتراضي', 'dir': 'ltr', 'style': 'width:9em'}
+        html = super().render(name, value, attrs, renderer)
+        v = value if (isinstance(value, str) and len(value) == 7 and value.startswith('#')) else '#c5a059'
+        sid = attrs.get('id', name)
+        picker = (f'<input type="color" class="iaj-color-pick" value="{v}" data-for="{sid}" '
+                  'style="width:44px;height:32px;padding:0;border:1px solid #ccc;border-radius:6px;vertical-align:middle;margin-inline-start:6px;cursor:pointer">'
+                  f'<button type="button" class="iaj-color-clear" data-for="{sid}" style="margin-inline-start:6px;border:0;background:none;color:#a33;cursor:pointer" '
+                  'title="رجوع للون الافتراضي">✕ افتراضي</button>'
+                  f'<span class="iaj-color-dot" id="{sid}_dot" style="display:inline-block;width:18px;height:18px;border-radius:50%;vertical-align:middle;'
+                  f'margin-inline-start:6px;border:1px solid #999;background:{value or "transparent"}"></span>')
+        script = ('<script>(function(){if(window.__iajColors)return;window.__iajColors=1;document.addEventListener("input",function(e){'
+                  'var t=e.target;if(t.classList.contains("iaj-color-pick")){var f=document.getElementById(t.dataset.for);f.value=t.value;'
+                  'document.getElementById(f.id+"_dot").style.background=t.value;}else if(t.classList.contains("iaj-color-text")){'
+                  'var d=document.getElementById(t.id+"_dot");if(d)d.style.background=t.value||"transparent";'
+                  'var p=document.querySelector(\'.iaj-color-pick[data-for="\'+t.id+\'"]\');if(p&&/^#[0-9a-fA-F]{6}$/.test(t.value))p.value=t.value;}});'
+                  'document.addEventListener("click",function(e){var b=e.target.closest(".iaj-color-clear");if(!b)return;'
+                  'var f=document.getElementById(b.dataset.for);f.value="";document.getElementById(f.id+"_dot").style.background="transparent";});})();</script>')
+        return mark_safe(html + picker + script)
+
+
 class FontSelect(forms.Select):
     """قائمة خطوط + نموذج حيّ بالخط المختار تحتها"""
 
@@ -245,6 +269,15 @@ class ThemeSettingAdmin(admin.ModelAdmin):
                        'font_cards', 'font_buttons', 'font_numbers', 'font_footer', 'font_size'),
             'description': 'تحت كل قائمة نموذج حيّ للخط. «نفس خط النص الأساسي» = يتبع الخط الأول. '
                            'استخدم زر «👁 معاينة قبل الحفظ» بالأسفل لرؤية الموقع بالخطوط الجديدة قبل نشرها.',
+        }),
+        ('ألوان النصوص — لون لكل عنصر (فارغ = اللون الأصلي)', {
+            'fields': ('color_body', 'color_headings', 'color_site_title', 'color_nav', 'color_hero', 'color_hero_text',
+                       'color_tl_title', 'color_tl_date', 'color_prize_title', 'color_prize_text', 'color_buttons',
+                       'color_numbers', 'color_footer_title', 'color_footer_text', 'color_links'),
+            'description': 'اختر اللون من المربع أو اكتب كوده. «✕ افتراضي» يرجع للون التصميم الأصلي. '
+                           'لألوان قسم معيّن (عنوانه ونصوصه) استخدم «صورة أعلى الصفحة وخلفيات الأقسام». '
+                           'لألوان نصوص البطاقة تحت الفيديو استخدم «بطاقة النصوص تحت الفيديو» و«النصوص المتبدّلة». '
+                           'جرّب دائماً «👁 معاينة قبل الحفظ».',
         }),
         ('النمط العام', {'fields': ('site_style', 'flip_style')}),
         ('CSS مخصص (للمدير التقني)', {'fields': ('custom_css',), 'classes': ('collapse',)}),
@@ -445,6 +478,7 @@ class HeroTextSlideAdmin(admin.ModelAdmin):
     search_fields = ('heading', 'body_text')
     fieldsets = (
         (None, {'fields': ('heading', 'body_text')}),
+        ('الألوان (اختياري)', {'fields': ('heading_color', 'body_color')}),
         ('الحركة والمدة', {'fields': ('effect', 'effect_speed', 'seconds'),
                            'description': 'اختر حركة ظهور هذا النص وسرعتها، ومدة بقائه قبل الانتقال للنص التالي.'}),
         ('العرض', {'fields': ('order', 'is_active')}),
@@ -485,8 +519,7 @@ class HeroCardAdmin(admin.ModelAdmin):
                                      '<a href="/admin/award/herotextslide/"><b>النصوص المتبدّلة تحت الفيديو</b></a>.'),
         }),
         ('تصميم البطاقة', {
-            'fields': ('card_bg_color', 'card_opacity', 'font_color', 'font_size', 'font_weight', 'border_radius'),
-            'classes': ('collapse',),
+            'fields': ('card_bg_color', 'card_opacity', 'font_color', 'heading_color', 'font_size', 'font_weight', 'border_radius'),
             'description': 'تحكم بمظهر البطاقة الشفافة (اللون، الشفافية، الخط، الاستدارة)',
         }),
     )
@@ -624,5 +657,19 @@ def _auto_search_fields():
 
 
 _auto_search_fields()
+
+
+_orig_ffdb = admin.ModelAdmin.formfield_for_dbfield
+
+
+def _color_formfield(self, db_field, request, **kwargs):
+    from django.db import models as m
+    if (isinstance(db_field, m.CharField) and 'color' in db_field.name and (db_field.max_length or 0) <= 9
+            and not db_field.choices and 'widget' not in kwargs):
+        kwargs['widget'] = ColorWidget()
+    return _orig_ffdb(self, db_field, request, **kwargs)
+
+
+admin.ModelAdmin.formfield_for_dbfield = _color_formfield
 
 from . import admin_portal  # noqa: E402,F401  التسجيل والتحكيم

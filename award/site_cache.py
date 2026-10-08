@@ -36,17 +36,18 @@ def get_site_bundle():
     hero_text_items = []
     if hero_card.heading or hero_card.body_text:
         hero_text_items.append({'heading': hero_card.heading, 'body': hero_card.body_text,
-                                'fx': default_fx, 'speed': 0.6, 'seconds': 0})
+                                'fx': default_fx, 'speed': 0.6, 'seconds': 0, 'hcolor': '', 'bcolor': ''})
     try:
         hero_text_items += [{'heading': t.heading, 'body': t.body_text, 'fx': t.effect or default_fx,
-                             'speed': t.effect_speed or 0.6, 'seconds': t.seconds or 0}
+                             'speed': t.effect_speed or 0.6, 'seconds': t.seconds or 0,
+                             'hcolor': t.heading_color, 'bcolor': t.body_color}
                             for t in HeroTextSlide.objects.filter(is_active=True) if t.heading or t.body_text]
     except Exception:
         pass
-    from .fonts import theme_fonts
+    from .fonts import theme_fonts, theme_colors
     theme = _first(ThemeSetting)
     data = {
-        'site_fonts': theme_fonts(theme),
+        'site_fonts': dict(theme_fonts(theme), colors=theme_colors(theme)),
         'hero_text_items': hero_text_items,
         'settings': _first(SiteSetting),
         'theme': theme,

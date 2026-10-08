@@ -394,6 +394,22 @@ class ThemeSetting(models.Model):
     font_buttons = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط الأزرار")
     font_numbers = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط العداد التنازلي والأرقام")
     font_footer = models.CharField(max_length=40, blank=True, default='', choices=INHERIT_CHOICES, verbose_name="خط الفوتر (أسفل الصفحة)")
+    # -- ألوان النصوص: لون لكل عنصر (فارغ = اللون الأصلي) --
+    color_body = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: النص العام في الصفحات")
+    color_headings = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: عناوين الأقسام (كل الأقسام)")
+    color_site_title = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: اسم الجائزة في الهيدر")
+    color_nav = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: روابط القائمة الرئيسية")
+    color_hero = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: النص المتحرك أعلى الصفحة (العنوان)")
+    color_hero_text = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: النص المتحرك أعلى الصفحة (النص)")
+    color_tl_title = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: عناوين مراحل الجدول الزمني")
+    color_tl_date = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: تواريخ الجدول الزمني")
+    color_prize_title = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: عناوين بطاقات الجوائز")
+    color_prize_text = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: نص بطاقات الجوائز")
+    color_buttons = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: نص الأزرار")
+    color_numbers = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: أرقام العداد التنازلي")
+    color_footer_title = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: عناوين الفوتر")
+    color_footer_text = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: نصوص وروابط الفوتر")
+    color_links = models.CharField(max_length=9, blank=True, default='', verbose_name="لون: الروابط داخل النصوص")
     custom_css = models.TextField(blank=True, null=True, verbose_name="CSS مخصص (لتغيير ألوان صفحات أو أحجام خطوط معينة)", help_text="اكتب أو الصق أكواد CSS هنا لتغيير تصميم الموقع بدون لمس الكود الأساسي")
 
     class Meta:
@@ -805,6 +821,10 @@ class HeroTextSlide(models.Model):
     effect = models.CharField(max_length=10, choices=EFFECT_CHOICES, blank=True, default='', verbose_name="حركة ظهور هذا النص")
     SPEED_CHOICES = ((0.35, 'سريعة'), (0.6, 'متوسطة'), (1.0, 'بطيئة'), (1.6, 'بطيئة جداً'))
     effect_speed = models.FloatField(choices=SPEED_CHOICES, default=0.6, verbose_name="سرعة الحركة")
+    heading_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون العنوان (اختياري)",
+                                     help_text="فارغ = لون البطاقة.")
+    body_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون النص (اختياري)",
+                                  help_text="فارغ = لون البطاقة.")
     seconds = models.PositiveSmallIntegerField(default=0, verbose_name="مدة بقاء النص (ثوانٍ)",
                                                help_text="0 = تلقائي حسب طول النص (من إعدادات البطاقة).")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
@@ -827,9 +847,11 @@ class HeroCard(models.Model):
     is_enabled = models.BooleanField(default=True, verbose_name="إظهار بطاقة النصوص تحت الفيديو؟")
     heading = models.CharField(max_length=300, blank=True, default='', verbose_name="العنوان")
     body_text = models.TextField(blank=True, default='', verbose_name="النص الداخلي")
-    card_bg_color = models.CharField(max_length=7, default='#0a1632', verbose_name="لون خلفية البطاقة")
+    card_bg_color = models.CharField(max_length=7, default='#3b2614', verbose_name="لون خلفية البطاقة")
     card_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=0.55, verbose_name="شفافية البطاقة (0=شفافة، 1=معتمة)")
     font_color = models.CharField(max_length=7, default='#ffffff', verbose_name="لون الخط")
+    heading_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون العناوين داخل البطاقة",
+                                     help_text="فارغ = نفس «لون الخط».")
     font_size = models.CharField(max_length=6, default='1.1rem', verbose_name="حجم الخط")
     font_weight = models.CharField(max_length=3, default='600', verbose_name="وزن الخط")
     border_radius = models.CharField(max_length=6, default='0px', verbose_name="استدارة الزوايا")

@@ -5,8 +5,10 @@
     <div class="hc-slides" aria-live="polite">
         {% for t in hero_text_items %}
         <div class="hc-slide hc-fx-{{ t.fx }}{% if forloop.first %} active{% endif %}" style="--hc-t: {{ t.speed|stringformat:'s' }}s"{% if t.seconds %} data-sec="{{ t.seconds }}"{% endif %}{% if not forloop.first %} aria-hidden="true"{% endif %}>
-            {% if t.heading %}<h3 style="color:{{ hero_card.font_color }} !important;">{{ t.heading }}</h3>{% endif %}
-            {% if t.body %}<p style="color:{{ hero_card.font_color }} !important;">{{ t.body|linebreaksbr }}</p>{% endif %}
+            <div class="hc-inner">
+            {% if t.heading %}<h3 style="color:{{ t.hcolor|default:hero_card.heading_color|default:hero_card.font_color }} !important;">{{ t.heading }}</h3>{% endif %}
+            {% if t.body %}<p style="color:{{ t.bcolor|default:hero_card.font_color }} !important;">{{ t.body|linebreaksbr }}</p>{% endif %}
+            </div>
         </div>
         {% endfor %}
     </div>

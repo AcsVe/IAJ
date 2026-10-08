@@ -87,3 +87,33 @@ def theme_fonts(theme):
             rules.append(f"{_expand(sel)}{{font-family:var({var}) !important;}}")
     rules.insert(0, "body{font-family:var(--f-body) !important;}")
     return {'urls': urls, 'vars': ' '.join(vars_css), 'rules': '\n'.join(rules)}
+
+
+# ===================== ألوان النصوص =====================
+# (اسم الحقل، الاسم الظاهر، المحددات) — فارغ = اللون الأصلي في التصميم
+COLOR_TARGETS = [
+    ('color_body',         'النص العام في الصفحات', 'body,body p,body li'),
+    ('color_headings',     'عناوين الأقسام (كل الأقسام)', '.section-header h2,.media-page-header h1'),
+    ('color_site_title',   'اسم الجائزة في الهيدر', '.navbar-royal .nav-award-title'),
+    ('color_nav',          'روابط القائمة الرئيسية', '.navbar-royal .nav-link,.navbar-royal .dropdown-item'),
+    ('color_hero',         'النص المتحرك أعلى الصفحة (العنوان)', '.side-credits .sc-heading'),
+    ('color_hero_text',    'النص المتحرك أعلى الصفحة (النص)', '.side-credits .sc-text'),
+    ('color_tl_title',     'عناوين مراحل الجدول الزمني', 'section#timeline .timeline-title'),
+    ('color_tl_date',      'تواريخ الجدول الزمني', 'section#timeline .timeline-date'),
+    ('color_prize_title',  'عناوين بطاقات الجوائز', '.prize-box h4'),
+    ('color_prize_text',   'نص بطاقات الجوائز', '.prize-box p'),
+    ('color_buttons',      'نص الأزرار', '.btn,.nav-register'),
+    ('color_numbers',      'أرقام العداد التنازلي', '.cd-box b,.countdown-toggle'),
+    ('color_footer_title', 'عناوين الفوتر', '#siteFooter .footer-title'),
+    ('color_footer_text',  'نصوص وروابط الفوتر', '#siteFooter p,#siteFooter .footer-links a,#siteFooter .ft-copy'),
+    ('color_links',        'الروابط داخل النصوص', 'main a:not(.btn),.news-content a,.article-body a'),
+]
+
+
+def theme_colors(theme):
+    rules = []
+    for field, _label, sel in COLOR_TARGETS:
+        val = (getattr(theme, field, '') or '').strip() if theme else ''
+        if val and all(ch not in val for ch in ';{}<>'):
+            rules.append(','.join('html ' + x.strip() for x in sel.split(',')) + '{color:' + val + ' !important;}')
+    return '\n'.join(rules)

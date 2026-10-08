@@ -165,7 +165,7 @@ section#{{ sid }} .timeline-date {
 .yt-stack .yt-card { margin-right: auto; }   /* يبقى بمحاذاة زر «سجل الآن» يساراً */
 /* الفيديو يصغر على الشاشات القصيرة حتى يتسع النص تحته */
 .yt-stack .yt-card { max-width: calc((100vh - var(--header-h) - 60px) * 16 / 9); }
-.yt-stack:has(.hero-transparent-card) .yt-card { max-width: calc((100vh - var(--header-h) - 250px) * 16 / 9); min-width: min(100%, 320px); }
+/* بطاقة الفيديو بحجمها الكامل دائماً — صندوق النص تحتها يأخذ المساحة المتبقية فقط */
 .yt-card { position: relative; width: 100%; aspect-ratio: 16 / 9; flex-shrink: 0; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
 .yt-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; display: block; }
 .yt-duration { position: absolute; right: 8px; bottom: 8px; z-index: 2; direction: ltr; background: rgba(0,0,0,.8); color: #fff; font: 600 12px/1 Roboto, Arial, sans-serif; padding: 4px 6px; border-radius: 4px; letter-spacing: .3px; }
@@ -254,9 +254,20 @@ section#{{ sid }} .timeline-date {
 .hs-lightbox.single .hs-lb-nav, .hs-lightbox.single .hs-lb-count { display: none; }
 @media (max-width: 767.98px) { .hs-lb-nav { width: 40px; height: 40px; margin-top: -20px; } .hs-lb-prev { right: 8px; } .hs-lb-next { left: 8px; } }
 @media (hover: none) { .hs-nav { opacity: .85; width: 32px; height: 32px; margin-top: -16px; } }
-.yt-stack .hero-transparent-card { width: 100%; max-height: 220px; overflow: auto; }
-.yt-stack .hero-transparent-card.hc-multi { overflow: hidden; }
-.yt-stack .hc-multi .hc-slides { max-height: 165px; overflow: auto; }
+.yt-stack .hero-transparent-card { width: 100%; overflow: hidden; padding-top: 16px; padding-bottom: 16px;
+    --hc-room: max(78px, calc(100vh - var(--header-h) - 14px - min(700px, 45vw) * 9 / 16 - 44px)); max-height: var(--hc-room); }
+.yt-stack .hero-transparent-card .hc-slides { max-height: calc(var(--hc-room) - 32px); }
+.yt-stack .hero-transparent-card.hc-multi .hc-slides { max-height: calc(var(--hc-room) - 32px - 34px); }
+/* النص الطويل يمرّ للأعلى مثل شارة الأفلام، مع تلاشٍ عند الحافتين. النص القصير يظهر ثابتاً */
+.hc-slides { overflow: hidden; }
+.hc-slide.hc-long { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%);
+                    mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 86%, transparent 100%); }
+.hc-slide.hc-long .hc-inner { padding: 14px 0; }
+.hc-slide.hc-long.active .hc-inner { animation: hcRoll var(--roll-dur, 12s) linear var(--roll-delay, 1.6s) both; }
+.hc-slide.hc-long.hc-loop.active .hc-inner { animation-iteration-count: infinite; }
+.hero-transparent-card:hover .hc-slide.hc-long .hc-inner { animation-play-state: paused; }
+@keyframes hcRoll { 0% { transform: translateY(0); } 100% { transform: translateY(var(--roll, 0px)); } }
+@media (prefers-reduced-motion: reduce) { .hc-slide.hc-long .hc-inner { animation-duration: 60s !important; } }
 .side-video { background: #000; }
 .side-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .side-video iframe { position: absolute; top: 50%; left: 50%; width: 177.78vh; min-width: 100%; height: 56.25vw; min-height: 100%; transform: translate(-50%, -50%); border: 0; z-index: 0; }
@@ -303,22 +314,23 @@ section#{{ sid }} .timeline-date {
 .hc-slide.hc-fx-flip.leaving { transform: rotateX(-80deg); }
 .hc-slide.hc-fx-none, .hc-slide.hc-fx-none.active { transition: none; }
 .hc-multi { position: relative; padding-bottom: 46px !important; }
-.hc-nav { position: absolute; left: 14px; bottom: 10px; display: flex; align-items: center; gap: 8px; direction: rtl; }
+.hc-nav { position: absolute; right: 14px; bottom: 10px; display: flex; align-items: center; gap: 8px; direction: rtl; }
 .hc-nav[hidden] { display: none; }
 .hc-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1);
     color: inherit; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; cursor: pointer; transition: background .2s, transform .2s; }
 .hc-nav button:hover { background: var(--gold); color: var(--primary); transform: scale(1.08); }
 .hc-count { font: 600 .78rem/1 Roboto, Arial, sans-serif; opacity: .75; direction: ltr; min-width: 34px; text-align: center; }
-.hc-progress { position: absolute; right: 18px; left: 120px; bottom: 23px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; direction: rtl; }
+.hc-progress { position: absolute; left: 18px; right: 120px; bottom: 23px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; direction: rtl; }
 .hc-progress span { display: block; height: 100%; width: 0; margin-right: 0; margin-left: auto; background: var(--gold); }
 .hc-progress.run span { width: 100%; transition: width var(--hc-dur, 5s) linear; }
-.hc-nav[hidden] + .hc-progress { left: 18px; }
+.hc-nav[hidden] + .hc-progress { right: 18px; }
 @media (prefers-reduced-motion: reduce) { .hc-slide { transition: none !important; transform: none !important; filter: none !important; } }
 
 /* ---------- تابلت ---------- */
 @media (max-width: 991.98px) {
     .yt-stack { left: 30px; width: min(460px, 46%); }
-    .yt-stack .yt-card, .yt-stack:has(.hero-transparent-card) .yt-card { max-width: 100%; min-width: 0; }
+    .yt-stack .yt-card { max-width: 100%; min-width: 0; }
+    .yt-stack .hero-transparent-card { --hc-room: max(78px, calc(100vh - var(--header-h) - 14px - min(460px, 46vw) * 9 / 16 - 44px)); }
     .sc-heading { font-size: 20px; } .sc-text { font-size: 17px; }
     .side-credits, .has-side .side-credits { width: 60%; height: 220px; }
     .hero-card-slot { left: 30px; width: min(420px, 45%); }
@@ -340,9 +352,10 @@ section#{{ sid }} .timeline-date {
     /* البطاقة مباشرة تحت الشريط العلوي، والنص المتحرك ينزل لأسفل الشاشة — بدون فراغ فوق البطاقة */
     .yt-stack { left: 12px; right: 12px; width: auto; top: calc(var(--header-h) + 10px); bottom: auto; transform: none; gap: 10px; align-items: stretch; }
     .yt-card { border-radius: 10px; }
-    .has-side .yt-stack .hero-transparent-card { padding: 10px 14px; max-height: 22svh; overflow: auto; }
-    .has-side .yt-stack .hc-multi { padding-bottom: 40px !important; overflow: hidden; }
-    .has-side .yt-stack .hc-multi .hc-slides { max-height: calc(22svh - 50px); overflow: auto; }
+    .has-side .yt-stack .hero-transparent-card { padding: 10px 14px; --hc-room: 22svh; max-height: 22svh; overflow: hidden; }
+    .has-side .yt-stack .hero-transparent-card .hc-slides { max-height: calc(22svh - 20px); }
+    .has-side .yt-stack .hc-multi { padding-bottom: 40px !important; }
+    .has-side .yt-stack .hc-multi .hc-slides { max-height: calc(22svh - 50px); }
     .has-side .yt-stack .hero-transparent-card h3 { font-size: .95rem; margin-bottom: 2px; }
     .has-side .yt-stack .hero-transparent-card p { font-size: .82rem; line-height: 1.6; }
     .side-video iframe { width: 100%; height: 100%; min-height: 0; top: 0; left: 0; transform: none; pointer-events: auto; }
@@ -686,16 +699,54 @@ section#{{ sid }} .timeline-date {
 </script>
 <script>
 // النصوص المتبدّلة داخل البطاقة الشفافة: المدة حسب طول النص + حركة انتقال + سهمان
+// النص الأطول من الصندوق يمرّ للأعلى مثل شارة الأفلام؛ النص القصير يظهر ثابتاً بدون حركة
 (function () {
-    document.querySelectorAll('.hero-transparent-card.hc-multi').forEach(function (card) {
+    var ROLL_PX_PER_SEC = 22;   // سرعة مرور النص الطويل — مريحة للقراءة
+    function measure(card) {
+        var box = card.querySelector('.hc-slides');
+        if (!box) return;
+        var room = box.clientHeight;
+        card.querySelectorAll('.hc-slide').forEach(function (sl) {
+            var inner = sl.querySelector('.hc-inner'); if (!inner) return;
+            sl.classList.remove('hc-long');
+            var over = inner.scrollHeight - room;
+            if (over > 6 && room > 30) {
+                sl.classList.add('hc-long');
+                over = inner.scrollHeight + 28 - room;   // + الحشوة العلوية والسفلية
+                sl.style.setProperty('--roll', (-over) + 'px');
+                sl.style.setProperty('--roll-dur', Math.max(4, over / ROLL_PX_PER_SEC).toFixed(1) + 's');
+                sl.dataset.rollMs = Math.round((over / ROLL_PX_PER_SEC + 1.6 + 2.2) * 1000);   // حركة + توقف قبل وبعد
+            } else {
+                sl.dataset.rollMs = 0;
+            }
+        });
+    }
+    function restartRoll(sl) {
+        var inner = sl && sl.querySelector('.hc-inner');
+        if (!inner) return;
+        inner.style.animation = 'none'; void inner.offsetWidth; inner.style.animation = '';
+    }
+    document.querySelectorAll('.hero-transparent-card').forEach(function (card) {
+        measure(card);
+        var rT; window.addEventListener('resize', function () { clearTimeout(rT); rT = setTimeout(function () { measure(card); }, 200); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(card); });
+        if (!card.classList.contains('hc-multi')) {
+            // نص واحد: إن كان طويلاً يتكرر مروره
+            var only = card.querySelector('.hc-slide');
+            if (only) only.classList.add('hc-loop');
+            return;
+        }
         var slides = [].slice.call(card.querySelectorAll('.hc-slide'));
         var count = card.querySelector('.hc-count'), bar = card.querySelector('.hc-progress');
         var speed = Math.max(4, parseFloat(card.dataset.speed) || 14), minS = Math.max(2, parseFloat(card.dataset.min) || 4);
         var idx = 0, timer = null, paused = false;
         function dur(sl) {
+            var roll = parseFloat(sl.dataset.rollMs) || 0;
             var fixed = parseFloat(sl.getAttribute('data-sec'));   // مدة محددة لهذا النص من لوحة التحكم
-            if (fixed > 0) return fixed * 1000;
-            var n = (sl.textContent || '').replace(/\s+/g, ' ').trim().length; return Math.min(30, Math.max(minS, 1.2 + n / speed)) * 1000; }
+            if (fixed > 0) return Math.max(fixed * 1000, roll);
+            var n = (sl.textContent || '').replace(/\s+/g, ' ').trim().length;
+            return Math.max(roll, Math.min(30, Math.max(minS, 1.2 + n / speed)) * 1000);
+        }
         function schedule() {
             clearTimeout(timer); if (bar) bar.classList.remove('run');
             if (paused || document.hidden) return;
@@ -709,6 +760,7 @@ section#{{ sid }} .timeline-date {
             setTimeout(function () { old.classList.remove('leaving'); }, (parseFloat(getComputedStyle(old).getPropertyValue('--hc-t')) || .6) * 1000 + 50);
             idx = (n + slides.length) % slides.length;
             slides[idx].classList.add('active'); slides[idx].removeAttribute('aria-hidden');
+            restartRoll(slides[idx]);
             if (count) count.textContent = (idx + 1) + ' / ' + slides.length;
             schedule();
         }
@@ -1518,6 +1570,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var activeItem = null;
         function closeSheet() {
             sheet.classList.remove('open'); back.classList.remove('open');
+            document.body.classList.remove('tl-sheet-open');
             if (activeItem) activeItem.classList.remove('tl-active'); activeItem = null;
         }
         function openSheet(item) {
@@ -1525,7 +1578,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!pop || !src) return;
             if (activeItem) activeItem.classList.remove('tl-active');
             activeItem = item; item.classList.add('tl-active');
-            var hasMore = (src.getAttribute('data-desc') || '').trim() || src.getAttribute('data-img');
+            var hasMore = true;   // زر التفاصيل يظهر دائماً
             sheet.innerHTML = '<button type="button" class="tl-sheet-x" aria-label="إغلاق"><i class="fas fa-xmark"></i></button>' + pop.innerHTML +
                 '<button type="button" class="tl-sheet-more"' + (hasMore ? '' : ' hidden') + '><i class="fas fa-circle-info"></i> عرض التفاصيل كاملة</button>';
             sheet.querySelector('.tl-sheet-x').addEventListener('click', closeSheet);
@@ -1534,6 +1587,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (typeof bootstrap !== 'undefined') bootstrap.Modal.getOrCreateInstance(timelineModal).show(src);
             });
             sheet.classList.add('open'); back.classList.add('open');
+            document.body.classList.add('tl-sheet-open');
         }
         back.addEventListener('click', closeSheet);
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });

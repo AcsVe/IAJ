@@ -374,13 +374,15 @@
         html { background: var(--primary); } body { min-height: 100vh; }
 
         /* ===================== Footer ===================== */
-        footer { background-color: var(--primary); color: #ffffff; padding: 60px 0 30px; border-top: 4px solid var(--gold); }
+        footer { background-color: var(--primary); color: #ffffff; padding: 34px 0 20px; border-top: 4px solid var(--gold); }
         .footer-logo-img { width: 80px; height: 80px; object-fit: contain; border: 2px solid var(--gold); padding: 5px; border-radius: 50%; background-color: #fff; }
         .footer-title { color: var(--gold); font-weight: 700; margin-bottom: 20px; font-size: 1.2rem; }
         .footer-links a { color: #cccccc; text-decoration: none; display: block; margin-bottom: 10px; transition: color 0.2s; }
         .footer-links a:hover { color: var(--gold); padding-right: 5px; }
         /* الفوتر مضغوط: المعلومات + التواصل الاجتماعي + الحقوق تظهر معاً، وأي نص يُضاف يدفعها للأسفل تلقائياً */
-        .ft-head { margin-bottom: 26px; }
+        .ft-head { margin-bottom: 14px; }
+        .ft-head > div { margin-bottom: 0 !important; }
+        @media (min-width: 768px) { #siteFooter .footer-title { margin-bottom: 12px; } }
         .ft-col { margin-bottom: 18px; }
         .ft-contact p { margin-bottom: 8px; }
         .ft-hr { border-color: rgba(197,160,89,.3); margin: 10px 0 18px; }
@@ -399,6 +401,11 @@
             .ft-social .social-bar a { width: 36px; height: 36px; }
             /* مساحة لأسهم التنقل حتى لا تغطي سطر الحقوق */
             .ft-copy { padding-inline: 54px; line-height: 1.7; }
+            .ft-social { padding-inline: 54px; }
+            .ft-social .social-bar { gap: 2px; padding: 5px 8px; max-width: 100%; }
+        }
+        @media (max-width: 380px) {
+            .ft-social .social-bar a { width: 31px; height: 31px; font-size: 1rem; }
         }
         .section-header { text-align: center; margin-bottom: 60px; }
         .section-header h2 { font-weight: 900; color: var(--primary); font-size: 2.2rem; margin-bottom: 15px; }
@@ -434,6 +441,9 @@
         .scroll-arrow:hover { background-color: var(--primary); }
         .scroll-arrow:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
         .scroll-arrow.is-hidden { opacity: 0; visibility: hidden; transform: scale(.6); pointer-events: none; }
+        /* الأسهم تختفي (بتلاشٍ) إن غطّت أزرار تحكم أخرى، أو أثناء فتح بطاقة/نافذة، وعلى اللمس بعد التوقف عن التمرير */
+        .scroll-nav { transition: opacity .25s ease, visibility .25s ease; }
+        .scroll-nav.sn-away, .scroll-nav.sn-idle, body.tl-sheet-open .scroll-nav, body.modal-open .scroll-nav { opacity: 0; visibility: hidden; pointer-events: none; }
         /* تثبيت الشكل: دائرتان متطابقتان فوق بعض حتى لو كان في CSS مخصص قديم لـ #scrollDown */
         .scroll-nav #scrollUp.scroll-arrow, .scroll-nav #scrollDown.scroll-arrow {
             position: relative !important; inset: auto !important; left: auto !important; right: auto !important;
@@ -604,7 +614,8 @@
         body.style-glass .news-cards-row { background: transparent; }
     </style>
     <style>:root{ {{ site_fonts.vars|safe }} }
-{{ site_fonts.rules|safe }}</style>
+{{ site_fonts.rules|safe }}
+{{ site_fonts.colors|safe }}</style>
     {% if theme and theme.custom_css %}
     <style>{{ theme.custom_css|safe }}</style>
     {% endif %}
@@ -917,7 +928,8 @@
         var y = window.pageYOffset, off = headerHeight(), tops = sectionTops();
         for (var i = 0; i < tops.length; i++) {
             var t = tops[i] - off;
-            if (t > y + 40) return goTo(t);
+            // توقف قريب جداً من نهاية الصفحة (مثل بداية الفوتر) = ننزل للنهاية مباشرة بخطوة واحدة
+            if (t > y + 40) return goTo(t > maxScroll() - 140 ? maxScroll() : t);
         }
         goTo(maxScroll());
     }
@@ -1074,6 +1086,31 @@
     fitMobileTitle();
     window.addEventListener('resize', fitMobileTitle);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitMobileTitle);
+
+    /* ---------- أسهم التنقل لا تغطي أزرار التحكم ولا النصوص ---------- */
+    var sNav = document.querySelector('.scroll-nav');
+    var DODGE = '.hc-nav button, .hs-nav, .hs-dots, .yt-controls, .hs-expand, .yt-bigplay, .tl-sheet.open, .flip-track, .modal.show .modal-dialog';
+    function dodgeArrows() {
+        if (!sNav) return;
+        var r = sNav.getBoundingClientRect(), hit = false;
+        if (r.width) document.querySelectorAll(DODGE).forEach(function (el) {
+            if (hit || !el.offsetParent) return;
+            var b = el.getBoundingClientRect();
+            if (b.width && b.right > r.left - 6 && b.left < r.right + 6 && b.bottom > r.top - 6 && b.top < r.bottom + 6) hit = true;
+        });
+        sNav.classList.toggle('sn-away', hit);
+    }
+    var touchOnly = window.matchMedia('(hover: none)').matches, idleT;
+    function wakeArrows() {
+        if (!sNav || !touchOnly) return;
+        sNav.classList.remove('sn-idle');
+        clearTimeout(idleT);
+        idleT = setTimeout(function () { sNav.classList.add('sn-idle'); }, 2600);   // على اللمس: تختفي بعد التوقف عن التمرير
+    }
+    window.addEventListener('scroll', function () { wakeArrows(); clearTimeout(window._dgT); window._dgT = setTimeout(dodgeArrows, 60); }, { passive: true });
+    window.addEventListener('resize', dodgeArrows);
+    setInterval(dodgeArrows, 900);   // أزرار تظهر وتختفي بدون تمرير (تشغيل فيديو، تبدّل الشرائح)
+    wakeArrows(); setTimeout(dodgeArrows, 400);
 
     /* ---------- تشغيل ---------- */
     updateHeaderVars();
