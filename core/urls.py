@@ -61,6 +61,8 @@ urlpatterns = [
     path('success-stories/', views.success_stories_page, name='success_stories_page'),
     path('statistics/', views.statistics_page, name='statistics_page'),
     path('winners/', views.winners_page, name='winners_page'),
+    path('cycles/', views.cycles_archive, name='cycles_archive'),
+    path('cycles/<int:pk>/', views.cycle_detail, name='cycle_detail'),
     # الصور المخزّنة في قاعدة البيانات
     path('media/db/<path:name>', views.serve_db_media, name='db_media'),
     # الملفات المرفوعة على الجهاز (مجلد media)

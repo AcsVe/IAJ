@@ -95,6 +95,7 @@ section#{{ sid }} .timeline-date {
                         <button type="button" class="yt-bigplay yt-red" aria-label="تشغيل فيديو يوتيوب"><i class="fas fa-play"></i></button>
                     {% endif %}
                     {% if sl.title %}<div class="hs-title">{{ sl.title }}</div>{% endif %}
+                    {% if sl.show_caption %}{% with cap=sl.caption %}{% include 'award/_media_badge.html' %}{% endwith %}{% else %}{% include 'award/_media_badge.html' with cap='' %}{% endif %}
                 </div>
                 {% endfor %}
 

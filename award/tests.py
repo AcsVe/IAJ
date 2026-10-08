@@ -259,3 +259,57 @@ class GraphBackendTest(TestCase):
         self.assertEqual(kw['headers']['Authorization'], 'Bearer TOKEN')
         self.assertEqual(kw['json']['message']['body']['contentType'], 'HTML')
         self.assertEqual(kw['json']['message']['toRecipients'][0]['emailAddress']['address'], 'a@b.com')
+
+
+@override_settings(EMAIL_ENABLED=False)
+class CyclesArchiveTest(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        AwardCycle.objects.all().delete()
+        self.old = AwardCycle.objects.create(name='الدورة الثالثة عشرة', short_name='الدورة 13', year=2025,
+                                             opens_at=timezone.now() - timedelta(days=400), closes_at=timezone.now() - timedelta(days=300))
+        self.cur = AwardCycle.objects.create(name='الدورة الرابعة عشرة', short_name='الدورة 14', year=2026, hijri_year='1448',
+                                             is_current=True, opens_at=timezone.now() - timedelta(days=1),
+                                             closes_at=timezone.now() + timedelta(days=20))
+        self.admin = User.objects.create_superuser('admin', 'admin@x.org', 'Adm1n-pass!')
+
+    def test_media_cycle_and_archive(self):
+        from .models import Photo, TimelineEvent
+        p_new = Photo.objects.create(title='صورة جديدة', image='photos/a.jpg')
+        self.assertEqual(p_new.cycle_id, self.cur.pk)            # الدورة الحالية تلقائياً
+        Photo.objects.create(title='صورة قديمة', image='photos/b.jpg', cycle=self.old)
+        r = self.client.get('/photos/')
+        self.assertContains(r, 'كل الدورات')
+        self.assertContains(r, 'صورة قديمة')
+        r = self.client.get(f'/photos/?cycle={self.cur.pk}')
+        self.assertContains(r, 'صورة جديدة')
+        self.assertNotContains(r, 'صورة قديمة')
+        self.assertContains(self.client.get('/cycles/'), 'الدورة الثالثة عشرة')
+        r = self.client.get(f'/cycles/{self.cur.pk}/')
+        self.assertContains(r, '1448هـ/2026م')
+        # الجدول الزمني في الرئيسية: الدورة الحالية فقط
+        TimelineEvent.objects.create(title='خطوة قديمة', cycle=self.old)
+        TimelineEvent.objects.create(title='خطوة حالية', cycle=self.cur)
+        from .site_cache import clear_home_bundle
+        clear_home_bundle()
+        r = self.client.get('/')
+        self.assertContains(r, 'خطوة حالية')
+        self.assertNotContains(r, 'خطوة قديمة')
+        self.assertContains(r, 'استقبال طلبات الدورة 14')
+
+    def test_admin_cycle_actions(self):
+        from .models import Photo
+        self.client.login(username='admin', password='Adm1n-pass!')
+        r = self.client.post('/admin/award/awardcycle/', {'action': 'clone_cycle', '_selected_action': [self.cur.pk]})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(AwardCycle.objects.filter(year=2027, hijri_year='1449').exists())
+        ph = Photo.objects.create(title='x', image='photos/c.jpg')
+        r = self.client.post('/admin/award/photo/', {'action': 'move_to_cycle', '_selected_action': [ph.pk],
+                                                     'apply': '1', 'cycle': self.old.pk})
+        self.assertEqual(r.status_code, 302)
+        ph.refresh_from_db()
+        self.assertEqual(ph.cycle_id, self.old.pk)
+        for path in ('/admin/award/photo/', '/admin/award/video/', '/admin/award/news/', '/admin/award/winner/',
+                     '/admin/award/timelineevent/', f'/admin/award/awardcycle/{self.cur.pk}/change/', '/admin/award/heroslide/add/'):
+            self.assertEqual(self.client.get(path).status_code, 200, path)

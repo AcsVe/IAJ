@@ -13,6 +13,7 @@
 {% if category.winners.all|length > 0 %}
 <section class="py-5" style="background-color: {% if forloop.counter0|divisibleby:2 %}var(--bg-gray){% else %}#fff{% endif %};">
     <div class="container">
+        {% include 'award/_cycle_tabs.html' %}
         <div class="text-center mb-5" data-aos="fade-up">
             <h2 style="color: var(--primary); font-weight: 900; font-size: 2rem; position: relative; display: inline-block;">
                 {{ category.name }}
@@ -26,7 +27,8 @@
             {% for winner in category.winners.all %}
             {% if winner.is_active %}
             <div class="col-lg-4 col-md-6" data-aos="fade-up">
-                <div class="winner-card" style="background: #fff; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; height: 400px; display: flex; flex-direction: column;">
+                <div class="winner-card" style="background: #fff; overflow: hidden; position: relative; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; height: 400px; display: flex; flex-direction: column;">
+                        {% include 'award/_media_badge.html' with cap='' %}
                     {% if winner.image %}
                     <div style="height: 240px; overflow: hidden; flex-shrink: 0;">
                         <img src="{{ winner.image.url }}" alt="{{ winner.school_name }}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s;">

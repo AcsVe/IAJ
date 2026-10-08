@@ -1,0 +1,7 @@
+{% if portal.show_cycle_filter and cycle_tabs %}
+<nav class="cyc-tabs" aria-label="التصفية حسب الدورة">
+  <a href="?" class="{% if not cycle_sel %}on{% endif %}">كل الدورات <b>{{ cycle_total }}</b></a>
+  {% for t in cycle_tabs %}<a href="?cycle={{ t.c.pk }}" class="{% if cycle_sel == t.c.pk|stringformat:'s' %}on{% endif %}">{{ t.c.short_name|default:t.c.name }}{% if t.c.year %} · {{ t.c.year }}{% endif %} <b>{{ t.n }}</b></a>{% endfor %}
+  <a href="{% url 'cycles_archive' %}" class="cyc-arch"><i class="fas fa-box-archive ms-1"></i> أرشيف الدورات</a>
+</nav>
+{% endif %}

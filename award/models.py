@@ -241,6 +241,21 @@ class SiteSetting(models.Model):
     def has_hero_side(self):
         return bool(self.hero_side_video or self.side_youtube_embed or self.hero_side_image)
 
+def current_cycle_id():
+    """الدورة الحالية — تُستخدم افتراضياً للمواد الجديدة (صور، فيديو، أخبار…)"""
+    try:
+        from django.apps import apps
+        C = apps.get_model('award', 'AwardCycle')
+        return C.objects.filter(is_current=True).values_list('pk', flat=True).first()
+    except Exception:
+        return None
+
+
+def _cycle_fk():
+    return models.ForeignKey('AwardCycle', on_delete=models.SET_NULL, null=True, blank=True, default=current_cycle_id,
+                             verbose_name="الدورة", help_text="تُختار الدورة الحالية تلقائياً. فارغ = عام لكل الدورات.")
+
+
 def shade(hex_color, amount):
     """تفتيح (+) أو تغميق (-) لون hex — لصنع تدرّج تلقائي من لون واحد"""
     h = (hex_color or '').lstrip('#')
@@ -281,6 +296,9 @@ class HeroSlide(models.Model):
                                verbose_name="صورة غلاف للفيديو (اختياري)",
                                help_text="تظهر قبل الضغط على تشغيل. بدونها يظهر أول مشهد من الفيديو.")
     title = models.CharField(max_length=200, blank=True, default='', verbose_name="عنوان صغير على الشريحة (اختياري)")
+    caption = models.CharField(max_length=200, blank=True, default='', verbose_name="نص الشرح أعلى الصورة (اختياري)",
+                               help_text="يظهر بجانب شعار الجائزة أعلى الصورة/الفيديو. فارغ = العنوان.")
+    show_caption = models.BooleanField(default=True, verbose_name="إظهار نص الشرح أعلى الصورة؟")
     CLICK_CHOICES = (('zoom', 'تكبير الصورة بملء الشاشة'), ('link', 'فتح رابط'), ('none', 'لا شيء'))
     click_action = models.CharField(max_length=10, choices=CLICK_CHOICES, default='zoom',
                                     verbose_name="عند الضغط على الصورة",
@@ -321,6 +339,7 @@ class TimelineEvent(models.Model):
     icon = models.CharField(max_length=50, verbose_name="أيقونة FontAwesome (مثال: fa-bullhorn)", default="fa-check-circle", blank=True)
     is_highlighted = models.BooleanField(default=False, verbose_name="مميز؟ (مثل حفل الختام)")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
+    cycle = _cycle_fk()
 
     class Meta:
         verbose_name = "حدث زمني / خطوة"
@@ -556,6 +575,7 @@ class Winner(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="النبذة")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
     is_active = models.BooleanField(default=True, verbose_name="مفعّل")
+    cycle = _cycle_fk()
     class Meta: verbose_name = "فائز"; verbose_name_plural = "الفائزون"; ordering = ['-year', 'rank']
     def __str__(self): return f"{self.school_name} - المركز {self.rank}"
 
@@ -567,6 +587,7 @@ class MediaGallery(models.Model):
     video_url = models.URLField(blank=True, null=True, verbose_name="رابط يوتيوب")
     category = models.CharField(max_length=100, blank=True, null=True, verbose_name="التصنيف")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
+    cycle = _cycle_fk()
     class Meta: verbose_name = "صورة/فيديو"; verbose_name_plural = "معرض الصور"; ordering = ['order']
     def __str__(self): return self.title
 
@@ -575,6 +596,10 @@ class Photo(models.Model):
     image = models.FileField(max_length=500, upload_to='photos/', verbose_name="الصورة")
     description = models.TextField(blank=True, verbose_name="الوصف")
     is_active = models.BooleanField(default=True, verbose_name="مفعّل")
+    cycle = _cycle_fk()
+    caption = models.CharField(max_length=200, blank=True, default='', verbose_name="نص الشرح أعلى الصورة (اختياري)",
+                               help_text="يظهر بجانب شعار الجائزة أعلى الصورة/الفيديو. فارغ = العنوان.")
+    show_caption = models.BooleanField(default=True, verbose_name="إظهار نص الشرح أعلى الصورة؟")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -591,6 +616,10 @@ class Video(models.Model):
     description = models.TextField(blank=True, verbose_name="الوصف")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
     is_active = models.BooleanField(default=True, verbose_name="مفعّل")
+    cycle = _cycle_fk()
+    caption = models.CharField(max_length=200, blank=True, default='', verbose_name="نص الشرح أعلى الصورة (اختياري)",
+                               help_text="يظهر بجانب شعار الجائزة أعلى الصورة/الفيديو. فارغ = العنوان.")
+    show_caption = models.BooleanField(default=True, verbose_name="إظهار نص الشرح أعلى الصورة؟")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -617,6 +646,7 @@ class SuccessStory(models.Model):
     image = models.FileField(max_length=500, upload_to='success_stories/', blank=True, verbose_name="الصورة")
     date = models.DateField(verbose_name="التاريخ")
     is_active = models.BooleanField(default=True, verbose_name="مفعّل")
+    cycle = _cycle_fk()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -633,6 +663,7 @@ class News(models.Model):
     content = models.TextField(verbose_name="المحتوى")
     date = models.DateField(verbose_name="التاريخ")
     is_published = models.BooleanField(default=True, verbose_name="منشور؟")
+    cycle = _cycle_fk()
     class Meta: verbose_name = "خبر"; verbose_name_plural = "الأخبار"; ordering = ['-date']
     def __str__(self): return self.title
 
@@ -842,6 +873,12 @@ class AwardCycle(models.Model):
                                                      help_text="عند طلب تعديل من المدرسة يُحدَّد آخر موعد تلقائياً.")
     judges_per_submission = models.PositiveSmallIntegerField(default=2, verbose_name="عدد المحكّمين لكل طلب",
                                                              help_text="يُستخدم عند «توزيع تلقائي على المحكّمين».")
+    short_name = models.CharField(max_length=60, blank=True, default='', verbose_name="اسم مختصر",
+                                  help_text="مثال: الدورة 14 — يظهر في بطاقة العداد: «استقبال طلبات الدورة 14».")
+    countdown_title = models.CharField(max_length=120, blank=True, default='', verbose_name="عنوان بطاقة العداد (اختياري)",
+                                       help_text="فارغ = «استقبال طلبات» + الاسم المختصر.")
+    summary = models.TextField(blank=True, default='', verbose_name="نبذة عن الدورة (تظهر في صفحة الدورات السابقة)")
+    cover = models.ImageField(max_length=500, upload_to='cycles/', blank=True, null=True, verbose_name="صورة الدورة (اختياري)")
     hijri_year = models.CharField(max_length=10, blank=True, default='', verbose_name="السنة الهجرية",
                                   help_text="مثال: 1448 — تظهر في بطاقة الدورة: «الدورة الرابعة عشرة (1448هـ/2026م)».")
     show_card = models.BooleanField(default=True, verbose_name="إظهار بطاقة الدورة عند المرور على اسم الجائزة وزر التسجيل؟")
@@ -883,6 +920,10 @@ class AwardCycle(models.Model):
         from django.utils import timezone
         now = timezone.now()
         return bool(self.opens_at and self.closes_at and self.opens_at <= now <= self.closes_at)
+
+    @property
+    def cd_title(self):
+        return self.countdown_title or f"استقبال طلبات {self.short_name or self.name}"
 
     @property
     def card_title(self):
@@ -1192,6 +1233,15 @@ class PortalSetting(models.Model):
     submit_intro = models.TextField(blank=True, default='', verbose_name="تعليمات أعلى نموذج تقديم المشروع (اختياري)",
                                     help_text="مثال: شروط الملف، عدد الصفحات، آخر موعد…")
     show_spam_hint = models.BooleanField(default=True, verbose_name="تنبيه المدارس لتفقّد مجلد Spam")
+    countdown_badge = models.CharField(max_length=40, default='التسجيل مفتوح', verbose_name="نص زر العداد قبل الحساب",
+                                       help_text="يظهر لحظة تحميل الصفحة ثم يتحول إلى «باقي … يوماً».")
+    wm_enabled = models.BooleanField(default=True, verbose_name="إظهار شعار الجائزة على الصور والفيديو")
+    wm_position = models.CharField(max_length=10, default='right', choices=(('right', 'أعلى اليمين'), ('left', 'أعلى اليسار')),
+                                   verbose_name="مكان الشعار")
+    wm_size = models.PositiveSmallIntegerField(default=46, verbose_name="حجم الشعار (بكسل)")
+    wm_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=0.95, verbose_name="شفافية الشعار (0–1)")
+    captions_enabled = models.BooleanField(default=True, verbose_name="إظهار نص الشرح بجانب الشعار (الصور والفيديو)")
+    show_cycle_filter = models.BooleanField(default=True, verbose_name="تصفية الصور والفيديو والأخبار حسب الدورة في الموقع")
 
     class Meta:
         verbose_name = "إعدادات الحسابات والهيدر والتواصل"

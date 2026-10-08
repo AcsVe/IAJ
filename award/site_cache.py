@@ -65,7 +65,7 @@ CACHED_MODELS = ('SiteSetting', 'ThemeSetting', 'HomeContent', 'FooterContent',
 
 HOME_KEY = 'iaj:home-bundle:v1'
 HOME_MODELS = ('Field', 'Track', 'TimelineEvent', 'Judge', 'Sponsor', 'News', 'Submission', 'Principle',
-               'HeroSlide', 'SiteSetting', 'TrackDetail')
+               'HeroSlide', 'SiteSetting', 'TrackDetail', 'AwardCycle')
 
 
 def hero_slides():
@@ -76,7 +76,8 @@ def hero_slides():
         kind = sl.kind
         if not kind:
             continue
-        item = {'kind': kind, 'title': sl.title, 'poster': sl.poster.url if sl.poster else '',
+        item = {'kind': kind, 'title': sl.title, 'caption': sl.caption, 'show_caption': sl.show_caption,
+                'poster': sl.poster.url if sl.poster else '',
                 'click': sl.click_action if kind == 'image' else '', 'link': (sl.link_url or '').strip()}
         if item['click'] == 'link' and not item['link']:
             item['click'] = 'zoom'
@@ -113,6 +114,17 @@ def ensure_principles():
         Principle.objects.create(title=title, icon=icons[i], order=i + 1)
 
 
+def _current_timeline(TimelineEvent):
+    """الجدول الزمني للدورة الحالية (+ الخطوات العامة بدون دورة)"""
+    from django.db.models import Q
+    from .models import AwardCycle
+    cur = AwardCycle.objects.filter(is_current=True).values_list('pk', flat=True).first()
+    qs = TimelineEvent.objects.all()
+    if cur:
+        qs = qs.filter(Q(cycle_id=cur) | Q(cycle__isnull=True))
+    return list(qs)
+
+
 def get_home_bundle():
     data = cache.get(HOME_KEY)
     if data is not None:
@@ -130,7 +142,7 @@ def get_home_bundle():
         f.tracks_cached = list(f.track_set.all())
     data = {
         'fields': fields,
-        'timeline': list(TimelineEvent.objects.all()),
+        'timeline': _current_timeline(TimelineEvent),
         'principles': list(Principle.objects.filter(is_active=True)),
         'hero_slides': hero_slides(),
         'judges': list(Judge.objects.all()),

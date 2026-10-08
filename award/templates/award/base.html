@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load award_extras %}<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -230,6 +230,31 @@
         .td-row:nth-child(even) .td-val { background: rgba(10,22,50,.02); }
         @media (max-width: 640px) { .td-row { grid-template-columns: 1fr; } .td-key { padding: 12px 14px 8px; } .td-val { padding: 10px 16px 14px; } }
         /* زر «سجل الآن» بنفس تأثيرات زر «باقي … يوماً»: زجاج متدرّج + نبض + نقطة نابضة + حواف مستديرة */
+        /* بطاقة العداد: عنوان الدورة + المربعات + تاريخ الإغلاق + زر إغلاق */
+        .countdown-panel .cd-head { color: #fff; font-size: 1.2rem; font-weight: 800; margin: 2px 22px 14px; }
+        .countdown-panel .cd-close { position: absolute; top: 10px; left: 10px; width: 24px; height: 24px; border-radius: 50%; border: 0;
+            background: rgba(255,255,255,.9); color: var(--primary); font-weight: 900; line-height: 1; font-size: 1rem; cursor: pointer; }
+        .countdown-panel .cd-close:hover { background: var(--gold); color: #fff; }
+        .countdown-panel .cd-end { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.45); color: #fff; font-size: 1.15rem; font-weight: 800; }
+        /* شعار الجائزة + نص الشرح أعلى الصور والفيديو */
+        .media-badge { position: absolute; top: 10px; z-index: 5; display: flex; align-items: center; gap: 8px; pointer-events: none; max-width: calc(100% - 20px); }
+        .media-badge.mb-right { right: 10px; flex-direction: row; }
+        .media-badge.mb-left { left: 10px; flex-direction: row-reverse; }
+        .media-badge .mb-logo { width: {{ portal.wm_size|default:46 }}px; height: {{ portal.wm_size|default:46 }}px; object-fit: contain; border-radius: 50%;
+            background: #fff; padding: 3px; border: 2px solid var(--gold); opacity: {{ portal.wm_opacity|default:"0.95"|stringformat:"s" }};
+            box-shadow: 0 3px 10px rgba(0,0,0,.35); flex-shrink: 0; }
+        .media-badge .mb-cap { color: #fff; font-weight: 800; font-size: 1rem; line-height: 1.4;
+            text-shadow: 0 2px 4px rgba(0,0,0,.85), 0 0 12px rgba(0,0,0,.6); overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+            -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        @media (max-width: 767px) { .media-badge .mb-logo { width: 36px; height: 36px; } .media-badge .mb-cap { font-size: .9rem; } }
+        /* أزرار التصفية حسب الدورة */
+        .cyc-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 26px; }
+        .cyc-tabs a { padding: 8px 16px; border-radius: 30px; background: #fff; color: var(--primary); font-weight: 800; text-decoration: none;
+            border: 1px solid rgba(0,0,0,.08); box-shadow: 0 2px 8px rgba(0,0,0,.05); font-size: .95rem; }
+        .cyc-tabs a b { background: rgba(197,160,89,.18); color: var(--primary); border-radius: 20px; padding: 1px 8px; margin-right: 4px; font-size: .8rem; }
+        .cyc-tabs a.on { background: var(--primary); background-image: var(--menu-glass); color: #fff; border-color: transparent; }
+        .cyc-tabs a.on b { background: var(--gold); color: #fff; }
+        .cyc-tabs a.cyc-arch { background: transparent; box-shadow: none; border-style: dashed; }
         /* بطاقة الدورة: تظهر عند المرور على اسم الجائزة أو زر التسجيل — بنفس تصميم بطاقة «الوقت المتبقي» */
         .cyc-hover { position: relative; }
         .cycle-card { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 12px; z-index: 9999;
@@ -584,6 +609,7 @@
             <li><a class="dropdown-item" href="{% url 'home' %}#apply"><i class="fas fa-clipboard-check ms-2" style="color: var(--gold);"></i> الشروط والضوابط</a></li>
             <li><a class="dropdown-item" href="{% url 'home' %}#timeline"><i class="fas fa-timeline ms-2" style="color: var(--gold);"></i> الجدول الزمني</a></li>
             <li><a class="dropdown-item" href="{% url 'home' %}#prizes"><i class="fas fa-trophy ms-2" style="color: var(--gold);"></i> الجوائز</a></li>
+            <li><a class="dropdown-item" href="{% url 'cycles_archive' %}"><i class="fas fa-box-archive ms-2" style="color: var(--gold);"></i> دورات الجائزة</a></li>
           </ul>
         </li>
         <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#judges">التحكيم</a></li>
@@ -603,11 +629,12 @@
         <li class="nav-item d-none d-lg-flex align-items-center"><button type="button" class="nav-search-btn" data-open-search aria-label="بحث في الموقع" title="بحث"><i class="fas fa-magnifying-glass"></i></button></li>
         {% if reg_deadline and request.path == '/' %}
         <li class="nav-item dropdown" id="countdownDropdown" style="position: relative;">
-          <a class="nav-link countdown-toggle" href="#" aria-label="الوقت المتبقي للتسجيل">
-            <span class="countdown-pulse" id="countdownBadge">الوقت المتبقي</span>
+          <a class="nav-link countdown-toggle" href="#" aria-label="موعد استقبال الطلبات">
+            <span class="countdown-pulse" id="countdownBadge">{{ portal.countdown_badge|default:"التسجيل مفتوح" }}</span>
           </a>
           <div class="countdown-panel">
-            <div class="countdown-panel-header"><i class="fas fa-hourglass-half ms-1"></i> الوقت المتبقي للتسجيل</div>
+            <button type="button" class="cd-close" aria-label="إغلاق" onclick="event.stopPropagation();this.closest('#countdownDropdown').classList.remove('show')">×</button>
+            <div class="countdown-panel-header cd-head">{{ cd_title|default:"استقبال الطلبات" }}</div>
             {% with sd=settings.cd_show_days|default_if_none:True sh=settings.cd_show_hours|default_if_none:True sm=settings.cd_show_minutes|default_if_none:True ss=settings.cd_show_seconds|default_if_none:True %}
             <div class="cd-boxes" id="cdBoxes" data-units="{% if sd %}d{% endif %}{% if sh %}h{% endif %}{% if sm %}m{% endif %}{% if ss %}s{% endif %}">
               {% if sd %}<div class="cd-box"><b id="cdD">--</b><span>يوم</span></div>{% endif %}
@@ -617,6 +644,7 @@
             {% endwith %}
             </div>
             <div class="countdown-panel-value" id="countdownNav" hidden>--</div>
+            <div class="cd-end">{{ reg_deadline|ar_date }}</div>
             <a href="{% url 'submit_project' %}" class="cd-cta">قدّم مشروعك الآن <i class="fas fa-arrow-left me-1"></i></a>
           </div>
         </li>

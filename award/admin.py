@@ -169,7 +169,7 @@ class HeroSlideAdmin(admin.ModelAdmin):
     list_display_links = ('thumb', '__str__')
     list_filter = ('media_type', 'is_active')
     actions = ['make_active', 'make_hidden']
-    fields = ('media_type', 'media_file', 'youtube_url', 'poster', 'title', 'click_action', 'link_url', 'order', 'is_active')
+    fields = ('media_type', 'media_file', 'youtube_url', 'poster', 'title', 'caption', 'show_caption', 'click_action', 'link_url', 'order', 'is_active')
 
     @admin.display(description='معاينة')
     def thumb(self, obj):
@@ -366,7 +366,7 @@ class NewsAdmin(admin.ModelAdmin):
     list_display_links = ('title',)
     fieldsets = (
         (None, {
-            'fields': ('title', 'image', 'content', 'date', 'is_published')
+            'fields': ('title', 'image', 'content', 'date', 'cycle', 'is_published')
         }),
     )
 

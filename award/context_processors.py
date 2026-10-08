@@ -25,7 +25,7 @@ def portal_context(request):
         from .models import AwardCycle
         c = AwardCycle.current()
         cyc = {'name': c.name, 'opens_at': c.opens_at, 'closes_at': c.closes_at, 'title': c.card_title,
-               'show_card': c.show_card, 'note': c.card_note} if c else None
+               'show_card': c.show_card, 'note': c.card_note, 'cd_title': c.cd_title} if c else None
         cache.set('iaj_current_cycle', cyc, 60)
     now = timezone.now()
     if cyc and cyc['opens_at'] <= now <= cyc['closes_at']:
@@ -40,6 +40,8 @@ def portal_context(request):
         st = b.get('settings')
         data['reg_deadline'] = st.registration_deadline if st else None
         data['reg_open'] = True
+    if cyc:
+        data['cd_title'] = cyc.get('cd_title', '')
     if cyc and cyc.get('show_card'):
         data['cycle_card'] = cyc
     from .models import PortalSetting, SocialLink

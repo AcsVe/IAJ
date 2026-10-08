@@ -51,12 +51,27 @@ def submit_project(request):
     return submit_entry(request)
 
 
+def _cycle_filter(request, qs):
+    """تصفية حسب الدورة (?cycle=ID) + أعداد كل دورة لأزرار التصفية"""
+    from django.db.models import Count
+    from .models import AwardCycle
+    counts = dict(qs.order_by().values('cycle').annotate(n=Count('pk')).values_list('cycle', 'n'))
+    cycles = [{'c': c, 'n': counts.get(c.pk, 0)} for c in AwardCycle.objects.all() if counts.get(c.pk)]
+    sel = request.GET.get('cycle', '')
+    if sel.isdigit():
+        qs = qs.filter(Q(cycle_id=int(sel)) | Q(cycle__isnull=True))
+    ctx = {'cycle_tabs': cycles, 'cycle_sel': sel, 'cycle_total': sum(counts.values()),
+           'cycle_general': counts.get(None, 0)}
+    return qs, ctx
+
+
 def news_list(request):
     """صفحة قائمة الأخبار"""
-    all_news = News.objects.filter(is_published=True).order_by('-date')
+    all_news, cctx = _cycle_filter(request, News.objects.filter(is_published=True).order_by('-date'))
     return render(request, 'award/news_list.html', {
         'news_list': all_news,
         'all_news': all_news,
+        **cctx,
     })
 
 
@@ -71,31 +86,60 @@ def news_detail(request, pk):
 
 def photos_page(request):
     """صفحة الصور (موديل Photo — فيه is_active و created_at)"""
-    photos = Photo.objects.filter(is_active=True).order_by('-created_at')
-    return render(request, 'award/photos.html', {'photos': photos})
+    photos, cctx = _cycle_filter(request, Photo.objects.filter(is_active=True).order_by('-created_at'))
+    return render(request, 'award/photos.html', {'photos': photos, **cctx})
 
 
 def videos_page(request):
     """مكتبة الفيديو"""
-    videos = Video.objects.filter(is_active=True).order_by('order')
-    return render(request, 'award/videos.html', {'videos': videos})
+    videos, cctx = _cycle_filter(request, Video.objects.filter(is_active=True).order_by('order'))
+    return render(request, 'award/videos.html', {'videos': videos, **cctx})
 
 
 def success_stories_page(request):
     """قصص النجاح"""
-    stories = SuccessStory.objects.filter(is_active=True).order_by('-date')
-    return render(request, 'award/success_stories.html', {'stories': stories})
+    stories, cctx = _cycle_filter(request, SuccessStory.objects.filter(is_active=True).order_by('-date'))
+    return render(request, 'award/success_stories.html', {'stories': stories, **cctx})
 
 
 def winners_page(request):
     """صفحة الفائزون"""
     categories = WinnerCategory.objects.filter(is_active=True).prefetch_related('winners')
-    winners = Winner.objects.filter(is_active=True).select_related('category')
+    winners, cctx = _cycle_filter(request, Winner.objects.filter(is_active=True).select_related('category'))
     years = winners.values_list('year', flat=True).distinct().order_by('-year')
     return render(request, 'award/winners.html', {
         'categories': categories,
         'winners': winners,
         'years': years,
+        **cctx,
+    })
+
+
+def cycles_archive(request):
+    """الدورات السابقة: كل دورة مع أعداد الطلبات والفائزين والصور والفيديو"""
+    from django.db.models import Count
+    from .models import AwardCycle
+    cycles = AwardCycle.objects.annotate(
+        n_subs=Count('submissions', filter=~Q(submissions__status__in=('draft', 'withdrawn')), distinct=True),
+        n_winners=Count('winner', filter=Q(winner__is_active=True), distinct=True),
+        n_photos=Count('photo', filter=Q(photo__is_active=True), distinct=True),
+        n_videos=Count('video', filter=Q(video__is_active=True), distinct=True),
+        n_news=Count('news', filter=Q(news__is_published=True), distinct=True),
+    ).order_by('-year', '-opens_at')
+    return render(request, 'award/cycles.html', {'cycles': cycles})
+
+
+def cycle_detail(request, pk):
+    from .models import AwardCycle
+    c = get_object_or_404(AwardCycle, pk=pk)
+    return render(request, 'award/cycle_detail.html', {
+        'cycle': c,
+        'winners': Winner.objects.filter(is_active=True, cycle=c).select_related('category').order_by('rank'),
+        'photos': Photo.objects.filter(is_active=True, cycle=c).order_by('-created_at')[:24],
+        'videos': Video.objects.filter(is_active=True, cycle=c).order_by('order')[:12],
+        'news': News.objects.filter(is_published=True, cycle=c).order_by('-date')[:6],
+        'timeline': c.timelineevent_set.all() if hasattr(c, 'timelineevent_set') else [],
+        'n_subs': c.submissions.exclude(status__in=('draft', 'withdrawn')).count(),
     })
 
 

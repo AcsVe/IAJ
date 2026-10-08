@@ -1,0 +1,4 @@
+{% if portal.wm_enabled and settings.site_logo %}<div class="media-badge mb-{{ portal.wm_position|default:'right' }}" aria-hidden="true">
+  <img src="{{ settings.site_logo.url }}" alt="" class="mb-logo">
+  {% if portal.captions_enabled and cap %}<span class="mb-cap">{{ cap }}</span>{% endif %}
+</div>{% elif portal.captions_enabled and cap %}<div class="media-badge mb-{{ portal.wm_position|default:'right' }}" aria-hidden="true"><span class="mb-cap">{{ cap }}</span></div>{% endif %}

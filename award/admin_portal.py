@@ -59,9 +59,11 @@ class AwardCycleAdmin(admin.ModelAdmin):
     show_facets = FACETS
     filter_horizontal = ('tracks',)
     inlines = [CriterionInline]
-    actions = ['make_current', 'publish_results_action']
+    actions = ['make_current', 'clone_cycle', 'close_now', 'publish_results_action']
     fieldsets = (
-        (None, {'fields': (('name', 'year', 'hijri_year'), 'is_current', ('opens_at', 'closes_at'))}),
+        (None, {'fields': (('name', 'short_name'), ('year', 'hijri_year'), 'is_current', ('opens_at', 'closes_at'))}),
+        ('صفحة الدورة في أرشيف الموقع', {'fields': ('summary', 'cover')}),
+        ('بطاقة العداد', {'fields': ('countdown_title',), 'description': 'العنوان أعلى بطاقة «باقي … يوماً». فارغ = «استقبال طلبات» + الاسم المختصر.'}),
         ('بطاقة الدورة في الهيدر', {'fields': ('show_card', 'card_note'),
                                     'description': 'تظهر عند المرور بالماوس على اسم الجائزة أو زر «سجل الآن»: الاسم + السنة الهجرية/الميلادية + مواعيد التسجيل.'}),
         ('قواعد التسجيل', {'fields': ('tracks', 'max_per_school', 'revision_days')}),
@@ -102,6 +104,34 @@ class AwardCycleAdmin(admin.ModelAdmin):
             c.is_current = True
             c.save()
             self.message_user(request, f'«{c}» هي الدورة الحالية الآن.')
+
+    @admin.action(description='فتح دورة جديدة بنفس الإعدادات (استنساخ)')
+    def clone_cycle(self, request, queryset):
+        from datetime import timedelta
+        src = queryset.first()
+        if not src:
+            return
+        new = AwardCycle.objects.create(
+            name=f'{src.name} (جديدة)', short_name='', year=src.year + 1,
+            hijri_year=str(int(src.hijri_year) + 1) if src.hijri_year.isdigit() else '',
+            opens_at=src.opens_at + timedelta(days=365), closes_at=src.closes_at + timedelta(days=365),
+            is_current=False, max_per_school=src.max_per_school, revision_days=src.revision_days,
+            judges_per_submission=src.judges_per_submission, blind_judging=src.blind_judging, show_card=src.show_card)
+        new.tracks.set(src.tracks.all())
+        for c in src.criteria.all():
+            Criterion.objects.create(cycle=new, track=c.track, name=c.name, description=c.description,
+                                     max_score=c.max_score, weight=c.weight, order=c.order)
+        self.message_user(request, f'أُنشئت «{new.name}» بنفس المسارات والمعايير. عدّل الاسم والمواعيد ثم اختر «اجعلها الدورة الحالية».', messages.SUCCESS)
+
+    @admin.action(description='إغلاق التسجيل الآن')
+    def close_now(self, request, queryset):
+        n = 0
+        for c in queryset:
+            if c.closes_at > timezone.now():
+                c.closes_at = timezone.now()
+                c.save()
+                n += 1
+        self.message_user(request, f'أُغلق التسجيل في {n} دورة.')
 
     @admin.action(description='نشر النتائج وإبلاغ المدارس')
     def publish_results_action(self, request, queryset):
@@ -704,6 +734,11 @@ class PortalSettingAdmin(admin.ModelAdmin):
         ('شريط التواصل الاجتماعي', {'fields': ('social_title', 'social_in_footer', 'social_in_menu'),
                                      'description': 'الروابط نفسها من «روابط التواصل الاجتماعي».'}),
         ('نصوص صفحات الحساب', {'fields': ('login_intro', 'signup_title', 'signup_intro', 'submit_intro', 'show_spam_hint')}),
+        ('العداد', {'fields': ('countdown_badge',)}),
+        ('شعار الجائزة على الصور والفيديو', {'fields': ('wm_enabled', ('wm_position', 'wm_size', 'wm_opacity'), 'captions_enabled'),
+                                            'description': 'يظهر الشعار أعلى كل صورة وفيديو في الموقع (المعرض، الفيديو، الأخبار، شرائح الصفحة الرئيسية). '
+                                                           'نص الشرح يُكتب لكل صورة/فيديو في حقل «نص الشرح» ويمكن إخفاؤه لكل عنصر.'}),
+        ('الدورات في الموقع', {'fields': ('show_cycle_filter',)}),
     )
 
     def has_add_permission(self, request):
@@ -716,3 +751,51 @@ class PortalSettingAdmin(admin.ModelAdmin):
         from django.shortcuts import redirect
         obj = PortalSetting.get()
         return redirect(f'/admin/award/portalsetting/{obj.pk}/change/')
+
+
+# =====================================================
+#   ربط المواد بالدورات: فلتر + عمود + نقل جماعي إلى دورة
+# =====================================================
+class MoveCycleForm(forms.Form):
+    cycle = forms.ModelChoiceField(AwardCycle.objects.all(), required=False, label='الدورة',
+                                   empty_label='— عام (بدون دورة) —')
+
+
+def _move_to_cycle(modeladmin, request, queryset):
+    if 'apply' in request.POST:
+        form = MoveCycleForm(request.POST)
+        if form.is_valid():
+            n = queryset.update(cycle=form.cleaned_data['cycle'])
+            from .site_cache import clear_home_bundle
+            clear_home_bundle()
+            modeladmin.message_user(request, f'تم نقل {n} عنصر إلى «{form.cleaned_data["cycle"] or "عام"}».', messages.SUCCESS)
+            return None
+    else:
+        form = MoveCycleForm()
+    return _intermediate(modeladmin, request, queryset, form, 'نقل إلى دورة', 'move_to_cycle')
+
+
+_move_to_cycle.short_description = 'نقل المحدد إلى دورة…'
+
+
+def _attach_cycle_admin():
+    from .models import Photo, Video, News, SuccessStory, Winner, MediaGallery, TimelineEvent
+    for model in (Photo, Video, News, SuccessStory, Winner, MediaGallery, TimelineEvent):
+        ma = admin.site._registry.get(model)
+        if not ma:
+            continue
+        ld = list(ma.list_display)
+        if 'cycle' not in ld:
+            ld.insert(min(2, len(ld)), 'cycle')
+            ma.list_display = tuple(ld)
+        if 'cycle' not in (ma.list_filter or ()):
+            ma.list_filter = ('cycle',) + tuple(ma.list_filter or ())
+        ma.show_facets = FACETS
+        acts = list(ma.actions or [])
+        if 'move_to_cycle' not in [a if isinstance(a, str) else getattr(a, '__name__', '') for a in acts]:
+            acts.append(_move_to_cycle)
+        ma.actions = acts
+
+
+_move_to_cycle.__name__ = 'move_to_cycle'
+_attach_cycle_admin()

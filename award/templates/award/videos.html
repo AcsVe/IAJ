@@ -10,12 +10,14 @@
 
 <section class="py-5" style="background-color: var(--bg-gray);">
     <div class="container">
+        {% include 'award/_cycle_tabs.html' %}
         {% if videos %}
         <div class="row g-4">
             {% for video in videos %}
             <div class="col-lg-4 col-md-6" data-aos="fade-up">
                 <div class="video-card" style="background: #fff; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: transform 0.3s;">
                     <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                        {% if video.show_caption %}{% with cap=video.caption|default:video.title %}{% include 'award/_media_badge.html' %}{% endwith %}{% else %}{% include 'award/_media_badge.html' with cap='' %}{% endif %}
                         <iframe src="{{ video.get_embed_url }}" 
                                 title="{{ video.title }}"
                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"

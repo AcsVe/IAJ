@@ -11,12 +11,14 @@
 
 <section class="py-5" style="background-color: var(--bg-gray);">
     <div class="container">
+        {% include 'award/_cycle_tabs.html' %}
         {% if news_list %}
         <div class="row g-4">
             {% for news in news_list %}
             <div class="col-lg-4 col-md-6" data-aos="fade-up">
                 <a href="{% url 'news_detail' news.pk %}" class="text-decoration-none">
-                    <div class="news-card" style="background: #fff; border-radius: 0; overflow: hidden; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; height: 100%;">
+                    <div class="news-card" style="background: #fff; border-radius: 0; overflow: hidden; position: relative; box-shadow: 0 2px 15px rgba(0,0,0,0.08); transition: transform 0.3s, box-shadow 0.3s; height: 100%;">
+                        {% include 'award/_media_badge.html' with cap='' %}
                         {% if news.image %}
                         <div style="height: 220px; overflow: hidden;">
                             <img src="{{ news.image.url }}" alt="{{ news.title }}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s;">
