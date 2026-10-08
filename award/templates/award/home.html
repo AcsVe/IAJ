@@ -921,6 +921,12 @@ section#{{ sid }} .timeline-date {
                             <div class="timeline-title">{{ event.title }}</div>
                         </div>
                     </a>
+                    <div class="tl-pop" role="tooltip">
+                        {% if event.date_text %}<div class="tl-pop-date"><i class="far fa-calendar ms-1"></i> {{ event.date_text }}</div>{% endif %}
+                        <div class="tl-pop-title">{{ event.title }}</div>
+                        {% if event.description %}<div class="tl-pop-desc">{{ event.description|truncatewords:40 }}</div>{% endif %}
+                        <div class="tl-pop-hint"><i class="fas fa-hand-pointer ms-1"></i> اضغط للتفاصيل</div>
+                    </div>
                 </div>
                 {% if not forloop.last %}
                 <div class="timeline-h-connector">
@@ -1094,6 +1100,38 @@ section#{{ sid }} .timeline-date {
 .timeline-h-connector { flex-shrink:0;width:30px;height:240px;position:relative;margin-top:-60px;z-index:1; }
 .timeline-h-connector svg { width:30px;height:240px; }
 .timeline-mobile-line { display:none; }
+/* إبراز عناصر الجدول الزمني: التاريخ كشارة ذهبية، العنوان أكبر مع ظل، والدوائر بهالة */
+section#timeline .timeline-date { display: inline-block; background: linear-gradient(135deg, #e6c47a 0%, var(--gold) 55%, #a8843f 100%);
+    color: #fff !important; font-weight: 800; padding: 4px 12px; border-radius: 20px; line-height: 1.5; white-space: normal;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25); text-shadow: 0 1px 2px rgba(0,0,0,.25); margin-bottom: 8px; }
+section#timeline .timeline-title { font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+section#timeline .timeline-h-node { box-shadow: 0 0 0 6px rgba(197,160,89,.20), 0 12px 30px rgba(0,0,0,.30); }
+section#timeline .timeline-h-node i { color: var(--gold); }
+.timeline-h-item { position: relative; }
+.timeline-h-item:hover, .timeline-h-item:focus-within { z-index: 40; }
+/* بطاقة تظهر عند التحويم: نفس تصميم بطاقة العداد */
+.tl-pop { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 14px; z-index: 30;
+    width: 300px; padding: 16px 16px 14px; text-align: center; border-radius: 18px; color: #fff;
+    background: linear-gradient(160deg, rgba(18,36,80,.96) 0%, rgba(10,22,50,.94) 55%, rgba(70,55,20,.93) 100%);
+    border: 1px solid rgba(197,160,89,.55); box-shadow: 0 24px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.14);
+    backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); pointer-events: none; }
+.tl-pop::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -8px; border: 8px solid transparent; border-top-color: rgba(30,40,60,.95); }
+.timeline-h-item:hover .tl-pop, .timeline-h-item:focus-within .tl-pop { display: block; animation: tlRise .25s ease-out; }
+@keyframes tlRise { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.tl-pop-date { color: var(--gold); font-weight: 800; font-size: .95rem; margin-bottom: 6px; }
+.tl-pop-title { font-size: 1.2rem; font-weight: 900; line-height: 1.5; }
+.tl-pop-desc { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.3); font-size: .95rem; line-height: 1.8; color: #eef; }
+.tl-pop-hint { margin-top: 10px; color: #e9dcc0; font-size: .8rem; font-weight: 700; }
+@media (min-width: 1200px) { .premium-timeline { overflow: visible; } }
+@media (max-width: 991.98px) {
+    .premium-timeline { overflow: visible; }
+    .tl-pop { bottom: auto; top: 50%; left: 0; right: 92px; width: auto; margin: 0; transform: translateY(-50%); text-align: right; }
+    .tl-pop::after { top: 50%; left: auto; right: -16px; margin: -8px 0 0; border-top-color: transparent; border-left-color: rgba(30,40,60,.95); }
+    .timeline-h-item:hover .tl-pop, .timeline-h-item:focus-within .tl-pop { animation: tlSide .25s ease-out; }
+    @keyframes tlSide { from { opacity: 0; transform: translateY(-50%) translateX(-10px); } to { opacity: 1; transform: translateY(-50%) translateX(0); } }
+    section#timeline .timeline-date { font-size: .95rem !important; }
+    section#timeline .timeline-title { font-size: 1.12rem !important; }
+}
 /* تكبير الجدول الزمني على الشاشات الكبيرة: الدوائر والتواريخ والعناوين أوضح */
 @media (min-width: 1200px) {
     .timeline-h-item { width: 168px; }
@@ -1104,8 +1142,8 @@ section#{{ sid }} .timeline-date {
     .timeline-h-node img { width: 100px; height: 100px; }
     .timeline-h-node-dot { width: 13px; height: 13px; }
     .timeline-h-content { width: 168px; padding: 12px 4px; }
-    .timeline-date { font-size: 1.12rem; font-weight: 800; margin-bottom: 6px; letter-spacing: .3px; }
-    .timeline-title { font-size: 1.3rem; font-weight: 800; line-height: 1.55; }
+    section#timeline .timeline-date { font-size: 1.1rem !important; letter-spacing: .3px; }
+    section#timeline .timeline-title { font-size: 1.32rem !important; line-height: 1.55; }
     .timeline-h-connector { width: 26px; height: 290px; margin-top: -72px; }
     .timeline-h-connector svg { width: 26px; height: 290px; }
 }
@@ -1118,7 +1156,8 @@ section#{{ sid }} .timeline-date {
     .timeline-date { font-size:.95rem; }
     .timeline-title { font-size:1.08rem; }
     .timeline-h-item .timeline-h-node-dot { display:none; }
-    .timeline-h-item .timeline-h-content { margin:0 !important;order:0 !important;text-align:right;flex:1; }
+    .timeline-h-item .timeline-h-content { margin:0 !important;order:0 !important;text-align:right;flex:1;width:auto !important; }
+    .timeline-h-item > a { flex: 1; }
     .timeline-h-connector { display:none; }
     .timeline-mobile-line { display:block;width:2px;height:25px;background:#c8b49a;margin:2px 34px; }
 }
