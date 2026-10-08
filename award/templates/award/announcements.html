@@ -1,0 +1,13 @@
+{% extends 'award/base.html' %}
+{% block title %}إعلانات الجائزة{% endblock %}
+{% block content %}
+<section class="media-page-header" style="background-color: var(--primary); text-align: center;">
+  <div class="container"><h1 style="color: var(--gold); font-weight: 900;">إعلانات الجائزة</h1><p style="color: rgba(255,255,255,.75);">آخر الإعلانات والمستجدات</p></div>
+</section>
+<section style="background: var(--bg-gray); padding: 32px 0 60px;"><div class="container">
+  {% include 'award/_cycle_tabs.html' %}
+  {% if items %}<div class="an-grid">{% for a in items %}{% include 'award/_ann_card.html' %}{% endfor %}</div>
+  {% else %}<p class="text-center text-muted py-5">لا توجد إعلانات بعد.</p>{% endif %}
+</div></section>
+{% include 'award/_ann_assets.html' %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>الإعلانات ({{ items|length }})</h1>{% if obj %}<a href="/manage/announcements/" class="pt-btn pt-btn-light">+ إعلان جديد</a>{% endif %}</div>
+<div class="row g-4">
+  <div class="col-xl-5">{% for a in items %}<a href="/manage/announcements/{{ a.pk }}/" class="pt-card d-block text-decoration-none{% if obj and obj.pk == a.pk %} border border-warning{% endif %}" style="padding:14px 16px">
+      <b style="color:var(--primary)">{% if a.pinned %}📌 {% endif %}{{ a.title }}</b>
+      <div class="pt-help">{{ a.get_kind_display }}{% if a.n %} · {{ a.n }} وسائط{% endif %} · {{ a.date|date:"Y-m-d" }} ·
+        {% if a.is_published %}<span class="text-success">منشور</span>{% else %}<span class="text-danger">مسودة</span>{% endif %}{% if a.show_on_home %} · في الرئيسية{% endif %}</div></a>
+    {% empty %}<div class="pt-card text-muted">لا توجد إعلانات بعد.</div>{% endfor %}</div>
+  <div class="col-xl-7"><div class="pt-card"><h2>{% if obj %}تعديل الإعلان{% else %}إعلان جديد — بطاقة نصية أو بطاقة صور وفيديو{% endif %}</h2>
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+      {% with f=form.title %}{% include 'award/portal/_field.html' %}{% endwith %}
+      <div class="row g-2"><div class="col-md-6">{% with f=form.kind %}{% include 'award/portal/_field.html' %}{% endwith %}</div><div class="col-md-6">{% with f=form.cycle %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+      {% with f=form.body %}{% include 'award/portal/_field.html' %}{% endwith %}
+      <div class="row g-2"><div class="col-md-6">{% with f=form.media_files %}{% include 'award/portal/_field.html' %}{% endwith %}</div><div class="col-md-6">{% with f=form.youtube %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+      {% if obj and obj.media.exists %}<div class="d-flex flex-wrap gap-2 mb-3">{% for m in obj.media.all %}<div class="position-relative" style="width:110px">
+        {% if m.kind == 'image' %}<img src="{{ m.file.url }}" style="width:110px;height:76px;object-fit:cover;border-radius:8px">{% elif m.kind == 'youtube' %}<img src="https://i.ytimg.com/vi/{{ m.yt }}/mqdefault.jpg" style="width:110px;height:76px;object-fit:cover;border-radius:8px">{% else %}<video src="{{ m.file.url }}" style="width:110px;height:76px;border-radius:8px;background:#000"></video>{% endif %}
+        <button name="act" value="del_media" formnovalidate onclick="this.form.mid.value='{{ m.pk }}'" class="btn btn-sm btn-danger position-absolute" style="top:2px;left:2px;padding:0 6px">×</button></div>{% endfor %}<input type="hidden" name="mid"></div>{% endif %}
+      <div class="row g-2"><div class="col-md-6">{% with f=form.link_url %}{% include 'award/portal/_field.html' %}{% endwith %}</div><div class="col-md-3">{% with f=form.link_text %}{% include 'award/portal/_field.html' %}{% endwith %}</div><div class="col-md-3">{% with f=form.publish_date %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+      <div class="mg-checks mb-3">
+        <label>{{ form.show_on_home }} {{ form.show_on_home.label }}</label><label>{{ form.pinned }} {{ form.pinned.label }}</label><label>{{ form.is_published }} {{ form.is_published.label }}</label></div>
+      <div class="d-flex gap-2"><button class="btn-act gold"><i class="fas fa-floppy-disk"></i> حفظ ونشر</button>
+        {% if obj %}<a href="{{ obj.get_absolute_url }}" target="_blank" class="pt-btn pt-btn-light">معاينة</a><button name="act" value="delete" formnovalidate class="btn-act danger" onclick="return confirm('حذف الإعلان؟')"><i class="fas fa-trash"></i></button>{% endif %}</div>
+    </form></div></div>
+</div>
+{% endblock %}

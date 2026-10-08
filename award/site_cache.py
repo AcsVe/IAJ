@@ -65,7 +65,7 @@ CACHED_MODELS = ('SiteSetting', 'ThemeSetting', 'HomeContent', 'FooterContent',
 
 HOME_KEY = 'iaj:home-bundle:v1'
 HOME_MODELS = ('Field', 'Track', 'TimelineEvent', 'Judge', 'Sponsor', 'News', 'Submission', 'Principle',
-               'HeroSlide', 'SiteSetting', 'TrackDetail', 'AwardCycle')
+               'HeroSlide', 'SiteSetting', 'TrackDetail', 'AwardCycle', 'Announcement', 'AnnouncementMedia')
 
 
 def hero_slides():
@@ -125,6 +125,11 @@ def _current_timeline(TimelineEvent):
     return list(qs)
 
 
+def _home_announcements():
+    from .models import Announcement
+    return list(Announcement.objects.filter(is_published=True, show_on_home=True).prefetch_related('media')[:6])
+
+
 def get_home_bundle():
     data = cache.get(HOME_KEY)
     if data is not None:
@@ -148,6 +153,7 @@ def get_home_bundle():
         'judges': list(Judge.objects.all()),
         'sponsors': list(Sponsor.objects.all()),
         'latest_news': list(News.objects.filter(is_published=True)[:3]),
+        'announcements': _home_announcements(),
         'total_submissions': Submission.objects.count(),
         'accepted_submissions': Submission.objects.filter(status='accepted').count(),
     }

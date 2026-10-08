@@ -70,7 +70,8 @@ STATUS_CHOICES = (
     ('draft', 'مسودة'),
     ('submitted', 'مُرسل — بانتظار التدقيق'),
     ('screening', 'قيد التدقيق'),
-    ('revision', 'مطلوب تعديل'),
+    ('revision', 'مطلوب استكمال / تعديل'),
+    ('on_hold', 'معلّق'),
     ('judging', 'قيد التحكيم'),
     ('accepted', 'مقبول'),
     ('rejected', 'غير مقبول'),
@@ -164,7 +165,12 @@ class Submission(models.Model):
 
     @property
     def can_withdraw(self):
-        return self.status in ('draft', 'submitted', 'screening', 'revision')
+        return self.status in ('draft', 'submitted', 'screening', 'revision', 'on_hold')
+
+    @property
+    def can_add_files(self):
+        """المدرسة تضيف ملفات/وسائط في أي وقت قبل النتيجة النهائية"""
+        return self.status not in ('accepted', 'rejected', 'winner', 'withdrawn')
 
     # ---------- التحكيم ----------
     @property
@@ -575,6 +581,7 @@ class Winner(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="النبذة")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
     is_active = models.BooleanField(default=True, verbose_name="مفعّل")
+    submission = models.OneToOneField('Submission', on_delete=models.SET_NULL, null=True, blank=True, related_name='winner_entry', verbose_name="الطلب المرتبط")
     cycle = _cycle_fk()
     class Meta: verbose_name = "فائز"; verbose_name_plural = "الفائزون"; ordering = ['-year', 'rank']
     def __str__(self): return f"{self.school_name} - المركز {self.rank}"
@@ -992,7 +999,7 @@ class Area(models.Model):
         return self.name
 
 
-ROLE_CHOICES = (('school', 'مدرسة'), ('judge', 'محكّم'))
+ROLE_CHOICES = (('school', 'مدرسة'), ('judge', 'محكّم'), ('manager', 'إداري الجائزة'))
 
 
 class Profile(models.Model):
@@ -1263,3 +1270,186 @@ class PortalSetting(models.Model):
         super().save(*a, **kw)
         from django.core.cache import cache
         cache.delete('iaj_portal_setting')
+
+
+# ========================================= #
+#   ملفات إضافية، مراسلات، لجان، إعلانات     #
+# ========================================= #
+
+FILE_KINDS = (('image', 'صورة'), ('video', 'فيديو'), ('audio', 'صوت'), ('doc', 'مستند'), ('archive', 'ملف مضغوط'), ('other', 'أخرى'))
+_KIND_BY_EXT = {
+    'image': {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.heic', '.heif', '.bmp', '.tif', '.tiff', '.svg', '.avif'},
+    'video': {'.mp4', '.mov', '.m4v', '.avi', '.mkv', '.webm', '.wmv', '.3gp', '.mpeg', '.mpg'},
+    'audio': {'.mp3', '.wav', '.m4a', '.aac', '.ogg', '.flac', '.wma', '.amr'},
+    'doc': {'.pdf', '.doc', '.docx', '.odt', '.rtf', '.txt', '.ppt', '.pptx', '.odp', '.pps', '.ppsx', '.xls', '.xlsx', '.ods', '.csv', '.key', '.pages', '.numbers'},
+    'archive': {'.zip', '.rar', '.7z', '.tar', '.gz', '.tgz', '.bz2'},
+}
+ALLOWED_UPLOAD_EXTS = set().union(*_KIND_BY_EXT.values())
+
+
+def file_kind(name):
+    import os
+    ext = os.path.splitext(name or '')[1].lower()
+    for k, exts in _KIND_BY_EXT.items():
+        if ext in exts:
+            return k
+    return 'other'
+
+
+def extra_upload(instance, filename):
+    import os
+    base, ext = os.path.splitext(os.path.basename(filename))
+    ref = instance.submission.ref if instance.submission_id else 'new'
+    return f'private/submissions/{ref}/extra/{base[:60]}{ext.lower()}'
+
+
+class SubmissionFile(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='files', verbose_name="الطلب")
+    file = models.FileField(max_length=500, upload_to=extra_upload, verbose_name="الملف")
+    title = models.CharField(max_length=200, blank=True, default='', verbose_name="وصف الملف")
+    kind = models.CharField(max_length=10, choices=FILE_KINDS, default='other', verbose_name="النوع")
+    size = models.PositiveBigIntegerField(default=0, verbose_name="الحجم")
+    uploaded_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="رفعه")
+    after_submit = models.BooleanField(default=False, verbose_name="أُضيف بعد الإرسال؟")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "ملف مرفق"
+        verbose_name_plural = "ملفات الطلبات المرفقة"
+        ordering = ['created_at', 'id']
+
+    def __str__(self):
+        return self.title or self.filename
+
+    @property
+    def filename(self):
+        import os
+        return os.path.basename(self.file.name or '')
+
+    @property
+    def size_label(self):
+        n = self.size or 0
+        return f"{n / 1048576:.1f} MB" if n >= 1048576 else f"{max(1, n // 1024)} KB"
+
+    @property
+    def icon(self):
+        return {'image': 'fa-file-image', 'video': 'fa-file-video', 'audio': 'fa-file-audio', 'doc': 'fa-file-lines',
+                'archive': 'fa-file-zipper'}.get(self.kind, 'fa-file')
+
+    def save(self, *a, **kw):
+        if self.file and not self.size:
+            try:
+                self.size = self.file.size
+            except Exception:
+                pass
+        if self.file:
+            self.kind = file_kind(self.file.name)
+        super().save(*a, **kw)
+
+
+def message_upload(instance, filename):
+    import os
+    base, ext = os.path.splitext(os.path.basename(filename))
+    ref = instance.submission.ref if instance.submission_id else 'new'
+    return f'private/submissions/{ref}/messages/{base[:60]}{ext.lower()}'
+
+
+class SubmissionMessage(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='messages', verbose_name="الطلب")
+    sender = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, verbose_name="المرسل")
+    from_staff = models.BooleanField(default=False, verbose_name="من إدارة الجائزة؟")
+    body = models.TextField(verbose_name="الرسالة")
+    attachment = models.FileField(max_length=500, upload_to=message_upload, blank=True, verbose_name="مرفق")
+    is_read = models.BooleanField(default=False, verbose_name="مقروءة؟")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "رسالة على طلب"
+        verbose_name_plural = "مراسلات الطلبات"
+        ordering = ['created_at', 'id']
+
+    def __str__(self):
+        return self.body[:60]
+
+
+class JudgingCommittee(models.Model):
+    name = models.CharField(max_length=200, verbose_name="اسم اللجنة")
+    cycle = _cycle_fk()
+    fields = models.ManyToManyField(Field, blank=True, verbose_name="المجالات", help_text="فارغ = كل المجالات.")
+    tracks = models.ManyToManyField(Track, blank=True, verbose_name="المسارات (اختياري)")
+    members = models.ManyToManyField('auth.User', blank=True, related_name='committees', verbose_name="الأعضاء (المحكّمون)",
+                                     limit_choices_to={'profile__role': 'judge'})
+    chair = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='chaired_committees',
+                              verbose_name="رئيس اللجنة", limit_choices_to={'profile__role': 'judge'})
+    notes = models.TextField(blank=True, default='', verbose_name="ملاحظات")
+
+    class Meta:
+        verbose_name = "لجنة تحكيم"
+        verbose_name_plural = "لجان التحكيم"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def covers(self, sub):
+        if self.tracks.exists():
+            return self.tracks.filter(pk=sub.track_id).exists()
+        if self.fields.exists():
+            return self.fields.filter(pk=sub.field_id).exists()
+        return True
+
+
+ANN_TYPES = (('text', 'بطاقة نصية'), ('media', 'بطاقة وسائط (صور/فيديو)'))
+
+
+class Announcement(models.Model):
+    title = models.CharField(max_length=250, verbose_name="العنوان")
+    kind = models.CharField(max_length=10, choices=ANN_TYPES, default='text', verbose_name="نوع البطاقة")
+    body = models.TextField(blank=True, default='', verbose_name="النص")
+    link_url = models.CharField(max_length=500, blank=True, default='', verbose_name="رابط زر (اختياري)")
+    link_text = models.CharField(max_length=60, blank=True, default='', verbose_name="نص الزر")
+    cycle = _cycle_fk()
+    show_on_home = models.BooleanField(default=True, verbose_name="تظهر في الصفحة الرئيسية؟")
+    is_published = models.BooleanField(default=True, verbose_name="منشور؟")
+    pinned = models.BooleanField(default=False, verbose_name="مثبّت أولاً؟")
+    publish_date = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ النشر", help_text="فارغ = تاريخ الإنشاء.")
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="بواسطة")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "إعلان"
+        verbose_name_plural = "الإعلانات (بطاقات نصية ووسائط)"
+        ordering = ['-pinned', '-publish_date', '-created_at']
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return f'/announcements/{self.pk}/'
+
+    @property
+    def date(self):
+        return self.publish_date or self.created_at
+
+
+class AnnouncementMedia(models.Model):
+    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, related_name='media', verbose_name="الإعلان")
+    file = models.FileField(max_length=500, upload_to='announcements/', blank=True, verbose_name="صورة أو فيديو")
+    youtube_url = models.CharField(max_length=300, blank=True, default='', verbose_name="أو رابط يوتيوب")
+    caption = models.CharField(max_length=200, blank=True, default='', verbose_name="نص الشرح")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+
+    class Meta:
+        verbose_name = "وسائط الإعلان"
+        verbose_name_plural = "وسائط الإعلان"
+        ordering = ['order', 'id']
+
+    @property
+    def kind(self):
+        if self.youtube_url:
+            return 'youtube'
+        return 'video' if file_kind(self.file.name) == 'video' else 'image'
+
+    @property
+    def yt(self):
+        return youtube_id(self.youtube_url)

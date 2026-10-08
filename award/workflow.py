@@ -15,7 +15,8 @@ ADMIN_URL = '/admin/award/submission/{}/change/'
 SCHOOL_MESSAGES = {
     'submitted': ('تم استلام طلبك {ref}', 'شكراً لكم. استلمنا طلب «{title}» وسيبدأ فريق الجائزة بتدقيقه قريباً.', 'success'),
     'screening': ('طلبك {ref} قيد التدقيق', 'بدأ فريق الجائزة تدقيق طلب «{title}» والتأكد من اكتمال متطلباته.', 'info'),
-    'revision': ('مطلوب تعديل على طلبك {ref}', 'يرجى الدخول إلى حسابكم وتعديل طلب «{title}» ثم إعادة إرساله.', 'warning'),
+    'revision': ('مطلوب استكمال/تعديل على طلبك {ref}', 'يرجى الدخول إلى حسابكم واستكمال أو تعديل طلب «{title}» ثم إعادة إرساله.', 'warning'),
+    'on_hold': ('طلبك {ref} معلّق مؤقتاً', 'تم تعليق طلب «{title}» مؤقتاً لدى فريق الجائزة.', 'warning'),
     'judging': ('طلبك {ref} في مرحلة التحكيم', 'اجتاز طلب «{title}» مرحلة التدقيق وانتقل إلى لجنة التحكيم.', 'info'),
     'accepted': ('نتيجة طلبك {ref}: مقبول', 'يسعدنا إبلاغكم بقبول مشروع «{title}». سنتواصل معكم بالخطوات التالية.', 'success'),
     'rejected': ('نتيجة طلبك {ref}', 'نشكركم على مشاركتكم بمشروع «{title}». نأسف لعدم تأهله في هذه الدورة، ونتطلع لمشاركتكم القادمة.', 'info'),
@@ -31,7 +32,7 @@ def _school_message(sub, status, note=''):
     body = body.format(title=sub.project_title, ref=sub.ref)
     if status == 'revision' and sub.revision_deadline:
         body += f"\nآخر موعد للتعديل: {timezone.localtime(sub.revision_deadline):%Y-%m-%d %H:%M}"
-    note = note or (sub.school_note if status in ('revision', 'accepted', 'rejected', 'winner') else '')
+    note = note or (sub.school_note if status in ('revision', 'on_hold', 'accepted', 'rejected', 'winner') else '')
     if note:
         body += f"\n\nملاحظة فريق الجائزة:\n{note}"
     notify(sub.owner, title.format(ref=sub.ref), body, sub.get_absolute_url(), level, button='عرض الطلب')
@@ -46,6 +47,8 @@ def change_status(sub, new, by=None, note='', notify_school=True, save=True):
     now = timezone.now()
     if new == 'submitted' and not sub.sent_at:
         sub.sent_at = now
+    if new in ('on_hold',) and note:
+        sub.school_note = note
     if new == 'revision':
         days = (sub.cycle.revision_days if sub.cycle else 7) or 7
         if not sub.revision_deadline or sub.revision_deadline < now:

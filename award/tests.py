@@ -212,7 +212,7 @@ class RegistrationFlowTest(TestCase):
         self.assertEqual(r.status_code, 302)
         s.refresh_from_db()
         self.assertEqual(s.status, 'revision')
-        self.assertTrue(Notification.objects.filter(user=u, title__contains='مطلوب تعديل').exists())
+        self.assertTrue(Notification.objects.filter(user=u, title__contains='مطلوب استكمال').exists())
         r = self.client.post('/admin/award/submission/', {'action': 'export_csv', '_selected_action': [s.pk]})
         self.assertIn('IAJ-', r.content.decode('utf-8'))
 
@@ -313,3 +313,84 @@ class CyclesArchiveTest(TestCase):
         for path in ('/admin/award/photo/', '/admin/award/video/', '/admin/award/news/', '/admin/award/winner/',
                      '/admin/award/timelineevent/', f'/admin/award/awardcycle/{self.cur.pk}/change/', '/admin/award/heroslide/add/'):
             self.assertEqual(self.client.get(path).status_code, 200, path)
+
+
+@override_settings(MEDIA_ROOT=TMP_MEDIA, EMAIL_ENABLED=False, EMAIL_HOST='')
+class ManagerConsoleTest(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        AwardCycle.objects.all().delete()
+        self.cycle = AwardCycle.objects.create(name='الدورة الأولى', short_name='الدورة الأولى', year=2026, is_current=True,
+                                               opens_at=timezone.now() - timedelta(days=1), closes_at=timezone.now() + timedelta(days=30))
+        f = Field.objects.create(name_ar='العلوم', name_en='S')
+        self.track = Track.objects.create(field=f, name_ar='الطاقة', name_en='E')
+        self.mgr = User.objects.create_user('m@x.org', 'm@x.org', 'Mgr-pass-2026', first_name='مدير')
+        Profile.objects.create(user=self.mgr, role='manager')
+        self.school = User.objects.create_user('s@x.org', 's@x.org', 'Sch-pass-2026')
+        Profile.objects.create(user=self.school, school_name='مدرسة النور')
+        self.sub = Submission.objects.create(owner=self.school, cycle=self.cycle, school_name='مدرسة النور', contact_person='x',
+                                             email='s@x.org', phone='0790', field=f, track=self.track,
+                                             project_title='مشروع الطاقة', status='submitted', document='private/x.pdf')
+
+    def test_manager_flow(self):
+        from .models import SubmissionMessage, SubmissionFile, JudgingCommittee, Announcement, Winner
+        c = self.client
+        self.assertEqual(c.get('/manage/').status_code, 302)          # يحتاج دخول
+        c.login(username='m@x.org', password='Mgr-pass-2026')
+        for path in ('/manage/', '/manage/submissions/', f'/manage/submissions/{self.sub.pk}/', '/manage/results/',
+                     '/manage/judges/', '/manage/committees/', '/manage/announcements/', '/manage/schools/'):
+            self.assertEqual(c.get(path).status_code, 200, path)
+        # رسالة للمدرسة + طلب استكمال
+        c.post(f'/manage/submissions/{self.sub.pk}/', {'act': 'message', 'body': 'يرجى إرفاق صور التنفيذ'})
+        self.assertTrue(SubmissionMessage.objects.filter(submission=self.sub, from_staff=True).exists())
+        self.assertTrue(Notification.objects.filter(user=self.school, title__contains='رسالة من إدارة الجائزة').exists())
+        c.post(f'/manage/submissions/{self.sub.pk}/', {'act': 'status', 'status': 'revision', 'note': 'نواقص', 'notify': '1'})
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, 'revision')
+        # المدرسة ترد وترفع ملفات متعددة
+        sc = self.client_class()
+        sc.login(username='s@x.org', password='Sch-pass-2026')
+        r = sc.post(f'/portal/submissions/{self.sub.pk}/files/', {'title': 'صور', 'files': [
+            SimpleUploadedFile('a.jpg', b'\xff\xd8\xff', content_type='image/jpeg'),
+            SimpleUploadedFile('b.mp4', b'\x00\x00\x00\x18ftypmp42', content_type='video/mp4'),
+            SimpleUploadedFile('c.zip', b'PK', content_type='application/zip')]})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(SubmissionFile.objects.filter(submission=self.sub).count(), 3)
+        self.assertEqual(set(SubmissionFile.objects.values_list('kind', flat=True)), {'image', 'video', 'archive'})
+        sc.post(f'/portal/submissions/{self.sub.pk}/message/', {'body': 'تم الإرفاق'})
+        self.assertTrue(Notification.objects.filter(user=self.mgr, title__contains='رسالة من').exists())
+        # ملف خاص: المدير يفتحه، الزائر لا
+        f = SubmissionFile.objects.first()
+        self.assertEqual(c.get(f.file.url).status_code, 200)
+        self.assertEqual(self.client_class().get(f.file.url).status_code, 404)
+        # لجنة + محكّم + إسناد
+        j = User.objects.create_user('j@x.org', 'j@x.org', 'J-pass-2026')
+        Profile.objects.create(user=j, role='judge')
+        com = JudgingCommittee.objects.create(name='لجنة العلوم', cycle=self.cycle)
+        com.members.add(j)
+        r = c.post('/manage/submissions/', {'ids': [self.sub.pk], 'bulk': 'committee', 'committee': com.pk})
+        self.assertEqual(self.sub.assignments.count(), 1)
+        # اعتماد فائز (مخفي حتى النشر) ثم نشر النتائج
+        c.post(f'/manage/submissions/{self.sub.pk}/', {'act': 'winner', 'rank': '1'})
+        self.sub.refresh_from_db()
+        self.assertEqual(self.sub.status, 'winner')
+        self.assertTrue(Winner.objects.filter(submission=self.sub, cycle=self.cycle, rank=1).exists())
+        c.post('/manage/results/', {'act': 'publish'})
+        self.assertTrue(Notification.objects.filter(user=self.school, title__contains='مبارك').exists())
+        # إعلان وسائط يظهر في الرئيسية
+        c.post('/manage/announcements/', {'title': 'إعلان الفائزين', 'kind': 'media', 'body': 'نص', 'cycle': self.cycle.pk,
+                                          'show_on_home': 'on', 'is_published': 'on',
+                                          'media_files': [SimpleUploadedFile('p.jpg', b'\xff\xd8\xff', content_type='image/jpeg')],
+                                          'youtube': 'https://youtu.be/dQw4w9WgXcQ'})
+        a = Announcement.objects.get(title='إعلان الفائزين')
+        self.assertEqual(a.media.count(), 2)
+        self.assertContains(self.client_class().get('/'), 'إعلان الفائزين')
+        self.assertContains(self.client_class().get(f'/announcements/{a.pk}/'), 'dQw4w9WgXcQ')
+        # تصدير CSV
+        r = c.post('/manage/submissions/', {'ids': [self.sub.pk], 'bulk': 'export'})
+        self.assertIn('مشروع الطاقة', r.content.decode('utf-8'))
+
+    def test_school_cannot_open_manage(self):
+        self.client.login(username='s@x.org', password='Sch-pass-2026')
+        self.assertEqual(self.client.get('/manage/').status_code, 404)

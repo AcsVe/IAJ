@@ -228,4 +228,4 @@ PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3   # روابط التفعيل/الاس
 AUTHENTICATION_BACKENDS = ['award.auth.EmailOrUsernameBackend']
 
 # رفع ملفات الطلبات
-SUBMISSION_MAX_MB = int(os.environ.get('SUBMISSION_MAX_MB', '25') or 25)
+SUBMISSION_MAX_MB = int(os.environ.get('SUBMISSION_MAX_MB', '95') or 95)   # Cloudflare (المجاني) يقبل حتى 100MB للطلب الواحد

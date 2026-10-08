@@ -1,0 +1,23 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>المدارس المسجّلة (<span id="shownCount">{{ items|length }}</span> من {{ total }})</h1><input type="search" class="form-control" style="max-width:260px" placeholder="بحث فوري…" data-live="#sTable tbody tr"></div>
+<form method="get" class="mg-chips">
+  <select name="gov" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المحافظات ({{ total }})</option>{% for g, n in govs %}<option value="{{ g.pk }}"{% if f.gov == g.pk|stringformat:'s' %} selected{% endif %}>{{ g }} ({{ n }})</option>{% endfor %}</select>
+  <select name="dir" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المديريات</option>{% for d, n in dirs %}<option value="{{ d.pk }}"{% if f.dir == d.pk|stringformat:'s' %} selected{% endif %}>{{ d }} ({{ n }})</option>{% endfor %}</select>
+</form>
+<form method="post">{% csrf_token %}
+  <div class="mg-bulk"><b>المحدد: <span id="selCount">0</span> / {{ items|length }}</b>
+    <input type="text" name="title" class="form-control form-control-sm" placeholder="عنوان الرسالة" style="max-width:220px">
+    <input type="text" name="note" class="form-control form-control-sm" placeholder="نص الرسالة / الإشعار" style="flex:1">
+    <button class="btn-act gold"><i class="fas fa-paper-plane"></i> إرسال للمحدد</button></div>
+  <div class="pt-card" style="padding:0;overflow:auto"><table class="mg-table" id="sTable">
+    <thead><tr><th><input type="checkbox" data-checkall="#sTable tbody"></th><th>المدرسة</th><th>ضابط الارتباط</th><th>الهاتف</th><th>المحافظة / المديرية</th><th>الطلبات</th><th>التسجيل</th></tr></thead>
+    <tbody>{% for p in items %}<tr><td><input type="checkbox" name="ids" value="{{ p.pk }}"></td>
+      <td><b>{{ p.school_name|default:"—" }}</b><br><small class="text-muted" dir="ltr">{{ p.user.email }}</small></td>
+      <td>{{ p.contact_person }}</td><td dir="ltr">{{ p.phone }}</td>
+      <td><small>{{ p.governorate|default:"—" }}<br>{{ p.directorate|default:"" }}</small></td>
+      <td>{% if p.n %}<a href="/manage/submissions/?q={{ p.user.email|urlencode }}">{{ p.n }}</a>{% else %}0{% endif %}</td>
+      <td><small>{{ p.created_at|date:"Y-m-d" }}</small></td></tr>
+    {% empty %}<tr><td colspan="7" class="text-center text-muted py-4">لا توجد مدارس.</td></tr>{% endfor %}</tbody></table></div>
+</form>
+{% endblock %}

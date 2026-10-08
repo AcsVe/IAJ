@@ -1,0 +1,79 @@
+{% extends 'award/base.html' %}
+{% block title %}إدارة الجائزة{% endblock %}
+{% block extra_head %}{% include 'award/portal/_styles.html' %}
+<style>
+.mg{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+.mg-side{position:sticky;top:calc(var(--header-h) + 14px);background:#fff;border-radius:16px;padding:14px;box-shadow:0 8px 26px rgba(0,0,0,.06)}
+.mg-side h6{color:var(--gold);font-weight:900;margin:4px 8px 10px;font-size:.95rem}
+.mg-side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--primary);font-weight:800;text-decoration:none;font-size:.95rem}
+.mg-side a i{width:20px;text-align:center;color:var(--gold)}
+.mg-side a.on{background:var(--primary);background-image:var(--menu-glass);color:#fff}.mg-side a.on i{color:var(--gold)}
+.mg-side a:hover:not(.on){background:#f4f5f8}
+.mg-side .badge{background:#d93025;color:#fff;border-radius:20px;padding:1px 7px;font-size:.72rem;margin-right:auto}
+.mg-side select{margin:8px 0 4px}
+.mg-h{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.mg-h h1{font-size:1.6rem;font-weight:900;color:var(--primary);margin:0}
+.mg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.mg-chips a{padding:6px 13px;border-radius:30px;background:#fff;border:1px solid #e6e8ee;color:var(--primary);font-weight:800;text-decoration:none;font-size:.88rem}
+.mg-chips a b{background:#f1ead9;border-radius:20px;padding:0 7px;margin-right:4px;font-size:.78rem}
+.mg-chips a.on{background:var(--primary);color:#fff;border-color:var(--primary)}.mg-chips a.on b{background:var(--gold);color:#fff}
+.mg-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.93rem}
+.mg-table th{background:#f6f7fa;color:#667;font-weight:800;padding:10px;position:sticky;top:0;z-index:1;white-space:nowrap}
+.mg-table td{padding:10px;border-bottom:1px solid #f0f1f4;vertical-align:middle}
+.mg-table tr:hover td{background:#fbfaf6}
+.mg-table a.t{font-weight:800;color:var(--primary);text-decoration:none}
+.mg-bulk{position:sticky;top:calc(var(--header-h) + 6px);z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff8e6;border:1px solid rgba(197,160,89,.4);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.mg-bulk select,.mg-bulk input{width:auto;min-width:150px}
+.mg-stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:18px}
+.mg-stat a{display:block;background:#fff;border-radius:14px;padding:14px;text-align:center;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+.mg-stat b{display:block;font-size:1.8rem;font-weight:900;color:var(--primary)}.mg-stat span{color:#778;font-weight:800;font-size:.88rem}
+.mg-stat span.pt-status{color:#fff;white-space:normal;line-height:1.5;font-size:.8rem}
+.btn-act{border:0;border-radius:10px;padding:9px 14px;font-weight:800;color:#fff;display:inline-flex;gap:6px;align-items:center}
+.btn-act.info{background:#7b61ff}.btn-act.warning{background:#e8710a}.btn-act.secondary{background:#5f6368}.btn-act.purple{background:#9c27b0}
+.btn-act.success{background:#188038}.btn-act.danger{background:#d93025}.btn-act.gold{background:var(--gold)}
+.mg-checks label{display:inline-flex;gap:6px;align-items:center;margin:0 12px 6px 0;font-weight:600}
+@media(max-width:991px){.mg{grid-template-columns:1fr}.mg-side{position:static;display:flex;flex-wrap:wrap;gap:4px}.mg-side h6{width:100%}.mg-side a{padding:8px 10px;font-size:.88rem}}
+</style>{% endblock %}
+{% block content %}
+<section class="pt-page"><div class="container-fluid px-lg-4">
+  <div class="mg">
+    <aside class="mg-side">
+      <h6><i class="fas fa-award"></i> إدارة الجائزة</h6>
+      <a href="/manage/" class="{% if nav == 'dash' %}on{% endif %}"><i class="fas fa-gauge"></i> لوحة المتابعة</a>
+      <a href="/manage/submissions/" class="{% if nav == 'subs' %}on{% endif %}"><i class="fas fa-folder-open"></i> الطلبات {% if mg_unread %}<span class="badge" title="رسائل غير مقروءة">{{ mg_unread }}</span>{% endif %}</a>
+      <a href="/manage/results/" class="{% if nav == 'results' %}on{% endif %}"><i class="fas fa-trophy"></i> النتائج والفائزون</a>
+      <a href="/manage/committees/" class="{% if nav == 'committees' %}on{% endif %}"><i class="fas fa-people-group"></i> لجان التحكيم</a>
+      <a href="/manage/judges/" class="{% if nav == 'judges' %}on{% endif %}"><i class="fas fa-user-tie"></i> المحكّمون</a>
+      <a href="/manage/schools/" class="{% if nav == 'schools' %}on{% endif %}"><i class="fas fa-school"></i> المدارس</a>
+      <a href="/manage/announcements/" class="{% if nav == 'ann' %}on{% endif %}"><i class="fas fa-bullhorn"></i> الإعلانات</a>
+      <form method="get" class="w-100"><select name="cycle" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="all"{% if not cur_cycle %} selected{% endif %}>كل الدورات</option>
+        {% for c in cycles %}<option value="{{ c.pk }}"{% if cur_cycle and cur_cycle.pk == c.pk %} selected{% endif %}>{{ c.short_name|default:c.name }}{% if c.is_current %} (الحالية){% endif %}</option>{% endfor %}
+      </select></form>
+      {% if user.is_staff %}<a href="/admin/"><i class="fas fa-gears"></i> لوحة Django التقنية</a>{% endif %}
+      <a href="{% url 'notifications' %}"><i class="fas fa-bell"></i> إشعاراتي {% if unread_notes %}<span class="badge">{{ unread_notes }}</span>{% endif %}</a>
+    </aside>
+    <main>
+      {% include 'award/portal/_messages.html' %}
+      {% block mg %}{% endblock %}
+    </main>
+  </div>
+</div></section>
+<script>
+// تحديد الكل + عدّاد المحدد + بحث فوري في الجداول
+document.querySelectorAll('[data-checkall]').forEach(function (all) {
+  var scope = document.querySelector(all.dataset.checkall), out = document.querySelector(all.dataset.counter || '#selCount');
+  function upd() { var n = scope.querySelectorAll('input[name=ids]:checked').length; if (out) out.textContent = n; }
+  all.addEventListener('change', function () { scope.querySelectorAll('tr:not([hidden]) input[name=ids]').forEach(function (c) { c.checked = all.checked; }); upd(); });
+  scope.addEventListener('change', upd);
+});
+document.querySelectorAll('[data-live]').forEach(function (inp) {
+  var rows = document.querySelectorAll(inp.dataset.live), out = document.querySelector(inp.dataset.shown || '#shownCount');
+  inp.addEventListener('input', function () {
+    var q = inp.value.trim().toLowerCase(), n = 0;
+    rows.forEach(function (r) { var ok = !q || r.textContent.toLowerCase().indexOf(q) > -1; r.hidden = !ok; if (ok) n++; });
+    if (out) out.textContent = n;
+  });
+});
+</script>
+{% endblock %}

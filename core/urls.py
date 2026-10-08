@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path
-from award import views, portal_views as pv
+from award import views, portal_views as pv, manage_views as mv
 from award.portal_forms import SafePasswordResetForm
 
 _reset = dict(
@@ -47,8 +47,22 @@ urlpatterns = [
     path('portal/submissions/<int:pk>/', pv.submission_detail, name='submission_detail'),
     path('portal/submissions/<int:pk>/edit/', pv.submission_edit, name='submission_edit'),
     path('portal/submissions/<int:pk>/withdraw/', pv.submission_withdraw, name='submission_withdraw'),
+    path('portal/submissions/<int:pk>/files/', pv.submission_add_files, name='submission_add_files'),
+    path('portal/submissions/<int:pk>/message/', pv.submission_message, name='submission_message'),
     path('portal/notifications/', pv.notifications, name='notifications'),
     path('portal/notifications/<int:pk>/', pv.notification_go, name='notification_go'),
+
+    # ---------- إدارة الجائزة ----------
+    path('manage/', mv.dashboard, name='mg_dashboard'),
+    path('manage/submissions/', mv.submissions, name='mg_submissions'),
+    path('manage/submissions/<int:pk>/', mv.submission_detail, name='mg_submission'),
+    path('manage/results/', mv.results, name='mg_results'),
+    path('manage/judges/', mv.judges, name='mg_judges'),
+    path('manage/committees/', mv.committees, name='mg_committees'),
+    path('manage/committees/<int:pk>/', mv.committees, name='mg_committee'),
+    path('manage/announcements/', mv.announcements, name='mg_announcements'),
+    path('manage/announcements/<int:pk>/', mv.announcements, name='mg_announcement'),
+    path('manage/schools/', mv.schools, name='mg_schools'),
 
     # ---------- المحكّمون ----------
     path('judge/', pv.judge_home, name='judge_home'),
@@ -62,6 +76,8 @@ urlpatterns = [
     path('statistics/', views.statistics_page, name='statistics_page'),
     path('winners/', views.winners_page, name='winners_page'),
     path('cycles/', views.cycles_archive, name='cycles_archive'),
+    path('announcements/', views.announcements_page, name='announcements'),
+    path('announcements/<int:pk>/', views.announcement_detail, name='announcement_detail'),
     path('cycles/<int:pk>/', views.cycle_detail, name='cycle_detail'),
     # الصور المخزّنة في قاعدة البيانات
     path('media/db/<path:name>', views.serve_db_media, name='db_media'),

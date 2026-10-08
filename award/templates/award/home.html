@@ -779,6 +779,18 @@ section#{{ sid }} .timeline-date {
 </section>
 {% endif %}
 
+<!-- إعلانات الجائزة (بطاقات نصية ووسائط) -->
+{% if announcements %}
+<section id="announcements" class="py-5 sec-gray">
+  <div class="container">
+    <div class="section-header" data-aos="fade-down"><h2>إعلانات الجائزة</h2><div class="gold-line"></div></div>
+    <div class="an-grid">{% for a in announcements %}{% include 'award/_ann_card.html' %}{% endfor %}</div>
+    <div class="text-center mt-4"><a href="{% url 'announcements' %}" class="btn btn-gold">كل الإعلانات</a></div>
+  </div>
+</section>
+{% include 'award/_ann_assets.html' %}
+{% endif %}
+
 <!-- 3. عن الجائزة والمبادئ -->
 {% if section_bgs.about and section_bgs.about.bg_image %}
 <section id="about" data-no-fit class="py-5" style="background-image: url('{{ section_bgs.about.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.about.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">

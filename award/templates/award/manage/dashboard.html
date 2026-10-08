@@ -1,0 +1,24 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>لوحة المتابعة {% if cur_cycle %}— {{ cur_cycle.short_name|default:cur_cycle.name }}{% endif %}</h1>
+  <a href="/manage/submissions/" class="pt-btn pt-btn-gold"><i class="fas fa-folder-open"></i> كل الطلبات</a></div>
+<div class="mg-stat">
+  <a href="/manage/submissions/"><b>{{ total }}</b><span>كل الطلبات المرسلة</span></a>
+  {% for k, label, n in stats %}<a href="/manage/submissions/?status={{ k }}"><b>{{ n }}</b><span class="pt-status st-{{ k }}">{{ label }}</span></a>{% endfor %}
+  <a href="/manage/submissions/?drafts=1&status=draft"><b>{{ drafts }}</b><span>مسودات لم تُرسل</span></a>
+</div>
+<div class="mg-stat">
+  <a href="/manage/schools/"><b>{{ schools }}</b><span>مدرسة مسجّلة</span></a>
+  <a href="/manage/judges/"><b>{{ judges }}</b><span>محكّم فعّال</span></a>
+  <a href="/manage/results/"><b>{{ a_done }}/{{ a_total }}</b><span>تقييمات منتهية</span></a>
+</div>
+<div class="row g-4">
+  <div class="col-xl-7"><div class="pt-card"><h2>أحدث الطلبات</h2>
+    <table class="mg-table">{% for s in recent %}<tr><td><a class="t" href="/manage/submissions/{{ s.pk }}/">{{ s.project_title }}</a><br><small class="text-muted">{{ s.ref }} · {{ s.school_name }}</small></td>
+      <td><span class="pt-status st-{{ s.status }}">{{ s.get_status_display }}</span></td><td><small>{{ s.sent_at|date:"Y-m-d" }}</small></td></tr>
+    {% empty %}<tr><td class="text-muted">لا توجد طلبات بعد.</td></tr>{% endfor %}</table></div></div>
+  <div class="col-xl-5"><div class="pt-card pt-notes"><h2>آخر رسائل المدارس {% if mg_unread %}<span class="pt-status st-revision">{{ mg_unread }} جديدة</span>{% endif %}</h2>
+    {% for m in inbox %}<a class="pt-n{% if not m.is_read %} unread{% endif %}" href="/manage/submissions/{{ m.submission_id }}/#messages"><b>{{ m.submission.school_name }} — {{ m.submission.ref }}</b><p>{{ m.body|truncatechars:120 }}</p><small class="text-muted">{{ m.created_at|date:"Y-m-d H:i" }}</small></a>
+    {% empty %}<p class="text-muted">لا توجد رسائل.</p>{% endfor %}</div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h">
+  <div><h1>{{ sub.project_title }}</h1><div class="text-muted">{{ sub.ref }} · {{ sub.cycle|default:"" }} · أُرسل {{ sub.sent_at|date:"Y-m-d H:i"|default:"—" }}</div></div>
+  <div class="d-flex gap-2 align-items-center"><span class="pt-status st-{{ sub.status }}" style="font-size:1rem">{{ sub.get_status_display }}</span>{% if sub.results_hidden %}<small title="لا تظهر للمدرسة قبل نشر النتائج">🔒 غير منشورة</small>{% endif %}
+    {% if prev_next.0 %}<a class="pt-btn pt-btn-light" style="padding:7px 12px" href="/manage/submissions/{{ prev_next.0.pk }}/" title="السابق"><i class="fas fa-chevron-right"></i></a>{% endif %}
+    {% if prev_next.1 %}<a class="pt-btn pt-btn-light" style="padding:7px 12px" href="/manage/submissions/{{ prev_next.1.pk }}/" title="التالي"><i class="fas fa-chevron-left"></i></a>{% endif %}</div>
+</div>
+
+<div class="pt-card">
+  <h2><i class="fas fa-flag ms-1" style="color:var(--gold)"></i> القرار</h2>
+  <form method="post" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="status">
+    <div class="col-lg-6"><label class="form-label">ملاحظة / توجيهات للمدرسة (تُرسل مع الإشعار)</label><textarea name="note" class="form-control" rows="2" placeholder="مثال: يرجى إرفاق صور التنفيذ وجدول القياسات">{{ sub.school_note }}</textarea></div>
+    <div class="col-lg-3"><label class="form-label">آخر موعد للاستكمال (عند الطلب)</label><input type="datetime-local" name="deadline" class="form-control" value="{{ sub.revision_deadline|date:'Y-m-d\TH:i' }}"></div>
+    <div class="col-lg-3"><label class="form-check"><input type="checkbox" name="notify" value="1" checked class="form-check-input"> إشعار المدرسة</label></div>
+    <div class="col-12 d-flex flex-wrap gap-2 mt-2">{% for k, label, icon, c in actions %}<button name="status" value="{{ k }}" class="btn-act {{ c }}"{% if sub.status == k %} disabled style="opacity:.45"{% endif %}><i class="fas {{ icon }}"></i> {{ label }}</button>{% endfor %}</div>
+  </form>
+</div>
+
+<div class="row g-4">
+<div class="col-xl-7">
+  <div class="pt-card" id="messages"><h2><i class="fas fa-comments ms-1" style="color:var(--gold)"></i> المراسلات مع المدرسة ({{ msgs|length }})</h2>
+    {% include 'award/portal/_thread.html' %}
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="act" value="message">
+      {{ msg_form.body }}<div class="d-flex gap-2 mt-2">{{ msg_form.attachment }}<button class="btn-act gold" style="white-space:nowrap"><i class="fas fa-paper-plane"></i> إرسال للمدرسة</button></div>
+    </form></div>
+
+  <div class="pt-card" id="files"><h2><i class="fas fa-photo-film ms-1" style="color:var(--gold)"></i> الملفات</h2>
+    <div class="d-flex flex-wrap gap-3 mb-3">
+      {% if sub.document %}<a href="{{ sub.document.url }}" target="_blank" class="pt-btn pt-btn-light"><i class="fas fa-file-pdf"></i> ملف البحث</a>{% else %}<span class="text-danger">لا يوجد ملف بحث</span>{% endif %}
+      {% if sub.attachment %}<a href="{{ sub.attachment.url }}" target="_blank" class="pt-btn pt-btn-light"><i class="fas fa-paperclip"></i> المرفق</a>{% endif %}
+    </div>
+    <ul class="pt-files">{% for f in files %}<li class="pt-file"><a href="{{ f.file.url }}" target="_blank" class="pt-file-main">{% if f.kind == 'image' %}<img src="{{ f.file.url }}" alt="" loading="lazy">{% else %}<i class="fas {{ f.icon }}"></i>{% endif %}<span><b>{{ f.title|default:f.filename }}</b><small>{{ f.get_kind_display }} · {{ f.size_label }} · {{ f.created_at|date:"Y-m-d" }}{% if f.after_submit %} · <em>بعد الإرسال</em>{% endif %}</small></span></a>
+      <form method="post" onsubmit="return confirm('حذف الملف؟')">{% csrf_token %}<input type="hidden" name="act" value="delete_file"><input type="hidden" name="fid" value="{{ f.pk }}"><button class="pt-file-del"><i class="fas fa-trash"></i></button></form></li>
+    {% empty %}<li class="text-muted">لا توجد ملفات إضافية.</li>{% endfor %}</ul>
+  </div>
+
+  <div class="pt-card"><h2>بيانات المشروع</h2><dl class="pt-kv">
+    <dt>المجال / المسار</dt><dd>{{ sub.field|default:"—" }} / {{ sub.track|default:"—" }}</dd>
+    <dt>الملخص</dt><dd>{{ sub.abstract|default:"—" }}</dd><dt>الطلبة</dt><dd>{{ sub.team_members|default:"—" }}</dd>
+    <dt>المشرف</dt><dd>{{ sub.supervisor|default:"—" }}</dd></dl></div>
+</div>
+
+<div class="col-xl-5">
+  <div class="pt-card"><h2><i class="fas fa-school ms-1" style="color:var(--gold)"></i> المدرسة</h2><dl class="pt-kv">
+    <dt>المدرسة</dt><dd>{{ sub.school_name }}</dd><dt>ضابط الارتباط</dt><dd>{{ sub.contact_person }}</dd>
+    <dt>الهاتف</dt><dd><a href="tel:{{ sub.phone }}" dir="ltr">{{ sub.phone }}</a> · <a href="https://wa.me/{{ sub.phone|cut:' '|cut:'+' }}" target="_blank">واتساب</a></dd>
+    <dt>البريد</dt><dd><a href="mailto:{{ sub.email }}" dir="ltr">{{ sub.email }}</a></dd>
+    {% if prof %}<dt>المحافظة</dt><dd>{{ prof.governorate|default:"—" }} / {{ prof.area|default:"" }}</dd><dt>المديرية</dt><dd>{{ prof.directorate|default:"—" }}</dd>{% endif %}
+  </dl></div>
+
+  <div class="pt-card" id="judging"><h2><i class="fas fa-scale-balanced ms-1" style="color:var(--gold)"></i> التحكيم — المتوسط: {{ sub.avg_score|default_if_none:"—" }}</h2>
+    {% for a in assignments %}<div class="pt-crit">
+      <div class="d-flex justify-content-between"><b>{{ a.judge.get_full_name|default:a.judge.email }}</b>
+        {% if a.is_done %}<span class="pt-status st-accepted">{{ a.total }}/100</span>{% else %}<span class="pt-status st-revision">لم ينته</span>{% endif %}</div>
+      {% if a.is_done %}<small class="text-muted">{% for sc in a.scores.all %}{{ sc.criterion.name }}: {{ sc.value|floatformat:"-1" }}/{{ sc.criterion.max_score }}{% if not forloop.last %} · {% endif %}{% endfor %}</small>
+      {% if a.recommendation %}<div><b>التوصية:</b> {{ a.get_recommendation_display }}</div>{% endif %}{% if a.comment %}<div class="pt-help">{{ a.comment }}</div>{% endif %}{% endif %}
+      <form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="aid" value="{{ a.pk }}">
+        {% if a.is_done %}<button name="act" value="reopen" class="btn btn-link btn-sm p-0">إعادة فتح</button>{% endif %}
+        <button name="act" value="unassign" class="btn btn-link btn-sm p-0 text-danger" onclick="return confirm('إلغاء الإسناد؟')">إلغاء الإسناد</button></form>
+    </div>{% empty %}<p class="text-muted">لم يُسند لأي محكّم.</p>{% endfor %}
+    <form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="act" value="assign">
+      <label class="form-label">إضافة محكّمين</label>
+      <select name="judges" class="form-select" multiple size="4">{% for j in judges %}<option value="{{ j.pk }}">{{ j.get_full_name|default:j.email }}{% if j.profile.specialty %} — {{ j.profile.specialty }}{% endif %}</option>{% endfor %}</select>
+      <select name="committee" class="form-select mt-2"><option value="">— أو إسناد لجنة كاملة —</option>{% for c in committees %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}</select>
+      <button class="btn-act purple mt-2"><i class="fas fa-user-plus"></i> إسناد</button></form>
+  </div>
+
+  <div class="pt-card"><h2><i class="fas fa-trophy ms-1" style="color:var(--gold)"></i> اعتماد فائز</h2>
+    {% if winner %}<div class="pt-note">معتمد فائزاً — المركز {{ winner.rank }}{% if winner.category %} · {{ winner.category }}{% endif %}</div>{% endif %}
+    <form method="post" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="winner">
+      <div class="col-4"><label class="form-label">المركز</label><input type="number" name="rank" min="1" value="{{ winner.rank|default:1 }}" class="form-control"></div>
+      <div class="col-8"><label class="form-label">الفئة</label><select name="category" class="form-select"><option value="">—</option>{% for c in categories %}<option value="{{ c.pk }}"{% if winner.category_id == c.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+      <div class="col-12"><button class="btn-act gold"><i class="fas fa-trophy"></i> {% if winner %}تحديث{% else %}اعتماد فائزاً{% endif %}</button></div></form></div>
+
+  <div class="pt-card"><h2>ملاحظات داخلية (لا تراها المدرسة)</h2>
+    <form method="post">{% csrf_token %}<input type="hidden" name="act" value="internal"><textarea name="internal_note" class="form-control" rows="3">{{ sub.internal_note }}</textarea><button class="pt-btn pt-btn-light mt-2">حفظ</button></form></div>
+
+  <div class="pt-card"><h2>سجل الطلب</h2><ul class="pt-timeline">{% for l in logs %}<li><b>{{ l.new_label }}</b> <small>{{ l.created_at|date:"Y-m-d H:i" }}{% if l.by %} — {{ l.by.get_full_name|default:l.by.email }}{% endif %}</small>{% if l.note %}<div class="pt-help">{{ l.note }}</div>{% endif %}</li>{% endfor %}</ul></div>
+</div></div>
+{% endblock %}

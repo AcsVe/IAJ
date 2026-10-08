@@ -1,0 +1,23 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>لجان التحكيم ({{ items|length }})</h1>{% if obj %}<a href="/manage/committees/" class="pt-btn pt-btn-light">+ لجنة جديدة</a>{% endif %}</div>
+<div class="row g-4">
+  <div class="col-xl-5">{% for c in items %}<a href="/manage/committees/{{ c.pk }}/" class="pt-card d-block text-decoration-none{% if obj and obj.pk == c.pk %} border border-warning{% endif %}" style="padding:16px">
+      <b style="color:var(--primary);font-size:1.1rem">{{ c.name }}</b> <span class="pt-status st-judging">{{ c.n }} عضو</span>
+      <div class="pt-help">{% for f in c.fields.all %}{{ f }}{% if not forloop.last %}، {% endif %}{% empty %}كل المجالات{% endfor %}{% if c.tracks.exists %} · {{ c.tracks.count }} مسار{% endif %}</div>
+      <div class="pt-help">{% for m in c.members.all %}{{ m.get_full_name|default:m.email }}{% if c.chair_id == m.pk %} (رئيس){% endif %}{% if not forloop.last %}، {% endif %}{% endfor %}</div></a>
+    {% empty %}<div class="pt-card text-muted">لا توجد لجان. أنشئ أول لجنة من النموذج.</div>{% endfor %}</div>
+  <div class="col-xl-7"><div class="pt-card"><h2>{% if obj %}تعديل «{{ obj.name }}»{% else %}لجنة جديدة{% endif %}</h2>
+    <form method="post">{% csrf_token %}
+      <div class="row g-2"><div class="col-md-7">{% with f=form.name %}{% include 'award/portal/_field.html' %}{% endwith %}</div><div class="col-md-5">{% with f=form.cycle %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+      <label class="form-label">المجالات (فارغ = الكل)</label><div class="mg-checks mb-2">{% for c in form.fields %}{{ c }}{% endfor %}</div>
+      <label class="form-label">المسارات (اختياري — أدق من المجالات)</label><div class="mg-checks mb-2">{% for c in form.tracks %}{{ c }}{% endfor %}</div>
+      <label class="form-label">الأعضاء</label><div class="mg-checks mb-2">{% for c in form.members %}{{ c }}{% empty %}<span class="text-muted">أضف محكّمين أولاً من صفحة «المحكّمون».</span>{% endfor %}</div>
+      {% with f=form.chair %}{% include 'award/portal/_field.html' %}{% endwith %}
+      {% with f=form.notes %}{% include 'award/portal/_field.html' %}{% endwith %}
+      <div class="d-flex flex-wrap gap-2"><button class="btn-act gold"><i class="fas fa-floppy-disk"></i> حفظ</button>
+      {% if obj %}<button name="act" value="assign_all" class="btn-act purple" formnovalidate onclick="return confirm('إسناد كل طلبات مرحلة التحكيم في مجالات اللجنة لكل أعضائها؟')"><i class="fas fa-share-nodes"></i> إسناد طلبات التحكيم للجنة</button>
+      <button name="act" value="delete" class="btn-act danger" formnovalidate onclick="return confirm('حذف اللجنة؟')"><i class="fas fa-trash"></i></button>{% endif %}</div>
+    </form></div></div>
+</div>
+{% endblock %}

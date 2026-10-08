@@ -1,0 +1,13 @@
+{% if files %}
+<ul class="pt-files">
+  {% for f in files %}
+  <li class="pt-file">
+    <a href="{{ f.file.url }}" target="_blank" class="pt-file-main">
+      {% if f.kind == 'image' %}<img src="{{ f.file.url }}" alt="" loading="lazy">{% else %}<i class="fas {{ f.icon }}"></i>{% endif %}
+      <span><b>{{ f.title|default:f.filename }}</b><small>{{ f.get_kind_display }} · {{ f.size_label }} · {{ f.created_at|date:"Y-m-d" }}{% if f.after_submit %} · <em>بعد الإرسال</em>{% endif %}</small></span>
+    </a>
+    {% if can_delete_files %}<form method="post" action="{{ delete_url_base }}{{ f.pk }}/delete/" onsubmit="return confirm('حذف الملف؟')">{% csrf_token %}<button class="pt-file-del" title="حذف"><i class="fas fa-trash"></i></button></form>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="text-muted mb-0">لا توجد ملفات إضافية.</p>{% endif %}

@@ -1,0 +1,52 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>الطلبات <small class="text-muted" style="font-size:1rem">(<span id="shownCount">{{ total }}</span> من {{ base_total }})</small></h1>
+  <form method="get" class="d-flex gap-2"><input type="search" name="q" value="{{ f.q }}" class="form-control" placeholder="بحث: رقم الطلب، المدرسة، المشروع، الهاتف…" data-live="#subTable tbody tr" style="min-width:280px"></form></div>
+
+<div class="mg-chips">
+  <a href="?" class="{% if not f.status %}on{% endif %}">الكل <b>{{ base_total }}</b></a>
+  {% for k, label, n in status_tabs %}<a href="?status={{ k }}" class="{% if f.status == k %}on{% endif %}">{{ label }} <b>{{ n }}</b></a>{% endfor %}
+</div>
+<form method="get" class="mg-chips">
+  {% if f.status %}<input type="hidden" name="status" value="{{ f.status }}">{% endif %}
+  <select name="field" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المجالات</option>{% for o, n in fields_ %}<option value="{{ o.pk }}"{% if f.field == o.pk|stringformat:'s' %} selected{% endif %}>{{ o }} ({{ n }})</option>{% endfor %}</select>
+  <select name="track" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المسارات</option>{% for o, n in tracks %}<option value="{{ o.pk }}"{% if f.track == o.pk|stringformat:'s' %} selected{% endif %}>{{ o.name_ar }} ({{ n }})</option>{% endfor %}</select>
+  <select name="gov" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المحافظات</option>{% for o, n in govs %}<option value="{{ o.pk }}"{% if f.gov == o.pk|stringformat:'s' %} selected{% endif %}>{{ o }} ({{ n }})</option>{% endfor %}</select>
+  <select name="dir" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المديريات</option>{% for o, n in dirs %}<option value="{{ o.pk }}"{% if f.dir == o.pk|stringformat:'s' %} selected{% endif %}>{{ o }} ({{ n }})</option>{% endfor %}</select>
+  {% if f.field or f.track or f.gov or f.dir or f.q %}<a href="?{% if f.status %}status={{ f.status }}{% endif %}">مسح التصفية ×</a>{% endif %}
+</form>
+
+<form method="post" id="bulkForm">{% csrf_token %}
+  <input type="hidden" name="back" value="{{ request.get_full_path }}">
+  <div class="mg-bulk">
+    <b>المحدد: <span id="selCount">0</span> / {{ total }}</b>
+    <select name="bulk" class="form-select form-select-sm" id="bulkSel">
+      <option value="">— إجراء على المحدد —</option>
+      <optgroup label="تغيير الحالة (مع إشعار)">{% for k, label, icon, c in actions %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</optgroup>
+      <optgroup label="التحكيم"><option value="auto_assign">توزيع تلقائي على المحكّمين</option><option value="committee">إسناد إلى لجنة…</option></optgroup>
+      <option value="message">إرسال رسالة للمدارس</option>
+      <option value="export">تصدير Excel (CSV)</option>
+      <option value="delete">حذف</option>
+    </select>
+    <select name="committee" class="form-select form-select-sm" id="bulkCom" hidden>{% for c in committees %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}</select>
+    <input type="text" name="note" class="form-control form-control-sm" placeholder="ملاحظة / نص الرسالة للمدرسة (اختياري)" style="flex:1">
+    <button class="btn-act gold" onclick="var v=document.getElementById('bulkSel').value; if(v==='delete') return confirm('حذف الطلبات المحددة نهائياً؟'); return true;">تنفيذ</button>
+  </div>
+  <div class="pt-card" style="padding:0;overflow:auto;max-height:70vh">
+  <table class="mg-table" id="subTable">
+    <thead><tr><th><input type="checkbox" data-checkall="#subTable tbody" title="تحديد الكل"></th><th>الطلب</th><th>المدرسة</th><th>المسار</th><th>الحالة</th><th>التحكيم</th><th>المتوسط</th><th>الإرسال</th></tr></thead>
+    <tbody>
+    {% for s in subs %}<tr>
+      <td><input type="checkbox" name="ids" value="{{ s.pk }}"></td>
+      <td><a class="t" href="/manage/submissions/{{ s.pk }}/">{{ s.project_title|truncatechars:60 }}</a><br><small class="text-muted">{{ s.ref }}</small></td>
+      <td>{{ s.school_name }}<br><small class="text-muted">{{ s.owner.profile.directorate|default:"" }}</small></td>
+      <td><small>{{ s.track.name_ar|default:"—" }}</small></td>
+      <td><span class="pt-status st-{{ s.status }}">{{ s.get_status_display }}</span>{% if s.results_hidden %} 🔒{% endif %}</td>
+      <td>{{ s.judging_progress }}</td><td><b>{{ s.avg_score|default_if_none:"—" }}</b></td>
+      <td><small>{{ s.sent_at|date:"Y-m-d"|default:"—" }}</small></td>
+    </tr>{% empty %}<tr><td colspan="8" class="text-center text-muted py-4">لا توجد طلبات مطابقة.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</form>
+<script>document.getElementById('bulkSel').addEventListener('change',function(){document.getElementById('bulkCom').hidden=this.value!=='committee'});</script>
+{% endblock %}

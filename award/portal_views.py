@@ -17,7 +17,7 @@ from django.views.decorators.http import require_POST
 from .models import (AwardCycle, Assignment, Criterion, Notification, Profile, Score, Submission,
                      EDITABLE_STATUSES, RECOMMEND_CHOICES)
 from .notify import send_email, notify_staff
-from .portal_forms import SchoolSignupForm, ProfileForm, PortalSubmissionForm, location_json
+from .portal_forms import SchoolSignupForm, ProfileForm, PortalSubmissionForm, location_json, ExtraFilesForm, MessageForm
 from . import workflow
 
 User = get_user_model()
@@ -56,8 +56,8 @@ def _home_for(user):
     role = _role(user)
     if role == 'judge':
         return '/judge/'
-    if role == 'staff':
-        return '/admin/'
+    if role in ('staff', 'manager'):
+        return '/manage/'
     return '/portal/'
 
 
@@ -183,8 +183,8 @@ def portal_home(request):
     role = _role(request.user)
     if role == 'judge':
         return redirect('judge_home')
-    if role == 'staff' and not request.GET.get('school'):
-        return redirect('/admin/')
+    if role in ('staff', 'manager') and not request.GET.get('school'):
+        return redirect('/manage/')
     prof = _school_profile(request)
     cycle = AwardCycle.current()
     subs = (Submission.objects.filter(owner=request.user)
@@ -237,6 +237,7 @@ def _save_submission(request, form, sub, creating):
         return None
     sub.save()
     form.save_m2m()
+    _save_extra_files(request, sub, form.cleaned_data.get('extra_files') or [], '')
     if action == 'submit':
         workflow.change_status(sub, 'submitted', by=request.user)
         messages.success(request, f'تم إرسال الطلب {sub.ref} بنجاح. ستجدون كل تحديث هنا في حسابكم، وتصلكم نسخة بالبريد.' + _spam_hint())
@@ -245,6 +246,14 @@ def _save_submission(request, form, sub, creating):
             workflow.StatusLog.objects.create(submission=sub, new_status='draft', by=request.user)
         messages.info(request, f'تم حفظ الطلب {sub.ref} كمسودة. لم يُرسل بعد.')
     return sub
+
+
+def _save_extra_files(request, sub, files, title):
+    from .models import SubmissionFile
+    after = sub.status not in ('draft', 'revision')
+    for f in files:
+        SubmissionFile.objects.create(submission=sub, file=f, title=title, uploaded_by=request.user, after_submit=after)
+    return len(files)
 
 
 @login_required
@@ -296,7 +305,48 @@ def submission_detail(request, pk):
     sub = _own_submission(request, pk)
     steps = _steps(sub)
     logs = [l for l in sub.logs.all() if not (sub.results_hidden and l.new_status in ('accepted', 'rejected', 'winner'))]
-    return render(request, 'award/portal/submission_detail.html', {'tab': 'home', 'sub': sub, 'steps': steps, 'logs': logs})
+    sub.messages.filter(from_staff=True, is_read=False).update(is_read=True)
+    return render(request, 'award/portal/submission_detail.html', {
+        'tab': 'home', 'sub': sub, 'steps': steps, 'logs': logs,
+        'files': sub.files.all(), 'msgs': sub.messages.select_related('sender'),
+        'files_form': ExtraFilesForm(), 'msg_form': MessageForm()})
+
+
+@login_required
+@require_POST
+def submission_add_files(request, pk):
+    sub = _own_submission(request, pk)
+    if not sub.can_add_files:
+        messages.warning(request, 'لا يمكن إضافة ملفات لهذا الطلب الآن.')
+        return redirect(sub.get_absolute_url())
+    form = ExtraFilesForm(request.POST, request.FILES)
+    if form.is_valid():
+        n = _save_extra_files(request, sub, form.cleaned_data['files'], form.cleaned_data.get('title', ''))
+        messages.success(request, f'تم رفع {n} ملف.')
+        if sub.status not in ('draft',):
+            notify_staff(f'ملفات جديدة على الطلب {sub.ref}', f"{sub.school_name} أضافت {n} ملف: {form.cleaned_data.get('title') or ''}",
+                         f'/manage/submissions/{sub.pk}/', email=False)
+    else:
+        for e in form.errors.get('files', []) + form.non_field_errors():
+            messages.error(request, e)
+    return redirect(sub.get_absolute_url() + '#files')
+
+
+@login_required
+@require_POST
+def submission_message(request, pk):
+    from .models import SubmissionMessage
+    sub = _own_submission(request, pk)
+    form = MessageForm(request.POST, request.FILES)
+    if form.is_valid():
+        SubmissionMessage.objects.create(submission=sub, sender=request.user, from_staff=False,
+                                         body=form.cleaned_data['body'], attachment=form.cleaned_data.get('attachment') or '')
+        notify_staff(f'رسالة من {sub.school_name} — {sub.ref}', form.cleaned_data['body'][:300],
+                     f'/manage/submissions/{sub.pk}/#messages')
+        messages.success(request, 'تم إرسال رسالتكم لإدارة الجائزة.')
+    else:
+        messages.error(request, 'تعذّر إرسال الرسالة — تأكد من النص والمرفق.')
+    return redirect(sub.get_absolute_url() + '#messages')
 
 
 def _steps(sub):
@@ -462,12 +512,28 @@ def judge_review(request, pk):
 # =====================================================
 #   صلاحية ملفات الطلبات (تُستدعى من serve_media)
 # =====================================================
-def can_view_private_file(user, path):
+def is_manager(user):
     if not user.is_authenticated:
         return False
     if user.is_staff:
         return True
+    prof = getattr(user, 'profile', None)
+    return bool(prof and prof.role == 'manager')
+
+
+def can_view_private_file(user, path):
+    from .models import SubmissionFile, SubmissionMessage
+    if not user.is_authenticated:
+        return False
+    if is_manager(user):
+        return True
     sub = Submission.objects.filter(Q(document=path) | Q(attachment=path)).first()
+    if not sub:
+        f = SubmissionFile.objects.filter(file=path).select_related('submission').first()
+        sub = f.submission if f else None
+    if not sub:
+        m = SubmissionMessage.objects.filter(attachment=path).select_related('submission').first()
+        sub = m.submission if m else None
     if not sub:
         return False
     if sub.owner_id == user.pk:

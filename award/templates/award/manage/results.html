@@ -1,0 +1,28 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>النتائج والفائزون {% if cur_cycle %}— {{ cur_cycle.short_name|default:cur_cycle.name }}{% endif %}</h1>
+  {% if cur_cycle %}<form method="post">{% csrf_token %}<input type="hidden" name="act" value="publish">
+    {% if cur_cycle.results_published %}<span class="pt-status st-accepted" style="font-size:1rem">النتائج منشورة</span>
+    {% else %}<button class="btn-act success" onclick="return confirm('نشر نتائج الدورة وإبلاغ كل المدارس؟')"><i class="fas fa-bullhorn"></i> نشر النتائج وإبلاغ المدارس</button>{% endif %}</form>{% endif %}</div>
+<p class="text-muted">الطلبات في مرحلة التحكيم أو المقبولة، مرتبة حسب متوسط درجات المحكّمين داخل كل مسار. «المقترح» = الترتيب حسب الدرجة. حدّد الفائزين وعدّل المركز ثم «اعتماد».</p>
+{% if not groups %}<div class="pt-card text-center text-muted">لا توجد طلبات محكّمة بعد ({{ total }}).</div>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="act" value="winners">
+{% for track, rows in groups.items %}
+  <div class="pt-card" style="padding:16px 16px 6px"><h2>{{ track }} ({{ rows|length }})</h2>
+  <div style="overflow:auto"><table class="mg-table">
+    <thead><tr><th></th><th>المقترح</th><th>الطلب</th><th>المتوسط</th><th>التحكيم</th><th>التوصيات</th><th>المركز</th><th>الفئة</th><th>الحالة</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+      <td><input type="checkbox" name="ids" value="{{ r.s.pk }}"{% if r.winner %} checked{% endif %}></td>
+      <td><b>{{ r.suggest }}</b></td>
+      <td><a class="t" href="/manage/submissions/{{ r.s.pk }}/">{{ r.s.project_title|truncatechars:50 }}</a><br><small class="text-muted">{{ r.s.ref }} · {{ r.s.school_name }}</small></td>
+      <td><b style="font-size:1.1rem">{{ r.avg|default_if_none:"—" }}</b></td><td>{{ r.prog }}</td>
+      <td><small>بشدة {{ r.strong }} · أوصي {{ r.yes }} · لا {{ r.no }}</small></td>
+      <td><input type="number" name="rank_{{ r.s.pk }}" value="{% if r.winner %}{{ r.winner.rank }}{% else %}{{ r.suggest }}{% endif %}" min="1" class="form-control form-control-sm" style="width:70px"></td>
+      <td><select name="cat_{{ r.s.pk }}" class="form-select form-select-sm" style="min-width:120px"><option value="">—</option>{% for c in categories %}<option value="{{ c.pk }}"{% if r.winner.category_id == c.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></td>
+      <td><span class="pt-status st-{{ r.s.status }}">{{ r.s.get_status_display }}</span></td>
+    </tr>{% endfor %}</tbody></table></div></div>
+{% endfor %}
+{% if groups %}<button class="btn-act gold"><i class="fas fa-trophy"></i> اعتماد المحدد فائزين</button>
+<p class="pt-help mt-2">الاعتماد يضيفهم إلى صفحة «الفائزون» مربوطين بالدورة، ولا تصل النتيجة للمدارس إلا بعد «نشر النتائج».</p>{% endif %}
+</form>
+{% endblock %}

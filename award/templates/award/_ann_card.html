@@ -1,0 +1,28 @@
+<article class="an-card{% if a.kind == 'media' and a.media.all %} has-media{% endif %}">
+  {% if a.kind == 'media' and a.media.all %}
+  <div class="an-media" data-an-slider>
+    {% for m in a.media.all %}
+    <div class="an-slide{% if forloop.first %} active{% endif %}">
+      {% if m.kind == 'image' %}<img src="{{ m.file.url }}" alt="{{ m.caption|default:a.title }}" loading="lazy">
+      {% elif m.kind == 'video' %}<video src="{{ m.file.url }}" controls playsinline preload="metadata"></video>
+      {% else %}<iframe src="https://www.youtube.com/embed/{{ m.yt }}" title="{{ a.title }}" allowfullscreen loading="lazy"></iframe>{% endif %}
+      {% with cap=m.caption %}{% include 'award/_media_badge.html' %}{% endwith %}
+    </div>
+    {% endfor %}
+    {% if a.media.all|length > 1 %}
+    <button type="button" class="an-nav an-prev" aria-label="السابق"><i class="fas fa-chevron-right"></i></button>
+    <button type="button" class="an-nav an-next" aria-label="التالي"><i class="fas fa-chevron-left"></i></button>
+    <div class="an-dots">{% for m in a.media.all %}<span class="{% if forloop.first %}on{% endif %}"></span>{% endfor %}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+  <div class="an-body">
+    <div class="an-date"><i class="fas fa-bullhorn"></i> {{ a.date|date:"Y-m-d" }}{% if a.pinned %} · <i class="fas fa-thumbtack"></i>{% endif %}</div>
+    <h3><a href="{{ a.get_absolute_url }}">{{ a.title }}</a></h3>
+    {% if full %}<div class="an-text">{{ a.body|linebreaksbr }}</div>{% else %}<p class="an-text">{{ a.body|truncatewords:40 }}</p>{% endif %}
+    <div class="d-flex flex-wrap gap-2 mt-auto">
+      {% if a.link_url %}<a href="{{ a.link_url }}" class="an-btn">{{ a.link_text|default:"التفاصيل" }} <i class="fas fa-arrow-left"></i></a>{% endif %}
+      {% if not full %}<a href="{{ a.get_absolute_url }}" class="an-more">اقرأ المزيد</a>{% endif %}
+    </div>
+  </div>
+</article>

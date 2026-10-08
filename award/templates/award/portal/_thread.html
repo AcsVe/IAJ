@@ -1,0 +1,9 @@
+<div class="pt-thread">
+  {% for m in msgs %}
+  <div class="pt-msg{% if m.from_staff %} staff{% endif %}">
+    <div class="pt-msg-h"><b>{% if m.from_staff %}<i class="fas fa-award"></i> إدارة الجائزة{% else %}<i class="fas fa-school"></i> {{ sub.school_name }}{% endif %}</b><small>{{ m.created_at|date:"Y-m-d H:i" }}</small></div>
+    <div class="pt-msg-b">{{ m.body|linebreaksbr }}</div>
+    {% if m.attachment %}<a href="{{ m.attachment.url }}" target="_blank" class="pt-msg-att"><i class="fas fa-paperclip"></i> مرفق</a>{% endif %}
+  </div>
+  {% empty %}<p class="text-muted">لا توجد مراسلات بعد.</p>{% endfor %}
+</div>

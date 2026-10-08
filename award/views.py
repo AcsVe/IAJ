@@ -337,3 +337,15 @@ def track_detail(request, pk):
     track = get_object_or_404(Track.objects.select_related('field').prefetch_related('details'), pk=pk, is_active=True)
     siblings = Track.objects.filter(field_id=track.field_id, is_active=True).exclude(pk=track.pk) if track.field_id else []
     return render(request, 'award/track_detail.html', {'track': track, 'siblings': siblings})
+
+
+def announcements_page(request):
+    from .models import Announcement
+    items, cctx = _cycle_filter(request, Announcement.objects.filter(is_published=True).prefetch_related('media'))
+    return render(request, 'award/announcements.html', {'items': items, **cctx})
+
+
+def announcement_detail(request, pk):
+    from .models import Announcement
+    a = get_object_or_404(Announcement.objects.prefetch_related('media'), pk=pk, is_published=True)
+    return render(request, 'award/announcement_detail.html', {'a': a})

@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlsafe_base64_encode
 
-from .models import (AwardCycle, Area, PortalSetting, SocialLink, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
+from .models import (AwardCycle, Area, PortalSetting, SocialLink, SubmissionFile, SubmissionMessage, JudgingCommittee, Announcement, AnnouncementMedia, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
                      StatusLog, Submission, SuccessPageContent, STATUS_CHOICES, ROLE_CHOICES)
 from .notify import notify, send_email
 from . import workflow
@@ -799,3 +799,65 @@ def _attach_cycle_admin():
 
 _move_to_cycle.__name__ = 'move_to_cycle'
 _attach_cycle_admin()
+
+
+# =====================================================
+#   الملفات، المراسلات، اللجان، الإعلانات (العمل اليومي من /manage/)
+# =====================================================
+class SubmissionFileInline(admin.TabularInline):
+    model = SubmissionFile
+    extra = 0
+    fields = ('file', 'title', 'kind', 'size', 'after_submit', 'created_at')
+    readonly_fields = ('kind', 'size', 'after_submit', 'created_at')
+
+
+class SubmissionMessageInline(admin.TabularInline):
+    model = SubmissionMessage
+    extra = 0
+    fields = ('created_at', 'from_staff', 'sender', 'body', 'attachment', 'is_read')
+    readonly_fields = ('created_at', 'sender')
+
+
+SubmissionAdmin.inlines = [AssignmentInline, SubmissionFileInline, SubmissionMessageInline, StatusLogInline]
+
+
+@admin.register(SubmissionMessage)
+class SubmissionMessageAdmin(admin.ModelAdmin):
+    list_display = ('submission', 'from_staff', 'short', 'is_read', 'created_at')
+    list_filter = ('from_staff', 'is_read', 'submission__cycle')
+    show_facets = FACETS
+    search_fields = ('body', 'submission__ref', 'submission__school_name')
+
+    @admin.display(description='الرسالة')
+    def short(self, obj):
+        return obj.body[:80]
+
+
+@admin.register(JudgingCommittee)
+class JudgingCommitteeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'cycle', 'chair', 'members_n')
+    list_filter = ('cycle',)
+    show_facets = FACETS
+    filter_horizontal = ('fields', 'tracks', 'members')
+    search_fields = ('name',)
+
+    @admin.display(description='الأعضاء')
+    def members_n(self, obj):
+        return obj.members.count()
+
+
+class AnnouncementMediaInline(admin.TabularInline):
+    model = AnnouncementMedia
+    extra = 1
+    fields = ('order', 'file', 'youtube_url', 'caption')
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ('title', 'kind', 'cycle', 'is_published', 'show_on_home', 'pinned', 'publish_date')
+    list_editable = ('is_published', 'show_on_home', 'pinned')
+    list_display_links = ('title',)
+    list_filter = ('cycle', 'kind', 'is_published', 'show_on_home')
+    show_facets = FACETS
+    search_fields = ('title', 'body')
+    inlines = [AnnouncementMediaInline]

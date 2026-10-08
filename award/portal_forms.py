@@ -142,9 +142,45 @@ def _check_file(f, exts, label):
     return f
 
 
-DOC_EXTS = ['.pdf']
-ATTACH_EXTS = ['.pdf', '.zip', '.rar', '.7z', '.pptx', '.ppt', '.docx', '.doc', '.xlsx',
-               '.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mov']
+from .models import ALLOWED_UPLOAD_EXTS
+DOC_EXTS = ['.pdf', '.doc', '.docx', '.odt', '.ppt', '.pptx', '.rtf']
+ATTACH_EXTS = sorted(ALLOWED_UPLOAD_EXTS)
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    """رفع عدة ملفات دفعة واحدة"""
+    def __init__(self, *a, **kw):
+        kw.setdefault('widget', MultipleFileInput(attrs={'class': 'form-control', 'multiple': True}))
+        super().__init__(*a, **kw)
+
+    def clean(self, data, initial=None):
+        single = super().clean
+        if isinstance(data, (list, tuple)):
+            files = [single(d, initial) for d in data if d]
+        else:
+            files = [single(data, initial)] if data else []
+        for f in files:
+            _check_file(f, ATTACH_EXTS, f.name)
+        return files
+
+
+class ExtraFilesForm(forms.Form):
+    files = MultipleFileField(label='الملفات', required=True,
+                              help_text='يمكن اختيار عدة ملفات معاً: صور، فيديو، صوت، مستندات، عروض، جداول، ملفات مضغوطة.')
+    title = forms.CharField(label='وصف الملفات (اختياري)', max_length=200, required=False,
+                            widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثال: صور تنفيذ المشروع'}))
+
+
+class MessageForm(forms.Form):
+    body = forms.CharField(label='الرسالة', widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'اكتب رسالتك…'}))
+    attachment = forms.FileField(label='مرفق (اختياري)', required=False, widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
+
+    def clean_attachment(self):
+        return _check_file(self.cleaned_data.get('attachment'), ATTACH_EXTS, 'المرفق')
 
 
 class PortalSubmissionForm(forms.ModelForm):
@@ -159,7 +195,7 @@ class PortalSubmissionForm(forms.ModelForm):
             'team_members': _w(forms.Textarea, 'اسم الطالب — الصف (كل اسم في سطر)', rows=4),
             'supervisor': _w(forms.TextInput, 'اسم المعلم المشرف'),
             'contact_person': _w(forms.TextInput), 'phone': _w(forms.TextInput, dir='ltr'),
-            'document': forms.ClearableFileInput(attrs=dict(INPUT, accept='.pdf')),
+            'document': forms.ClearableFileInput(attrs=dict(INPUT, accept='.pdf,.doc,.docx,.odt,.ppt,.pptx,.rtf')),
             'attachment': forms.ClearableFileInput(attrs=INPUT),
         }
 
@@ -172,8 +208,11 @@ class PortalSubmissionForm(forms.ModelForm):
         self.fields['track'].required = True
         self.fields['field'].empty_label = '— اختر المجال —'
         self.fields['track'].empty_label = '— اختر المسار —'
-        self.fields['document'].help_text = f'PDF — حتى {settings.SUBMISSION_MAX_MB} ميغابايت. مطلوب عند الإرسال.'
-        self.fields['attachment'].help_text = f'اختياري — PDF، عرض تقديمي، صور، فيديو قصير أو ملف مضغوط (حتى {settings.SUBMISSION_MAX_MB} ميغابايت).'
+        self.fields['document'].label = 'ملف البحث / المشروع'
+        self.fields['document'].help_text = f'PDF أو Word أو PowerPoint — حتى {settings.SUBMISSION_MAX_MB} ميغابايت. مطلوب عند الإرسال.'
+        self.fields['attachment'].help_text = f'اختياري — أي صيغة: صور، فيديو، صوت، مستندات، ملف مضغوط (حتى {settings.SUBMISSION_MAX_MB} ميغابايت). ويمكن إضافة ملفات أكثر لاحقاً من صفحة الطلب.'
+        self.fields['extra_files'] = MultipleFileField(label='ملفات ووسائط إضافية (اختياري)', required=False,
+                                                       help_text='اختر عدة ملفات معاً: صور، فيديو، عروض، ملفات مضغوطة…')
 
     def clean_document(self):
         return _check_file(self.cleaned_data.get('document'), DOC_EXTS, 'ملف البحث')

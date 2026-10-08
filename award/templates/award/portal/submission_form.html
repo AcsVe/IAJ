@@ -26,7 +26,9 @@
 
     <h2 class="mt-3" style="font-size:1.15rem">٣. الملفات</h2>
     <div class="row"><div class="col-md-6">{% with f=form.document %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
-    <div class="col-md-6">{% with f=form.attachment %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+    <div class="col-md-6">{% with f=form.attachment %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-12">{% with f=form.extra_files %}{% include 'award/portal/_field.html' %}{% endwith %}</div></div>
+    {% if sub and sub.files.exists %}<div class="mb-3"><label class="form-label">الملفات المرفوعة سابقاً ({{ sub.files.count }})</label>{% with files=sub.files.all %}{% include 'award/portal/_files_list.html' %}{% endwith %}</div>{% endif %}
 
     <div class="d-flex flex-wrap gap-2 mt-3">
       <button type="submit" name="action" value="submit" class="pt-btn pt-btn-gold" onclick="return confirm('إرسال الطلب لفريق الجائزة؟ لن تتمكنوا من تعديله بعد الإرسال إلا إذا طُلب منكم ذلك.')"><i class="fas fa-paper-plane"></i> إرسال الطلب</button>

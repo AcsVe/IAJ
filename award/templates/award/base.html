@@ -619,6 +619,7 @@
             المركز الإعلامي <i class="fas fa-chevron-down" style="font-size: 0.65rem; margin-right: 5px;"></i>
           </a>
           <ul class="dropdown-menu" aria-labelledby="mediaDropdown">
+            <li><a class="dropdown-item" href="{% url 'announcements' %}"><i class="fas fa-bullhorn ms-2" style="color: var(--gold);"></i> الإعلانات</a></li>
             <li><a class="dropdown-item" href="{% url 'news_list' %}"><i class="fas fa-newspaper ms-2" style="color: var(--gold);"></i> الأخبار</a></li>
             <li><a class="dropdown-item" href="{% url 'photos_page' %}"><i class="fas fa-images ms-2" style="color: var(--gold);"></i> الصور</a></li>
             <li><a class="dropdown-item" href="{% url 'videos_page' %}"><i class="fas fa-video ms-2" style="color: var(--gold);"></i> مكتبة الفيديو</a></li>
@@ -662,11 +663,11 @@
       </div>
       {% if user.is_authenticated %}
       <a href="{% url 'notifications' %}" class="nav-bell" title="الإشعارات" aria-label="الإشعارات"><i class="fas fa-bell"></i>{% if unread_notes %}<span class="nav-bell-n">{{ unread_notes }}</span>{% endif %}</a>
-      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' %}/admin/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' %}لوحة التحكم{% else %}{{ portal.account_btn_text|default:"حسابي" }}{% endif %}</a>
+      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' or portal_role == 'manager' %}/manage/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' or portal_role == 'manager' %}إدارة الجائزة{% else %}{{ portal.account_btn_text|default:"حسابي" }}{% endif %}</a>
       {% elif not portal or portal.show_login_btn %}
       <a href="{% url 'login' %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {{ portal.login_btn_text|default:"دخول" }}</a>
       {% endif %}
-      {% if portal_role != 'judge' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':10' == '/accounts/' and reg_open and portal.show_register_btn is not False %}
+      {% if portal_role != 'judge' and portal_role != 'manager' and portal_role != 'staff' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':8' == '/manage/' and not request.path|slice:':10' == '/accounts/' and reg_open and portal.show_register_btn is not False %}
       <span class="cyc-hover cyc-left">
         <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
         {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">

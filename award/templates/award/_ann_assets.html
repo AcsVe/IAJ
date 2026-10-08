@@ -1,0 +1,33 @@
+<style>
+.an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;align-items:start}
+.an-card{display:flex;flex-direction:column;border-radius:18px;overflow:hidden;background:var(--glass-light);border:var(--glass-border);box-shadow:0 12px 34px rgba(0,0,0,.10);backdrop-filter:blur(12px)}
+.an-card:not(.has-media){background:var(--primary);background-image:var(--menu-glass);color:#fff}
+.an-card:not(.has-media) h3 a,.an-card:not(.has-media) .an-text{color:#fff}
+.an-media{position:relative;aspect-ratio:16/10;background:#000;overflow:hidden}
+.an-slide{position:absolute;inset:0;opacity:0;transition:opacity .5s;pointer-events:none}.an-slide.active{opacity:1;pointer-events:auto}
+.an-slide img,.an-slide video,.an-slide iframe{width:100%;height:100%;object-fit:cover;border:0;display:block}
+.an-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.85);color:var(--primary)}
+.an-prev{right:10px}.an-next{left:10px}
+.an-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:6}
+.an-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.6)}.an-dots span.on{background:var(--gold);width:20px;border-radius:6px}
+.an-body{padding:20px 22px;display:flex;flex-direction:column;flex:1}
+.an-date{color:var(--gold);font-weight:800;font-size:.88rem;margin-bottom:8px}
+.an-card h3{font-size:1.3rem;font-weight:900;margin:0 0 8px}.an-card h3 a{color:var(--primary);text-decoration:none}
+.an-text{color:#444;line-height:1.9;font-size:1rem}
+.an-btn{background:var(--gold);color:#fff;font-weight:800;padding:9px 18px;border-radius:30px;text-decoration:none}
+.an-more{color:var(--gold);font-weight:800;padding:9px 4px;text-decoration:none}
+</style>
+<script>
+document.querySelectorAll('[data-an-slider]').forEach(function (box) {
+  var slides = box.querySelectorAll('.an-slide'), dots = box.querySelectorAll('.an-dots span'), i = 0;
+  if (slides.length < 2) return;
+  function go(n) {
+    slides[i].querySelectorAll('video').forEach(function (v) { v.pause(); });
+    slides[i].classList.remove('active'); if (dots[i]) dots[i].classList.remove('on');
+    i = (n + slides.length) % slides.length;
+    slides[i].classList.add('active'); if (dots[i]) dots[i].classList.add('on');
+  }
+  box.querySelector('.an-next').addEventListener('click', function () { go(i + 1); });
+  box.querySelector('.an-prev').addEventListener('click', function () { go(i - 1); });
+});
+</script>

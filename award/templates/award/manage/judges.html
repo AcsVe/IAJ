@@ -1,0 +1,25 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>المحكّمون ({{ judges|length }})</h1><input type="search" class="form-control" style="max-width:260px" placeholder="بحث فوري…" data-live="#jTable tbody tr"></div>
+<div class="pt-card"><h2>إضافة محكّم (تصله دعوة بالبريد ليختار كلمة المرور)</h2>
+  <form method="post" class="row g-2">{% csrf_token %}<input type="hidden" name="act" value="add">
+    <div class="col-md-4">{% with f=form.name %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-4">{% with f=form.email %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-4">{% with f=form.phone %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-6">{% with f=form.specialty %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
+    <div class="col-md-6"><label class="form-label">مجالات التحكيم</label><div class="mg-checks">{% for c in form.fields %}{{ c }}{% endfor %}</div></div>
+    <div class="col-12"><button class="btn-act gold"><i class="fas fa-user-plus"></i> إضافة وإرسال الدعوة</button></div></form></div>
+<div class="pt-card" style="padding:0;overflow:auto"><table class="mg-table" id="jTable">
+  <thead><tr><th>المحكّم</th><th>التخصص</th><th>المجالات</th><th>اللجان</th><th>التقييمات</th><th>الحالة</th><th></th></tr></thead>
+  <tbody>{% for j in judges %}<tr>
+    <td><b>{{ j.get_full_name|default:j.email }}</b><br><small class="text-muted" dir="ltr">{{ j.email }}</small></td>
+    <td><small>{{ j.profile.specialty|default:"—" }}</small></td>
+    <td><small>{% for f in j.profile.judge_fields.all %}{{ f }}{% if not forloop.last %}، {% endif %}{% empty %}الكل{% endfor %}</small></td>
+    <td><small>{% for c in j.committees.all %}{{ c }}{% if not forloop.last %}، {% endif %}{% empty %}—{% endfor %}</small></td>
+    <td>{{ j.done }}/{{ j.n }}</td>
+    <td>{% if j.is_active %}<span class="pt-status st-accepted">فعّال</span>{% else %}<span class="pt-status st-withdrawn">موقوف</span>{% endif %}{% if not j.last_login %} <small class="text-muted">لم يدخل بعد</small>{% endif %}</td>
+    <td><form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="uid" value="{{ j.pk }}">
+      <button name="act" value="invite" class="btn btn-sm btn-light" title="إرسال رابط الدخول"><i class="fas fa-envelope"></i></button>
+      <button name="act" value="toggle" class="btn btn-sm btn-light">{% if j.is_active %}إيقاف{% else %}تفعيل{% endif %}</button></form></td>
+  </tr>{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">لا يوجد محكّمون.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}
