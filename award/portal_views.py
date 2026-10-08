@@ -73,7 +73,9 @@ def signup(request):
         user = form.save()
         if _verify_required():
             _send_activation(request, user)
-            return render(request, 'award/portal/check_email.html', {'email': user.email})
+            from email.utils import parseaddr
+            return render(request, 'award/portal/check_email.html',
+                          {'email': user.email, 'sender': parseaddr(settings.DEFAULT_FROM_EMAIL)[1]})
         user.is_active = True
         user.save(update_fields=['is_active'])
         login(request, user, backend='award.auth.EmailOrUsernameBackend')
@@ -174,7 +176,8 @@ def portal_home(request):
     subs = (Submission.objects.filter(owner=request.user)
             .select_related('cycle', 'track', 'field').order_by('-submitted_at'))
     return render(request, 'award/portal/dashboard.html', {
-        'tab': 'home', 'prof': prof, 'cycle': cycle, 'subs': subs, 'can_new': _can_create(request.user, cycle)[0],
+        'tab': 'home', 'prof': prof, 'cycle': cycle, 'subs': subs,
+        'mail_sender': __import__('email.utils').utils.parseaddr(settings.DEFAULT_FROM_EMAIL)[1] if settings.EMAIL_ENABLED else '', 'can_new': _can_create(request.user, cycle)[0],
         'new_block_reason': _can_create(request.user, cycle)[1],
         'notes': request.user.notifications.all()[:5],
         'counts': {

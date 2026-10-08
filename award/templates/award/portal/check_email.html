@@ -4,6 +4,8 @@
 <i class="fas fa-envelope-open-text" style="font-size:3rem;color:var(--gold)"></i>
 <h1 class="mt-3">تحقّقوا من بريدكم</h1>
 <p class="pt-sub">أرسلنا رابط التفعيل إلى <b dir="ltr">{{ email }}</b>. افتحوا الرسالة واضغطوا «تفعيل الحساب».</p>
+{% if sender %}<div class="pt-note" style="text-align:right">لضمان وصول إشعارات الجائزة إلى «البريد الوارد»: أضيفوا <b dir="ltr">{{ sender }}</b> إلى جهات الاتصال.
+وإذا وجدتم الرسالة في Spam اضغطوا «ليست رسالة غير مرغوب فيها» — بعدها تصل كل الرسائل إلى الوارد.</div>{% endif %}
 <p class="pt-help">لم تصل؟ راجعوا مجلد الرسائل غير المرغوبة (Spam)، أو <a href="{% url 'resend_activation' %}">أعيدوا الإرسال</a>.</p>
 </div>
 {% endblock %}

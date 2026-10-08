@@ -2,7 +2,8 @@
 {% block portal %}
 <div class="pt-card" style="border-top:0">
   <h1>أهلاً، {{ prof.display_name }}</h1>
-  <p class="pt-sub mb-0">من هنا تقدّمون مشاريعكم وتتابعون حالتها خطوة بخطوة.</p>
+  <p class="pt-sub mb-0">من هنا تقدّمون مشاريعكم وتتابعون حالتها خطوة بخطوة.
+  {% if mail_sender %}<br><small><i class="fas fa-envelope ms-1" style="color:var(--gold)"></i> تصلكم الإشعارات من <b dir="ltr">{{ mail_sender }}</b> — أضيفوه إلى جهات الاتصال حتى لا تذهب رسائلنا إلى Spam.</small>{% endif %}</p>
 </div>
 
 {% if cycle %}
