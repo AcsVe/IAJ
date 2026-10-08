@@ -24,7 +24,7 @@ User = get_user_model()
 
 
 def _verify_required():
-    return bool(settings.EMAIL_HOST) and getattr(settings, 'REQUIRE_EMAIL_VERIFICATION', True)
+    return settings.EMAIL_ENABLED and getattr(settings, 'REQUIRE_EMAIL_VERIFICATION', True)
 
 
 def _role(user):

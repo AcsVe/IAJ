@@ -15,7 +15,7 @@ from . import workflow
 TMP_MEDIA = tempfile.mkdtemp()
 
 
-@override_settings(MEDIA_ROOT=TMP_MEDIA, EMAIL_HOST='', EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+@override_settings(MEDIA_ROOT=TMP_MEDIA, EMAIL_HOST='', EMAIL_ENABLED=False, EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 class RegistrationFlowTest(TestCase):
     @classmethod
     def tearDownClass(cls):
@@ -221,3 +221,32 @@ class RegistrationFlowTest(TestCase):
         self.assertEqual(r.status_code, 302)
         r = self.client.get('/portal/')
         self.assertContains(r, 'انتهت فترة التسجيل')
+
+
+class GraphBackendTest(TestCase):
+    @override_settings(MS_TENANT_ID='t', MS_CLIENT_ID='c', MS_CLIENT_SECRET='s', MS_SENDER='info@iajaward.org')
+    def test_graph_payload(self):
+        from unittest import mock
+        from django.core.mail import EmailMultiAlternatives
+        from award import mail_graph
+        mail_graph._token.update(value=None, exp=0)
+        calls = []
+
+        class R:
+            def __init__(self, code, data=None): self.status_code, self._d, self.text = code, data or {}, ''
+            def json(self): return self._d
+
+        def fake_post(url, **kw):
+            calls.append((url, kw))
+            if 'login.microsoftonline.com' in url:
+                return R(200, {'access_token': 'TOKEN', 'expires_in': 3600})
+            return R(202)
+        with mock.patch.object(mail_graph.requests, 'post', fake_post):
+            m = EmailMultiAlternatives('عنوان', 'نص', 'x@y', ['a@b.com'], reply_to=['info@iajaward.org'])
+            m.attach_alternative('<b>html</b>', 'text/html')
+            self.assertEqual(mail_graph.GraphEmailBackend().send_messages([m]), 1)
+        url, kw = calls[1]
+        self.assertIn('/users/info@iajaward.org/sendMail', url)
+        self.assertEqual(kw['headers']['Authorization'], 'Bearer TOKEN')
+        self.assertEqual(kw['json']['message']['body']['contentType'], 'HTML')
+        self.assertEqual(kw['json']['message']['toRecipients'][0]['emailAddress']['address'], 'a@b.com')

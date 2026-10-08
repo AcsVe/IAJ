@@ -198,7 +198,20 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'جائزة انتصا
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # بريد (أو أكثر، بفاصلة) يستلم تنبيه «طلب جديد» — فارغ = بريد كل مدير في لوحة التحكم
 ADMIN_NOTIFY_EMAILS = [e.strip() for e in os.environ.get('ADMIN_NOTIFY_EMAILS', '').split(',') if e.strip()]
-if EMAIL_HOST:
+# Microsoft 365 (Graph) — له الأولوية إن وُجد
+MS_TENANT_ID = os.environ.get('MS_TENANT_ID', '').strip()
+MS_CLIENT_ID = os.environ.get('MS_CLIENT_ID', '').strip()
+MS_CLIENT_SECRET = os.environ.get('MS_CLIENT_SECRET', '').strip()
+MS_SENDER = os.environ.get('MS_SENDER', '').strip()
+EMAIL_VIA_GRAPH = all((MS_TENANT_ID, MS_CLIENT_ID, MS_CLIENT_SECRET, MS_SENDER))
+EMAIL_ENABLED = EMAIL_VIA_GRAPH or bool(EMAIL_HOST)
+_reply_to = os.environ.get('REPLY_TO', '').strip()
+EMAIL_REPLY_TO = [_reply_to] if _reply_to else []
+if EMAIL_VIA_GRAPH:
+    EMAIL_BACKEND = 'award.mail_graph.GraphEmailBackend'
+    if not os.environ.get('DEFAULT_FROM_EMAIL'):
+        DEFAULT_FROM_EMAIL = f'جائزة انتصار عباس جردانة <{MS_SENDER}>'
+elif EMAIL_HOST:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'

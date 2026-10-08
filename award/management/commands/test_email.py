@@ -12,8 +12,10 @@ class Command(BaseCommand):
     def handle(self, to, **opts):
         from award.notify import send_email
         from award.models import EmailLog
-        if not settings.EMAIL_HOST:
-            self.stdout.write(self.style.WARNING('EMAIL_HOST غير موجود في .env — الرسالة ستُحفظ في logs/emails بدل إرسالها.'))
+        if settings.EMAIL_VIA_GRAPH:
+            self.stdout.write(f'Microsoft 365 (Graph) — from: {settings.MS_SENDER}')
+        elif not settings.EMAIL_HOST:
+            self.stdout.write(self.style.WARNING('البريد غير مضبوط في .env — الرسالة ستُحفظ في logs/emails بدل إرسالها.'))
         else:
             self.stdout.write(f'SMTP: {settings.EMAIL_HOST}:{settings.EMAIL_PORT}  SSL={settings.EMAIL_USE_SSL} TLS={settings.EMAIL_USE_TLS}  From: {settings.DEFAULT_FROM_EMAIL}')
         send_email(to, 'رسالة تجريبية — جائزة انتصار عباس جردانة',

@@ -24,10 +24,11 @@ def _send(to, subject, html, text):
     from .models import EmailLog
     status, err = 'sent', ''
     try:
-        msg = EmailMultiAlternatives(subject, text, settings.DEFAULT_FROM_EMAIL, to)
+        msg = EmailMultiAlternatives(subject, text, settings.DEFAULT_FROM_EMAIL, to,
+                                     reply_to=getattr(settings, 'EMAIL_REPLY_TO', None) or None)
         msg.attach_alternative(html, 'text/html')
         msg.send()
-        if not settings.EMAIL_HOST:
+        if not settings.EMAIL_ENABLED:
             status = 'saved'
     except Exception as e:   # لا نوقف الموقع بسبب البريد
         status, err = 'failed', f'{type(e).__name__}: {e}'

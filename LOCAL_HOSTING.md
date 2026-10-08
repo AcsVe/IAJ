@@ -54,7 +54,17 @@
 - ملفات الطلبات خاصة: تفتحها الإدارة والمدرسة صاحبة الطلب والمحكّم المُسند إليه فقط.
 - صفحات الموقع: `/accounts/signup/` `/accounts/login/` `/portal/` (المدرسة) `/judge/` (المحكّم).
 
-### إعداد البريد (noreply@iajaward.org)
+### البريد عبر Microsoft 365 (مُفضّل — من info@iajaward.org)
+```
+MS_TENANT_ID=...
+MS_CLIENT_ID=...
+MS_CLIENT_SECRET=...
+MS_SENDER=info@iajaward.org
+ADMIN_NOTIFY_EMAILS=awardiaj@gmail.com
+```
+المتطلبات: النطاق iajaward.org مُضاف ومُوثَّق في الـ tenant، صندوق info@iajaward.org (Shared mailbox يكفي)، وتطبيق Entra بصلاحية Mail.Send (Application) + Grant admin consent. له الأولوية على إعدادات SMTP.
+
+### إعداد البريد عبر SMTP (noreply@iajaward.org)
 أضف إلى `.env` ثم أعد تشغيل الموقع، وجرّب بـ `test_email.bat`:
 ```
 DEFAULT_FROM_EMAIL=جائزة انتصار عباس جردانة <noreply@iajaward.org>
