@@ -24,8 +24,12 @@ def _send(to, subject, html, text):
     from .models import EmailLog
     status, err = 'sent', ''
     try:
+        from email.utils import make_msgid
+        from urllib.parse import urlparse
+        domain = urlparse(getattr(settings, 'SITE_URL', '') or '').hostname or 'iajaward.org'
         msg = EmailMultiAlternatives(subject, text, settings.DEFAULT_FROM_EMAIL, to,
-                                     reply_to=getattr(settings, 'EMAIL_REPLY_TO', None) or None)
+                                     reply_to=getattr(settings, 'EMAIL_REPLY_TO', None) or None,
+                                     headers={'Message-ID': make_msgid(domain=domain)})
         msg.attach_alternative(html, 'text/html')
         msg.send()
         if not settings.EMAIL_ENABLED:
