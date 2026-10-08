@@ -1,4 +1,5 @@
 {% extends 'award/base.html' %}
+{% load award_extras %}
 
 {% block content %}
 <section class="media-page-header" style="background-color: var(--primary); padding: 80px 0 50px; text-align: center;">
@@ -61,7 +62,7 @@
 <section class="py-5" style="background-color: var(--bg-gray);">
     <div class="container text-center py-5">
         <i class="fas fa-trophy" style="font-size: 3rem; color: #ddd; margin-bottom: 15px;"></i>
-        <p style="color: #999; font-size: 1.1rem;">منصة التتويج بانتظار أصحابها… هل ستكون مدرستكم من الفائزين؟</p>
+        <p style="color: #999; font-size: 1.1rem;">منصة التتويج بانتظار أصحابها — {% if results_date %}يُعلن الفائزون في <b style="color:var(--gold)">{{ results_date|ar_date }}</b>{% else %}موعد إعلان الفائزين يُحدَّد قريباً{% endif %}</p>
     </div>
 </section>
 {% endif %}

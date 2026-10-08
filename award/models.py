@@ -893,6 +893,8 @@ class AwardCycle(models.Model):
                                  help_text="مثال: «تم تمديد التسجيل حتى نهاية الشهر».")
     blind_judging = models.BooleanField(default=True, verbose_name="تحكيم بدون أسماء؟",
                                         help_text="المحكّم لا يرى اسم المدرسة ولا أسماء الطلبة والمشرف.")
+    results_date = models.DateField(null=True, blank=True, verbose_name="تاريخ إعلان الفائزين",
+                                    help_text="يظهر في صفحة الفائزين قبل الإعلان: «يُعلن الفائزون في …».")
     results_published = models.BooleanField(default=False, verbose_name="النتائج منشورة؟",
                                             help_text="قبل النشر ترى المدارس «قيد التحكيم» حتى لو حدّدتم النتيجة. "
                                                       "عند النشر تُرسل الإشعارات للجميع.")

@@ -111,6 +111,7 @@ def winners_page(request):
         'categories': categories,
         'winners': winners,
         'years': years,
+        'results_date': getattr(__import__('award.models', fromlist=['AwardCycle']).AwardCycle.current(), 'results_date', None),
         **cctx,
     })
 

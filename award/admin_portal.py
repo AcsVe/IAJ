@@ -67,7 +67,7 @@ class AwardCycleAdmin(admin.ModelAdmin):
         ('بطاقة الدورة في الهيدر', {'fields': ('show_card', 'card_note'),
                                     'description': 'تظهر عند المرور بالماوس على اسم الجائزة أو زر «سجل الآن»: الاسم + السنة الهجرية/الميلادية + مواعيد التسجيل.'}),
         ('قواعد التسجيل', {'fields': ('tracks', 'max_per_school', 'revision_days')}),
-        ('التحكيم والنتائج', {'fields': ('judges_per_submission', 'blind_judging', 'results_published')}),
+        ('التحكيم والنتائج', {'fields': ('judges_per_submission', 'blind_judging', 'results_date', 'results_published')}),
     )
 
     def get_queryset(self, request):
