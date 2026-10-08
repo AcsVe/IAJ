@@ -36,10 +36,9 @@ def portal_context(request):
         data['reg_open'] = False
         data['reg_opens_at'] = cyc['opens_at'] if now < cyc['opens_at'] else None
     else:
-        b = get_site_bundle()
-        st = b.get('settings')
-        data['reg_deadline'] = st.registration_deadline if st else None
-        data['reg_open'] = True
+        # لا توجد دورة حالية = لم تُطلق أي دورة: لا عداد ولا زر تسجيل
+        data['reg_deadline'] = None
+        data['reg_open'] = False
     if cyc:
         data['cd_title'] = cyc.get('cd_title', '')
     if cyc and cyc.get('show_card'):
