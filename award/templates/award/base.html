@@ -236,6 +236,27 @@
             background: rgba(255,255,255,.9); color: var(--primary); font-weight: 900; line-height: 1; font-size: 1rem; cursor: pointer; }
         .countdown-panel .cd-close:hover { background: var(--gold); color: #fff; }
         .countdown-panel .cd-end { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.45); color: #fff; font-size: 1.15rem; font-weight: 800; }
+        /* البطاقات المنبثقة (العداد، بطاقة الدورة، التواصل): تظهر وتختفي بتلاشٍ سريع */
+        @media (min-width: 992px) {
+            .countdown-panel, .cycle-card, .soc-pop { display: block !important; opacity: 0; visibility: hidden; translate: 0 8px; pointer-events: none;
+                animation: none !important; transition: opacity .18s ease, translate .18s ease, visibility 0s linear .18s; }
+            #countdownDropdown.show .countdown-panel, .cyc-hover:hover .cycle-card, .cyc-hover:focus-within .cycle-card,
+            .soc-nav:hover .soc-pop, .soc-nav:focus-within .soc-pop {
+                opacity: 1; visibility: visible; translate: 0 0; pointer-events: auto; transition: opacity .18s ease, translate .18s ease, visibility 0s; }
+            .countdown-panel::after, .soc-pop::after { content: ''; position: absolute; top: -16px; left: 0; right: 0; height: 16px; }
+        }
+        @media (min-width: 992px) and (hover: hover) {
+            #countdownDropdown:hover .countdown-panel { opacity: 1; visibility: visible; translate: 0 0; pointer-events: auto; transition: opacity .18s ease, translate .18s ease, visibility 0s; }
+        }
+        /* التواصل الاجتماعي في القائمة الرئيسية */
+        .soc-nav { position: relative; }
+        .soc-nav-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.55); background: rgba(255,255,255,.08); color: #fff;
+            display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; transition: background .2s, color .2s; }
+        .soc-nav-btn:hover, .soc-nav:focus-within .soc-nav-btn { background: var(--gold); color: #fff; border-color: var(--gold); }
+        .soc-pop { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 12px; z-index: 9999; white-space: nowrap; }
+        .soc-pop .social-bar { box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+        .soc-pop::before { content: ''; position: absolute; top: -7px; left: 50%; margin-left: -7px; width: 14px; height: 14px; transform: rotate(45deg); background: #fff; }
+        @media (max-width: 991.98px) { .soc-nav { display: none !important; } }
         /* شعار الجائزة + نص الشرح أعلى الصور والفيديو */
         .media-badge { position: absolute; top: 10px; z-index: 5; display: flex; align-items: center; gap: 8px; pointer-events: none; max-width: calc(100% - 20px); }
         .media-badge.mb-right { right: 10px; flex-direction: row; }
@@ -310,7 +331,7 @@
         /* الشاشات المتوسطة: لا شيء يخرج عن الهيدر — العنوان يصغر ثم يختفي (الشعار يكفي) */
         @media (min-width: 992px) { .nav-award-title-desktop { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } }
         @media (min-width: 1200px) and (max-width: 1399.98px) { .nav-award-title-desktop { font-size: 1.2rem !important; margin: 0 8px !important; } .navbar-royal .nav-link { margin: 0 5px !important; } .navbar-royal .nav-register { padding: 8px 16px 8px 15px !important; } }
-        @media (min-width: 992px) and (max-width: 1199.98px) { .cyc-title-wrap { display: none !important; } .navbar-royal .navbar-nav { margin-left: auto; } .navbar-royal .nav-register { padding: 8px 14px !important; font-size: .88rem; } }
+        @media (min-width: 992px) and (max-width: 1299.98px) { .cyc-title-wrap { display: none !important; } .navbar-royal .navbar-nav { margin-left: auto; } .navbar-royal .nav-register { padding: 8px 14px !important; font-size: .88rem; } }
         .navbar-royal .nav-bell { position:relative; color:#fff; font-size:1.15rem; flex-shrink:0; margin:0 6px; text-decoration:none; }
         .navbar-royal .nav-bell:hover { color: var(--gold); }
         .navbar-royal .nav-bell-n { position:absolute; top:-8px; left:-10px; background:#d93025; color:#fff; border-radius:12px; font-size:.7rem; font-weight:800; padding:1px 6px; line-height:1.4; }
@@ -631,6 +652,10 @@
           </ul>
         </li>
         <li class="nav-item d-none d-lg-flex align-items-center"><button type="button" class="nav-search-btn" data-open-search aria-label="بحث في الموقع" title="بحث"><i class="fas fa-magnifying-glass"></i></button></li>
+        {% if social_links %}<li class="nav-item d-none d-lg-flex align-items-center soc-nav">
+          <button type="button" class="soc-nav-btn" aria-label="تابعونا على وسائل التواصل" title="تابعونا"><i class="fas fa-share-nodes"></i></button>
+          <div class="soc-pop">{% with portal_title_off=True %}<nav class="social-bar" aria-label="التواصل الاجتماعي">{% for s in social_links %}<a href="{{ s.href }}" target="_blank" rel="noopener" title="{{ s.get_platform_display }}" aria-label="{{ s.get_platform_display }}"{% if s.color %} style="--soc-c: {{ s.color }}"{% endif %}><i class="{{ s.icon_class }}"></i></a>{% endfor %}</nav>{% endwith %}</div>
+        </li>{% endif %}
         {% if reg_deadline and request.path == '/' %}
         <li class="nav-item dropdown" id="countdownDropdown" style="position: relative;">
           <a class="nav-link countdown-toggle" href="#" aria-label="موعد استقبال الطلبات">
@@ -942,6 +967,7 @@
     if (dd) {
         dd.querySelector('.countdown-toggle').addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); window._lastY = window.pageYOffset; dd.classList.toggle('show'); });
         document.addEventListener('click', function (e) { if (!dd.contains(e.target)) dd.classList.remove('show'); });
+        dd.addEventListener('mouseleave', function () { if (window.matchMedia('(hover: hover) and (min-width: 992px)').matches) dd.classList.remove('show'); });
     }
     var cdEl = document.getElementById('countdownNav');
     {% if reg_deadline %}

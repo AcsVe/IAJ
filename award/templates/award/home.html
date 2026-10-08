@@ -887,14 +887,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 5. الإطار الزمني -->
 {% if section_bgs.timeline and section_bgs.timeline.bg_image %}
-<section id="timeline" class="py-5" style="background-image: url('{{ section_bgs.timeline.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.timeline.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="timeline" data-no-fit class="py-5" style="background-image: url('{{ section_bgs.timeline.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.timeline.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.timeline.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.timeline.overlay_css }}opacity:{{ section_bgs.timeline.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.timeline and section_bgs.timeline.bg_color %}
-<section id="timeline" class="py-5" style="{{ section_bgs.timeline.bg_css }}">
+<section id="timeline" data-no-fit class="py-5" style="{{ section_bgs.timeline.bg_css }}">
     <div class="container">
 {% else %}
-<section id="timeline" class="py-5 sec-light">
+<section id="timeline" data-no-fit class="py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_timeline }}</h2><div class="gold-line"></div></div>
@@ -1110,32 +1110,34 @@ section#timeline .timeline-h-node i { color: var(--gold); }
 .timeline-h-item { position: relative; }
 .timeline-h-item:hover, .timeline-h-item:focus-within { z-index: 40; }
 /* بطاقة التحويم (أجهزة الماوس فقط) — نفس تصميم بطاقة العداد */
-.tl-pop { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 16px; z-index: 30;
+.tl-pop { display: block; opacity: 0; visibility: hidden; translate: 0 10px; transition: opacity .2s ease, translate .2s ease, visibility 0s linear .2s;
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 16px; z-index: 30;
     width: 430px; max-width: 90vw; padding: 22px 24px 18px; text-align: center; border-radius: 20px; color: #fff;
     background: linear-gradient(160deg, rgba(18,36,80,.97) 0%, rgba(10,22,50,.95) 55%, rgba(70,55,20,.94) 100%);
     border: 1px solid rgba(197,160,89,.6); box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14);
     backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); pointer-events: none; }
 .tl-pop::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -9px; border: 9px solid transparent; border-top-color: rgba(30,40,60,.96); }
 @media (hover: hover) and (pointer: fine) {
-    .timeline-h-item:hover .tl-pop, .timeline-h-item:focus-within .tl-pop { display: block; animation: tlRise .25s ease-out; }
+    .timeline-h-item:hover .tl-pop, .timeline-h-item:focus-within .tl-pop { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .2s ease, translate .2s ease, visibility 0s; }
 }
 @keyframes tlRise { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 .tl-pop-date { display: inline-block; background: #e6c47a; color: #1d1708; font-weight: 900; font-size: 1.25rem; padding: 3px 14px; border-radius: 20px; margin-bottom: 10px; }
 .tl-pop-title { font-size: 1.75rem; font-weight: 900; line-height: 1.5; }
 .tl-pop-desc { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.3); font-size: 1.28rem; line-height: 1.9; color: #f3f3f8; }
 .tl-pop-hint { margin-top: 12px; color: #f0e2c2; font-size: .95rem; font-weight: 800; }
-/* الشاشات الكبيرة: السلسلة بعرض الشاشة وأحجام تتناسب معها */
-@media (min-width: 1200px) {
-    .premium-timeline { overflow: visible; margin-inline: calc(50% - 50vw); padding-inline: 90px; }
-    .timeline-h-item { width: clamp(160px, 13vw, 230px) !important; }
-    .timeline-h-item:nth-child(even) { margin-top: clamp(150px, 12vw, 200px) !important; }
-    .timeline-h-node { width: clamp(128px, 10vw, 170px) !important; height: clamp(128px, 10vw, 170px) !important; border-width: 3px !important; }
+/* الشاشات الكبيرة: السلسلة تملأ عرض الشاشة — العناصر تتقاسم المساحة بالتساوي، والدوائر على خط واحد */
+@media (min-width: 992px) {
+    .premium-timeline { overflow: visible; margin-inline: calc(50% - 50vw); padding-inline: clamp(90px, 6vw, 130px); }
+    .timeline-h-track { min-width: 0 !important; width: 100%; align-items: flex-start !important; justify-content: center; padding: 34px 0 20px !important; }
+    .timeline-h-item, .timeline-h-item:nth-child(even) { flex: 1 1 0 !important; min-width: 0; width: auto !important; max-width: 270px; margin-top: 0 !important; justify-content: flex-start !important; }
+    .timeline-h-node { width: clamp(124px, 12.5vw, 215px) !important; height: clamp(124px, 12.5vw, 215px) !important; border-width: 3px !important; }
     .timeline-h-node::after { width: 80% !important; height: 80% !important; }
-    .timeline-h-node i { font-size: clamp(2.2rem, 2.6vw, 3.2rem) !important; }
-    .timeline-h-content { width: 100% !important; padding: 14px 4px !important; }
-    section#timeline .timeline-date { font-size: clamp(1.25rem, 1.45vw, 1.6rem) !important; }
-    section#timeline .timeline-title { font-size: clamp(1.5rem, 1.8vw, 2rem) !important; line-height: 1.45; }
-    .timeline-h-connector { width: clamp(20px, 1.6vw, 30px) !important; height: clamp(290px, 23vw, 380px) !important; margin-top: clamp(-90px, -6vw, -72px) !important; }
+    .timeline-h-node i { font-size: clamp(2.2rem, 3vw, 3.6rem) !important; }
+    .timeline-h-content, .timeline-h-item:nth-child(even) .timeline-h-content { width: 100% !important; padding: 14px 6px !important; margin: 14px 0 0 !important; order: 0 !important; }
+    .timeline-h-item:nth-child(even) .timeline-h-node-dot { order: 0 !important; margin: -1px 0 0 !important; }
+    section#timeline .timeline-date { font-size: clamp(1.25rem, 1.5vw, 1.75rem) !important; }
+    section#timeline .timeline-title { font-size: clamp(1.45rem, 1.9vw, 2.25rem) !important; line-height: 1.45; }
+    .timeline-h-connector { flex: 0 0 clamp(14px, 1.4vw, 28px) !important; width: auto !important; height: clamp(124px, 12.5vw, 215px) !important; margin-top: 0 !important; }
     .timeline-h-connector svg { width: 100% !important; height: 100% !important; }
 }
 /* الموبايل: كل السلسلة ظاهرة دائماً، التفاصيل بالضغط (نافذة) */
