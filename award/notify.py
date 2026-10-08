@@ -20,7 +20,39 @@ def absolute(url):
     return base.rstrip('/') + url
 
 
-def _send(to, subject, html, text):
+_logo_cache = {'key': None, 'data': None}
+
+
+def _logo_png():
+    """شعار الجائزة كصورة PNG صغيرة تُضمَّن داخل الرسالة (تظهر حتى لو كانت الصور الخارجية محجوبة)"""
+    try:
+        from .models import SiteSetting
+        st = SiteSetting.objects.only('site_logo').first()
+        name = st.site_logo.name if st and st.site_logo else ''
+        if not name:
+            return None
+        if _logo_cache['key'] == name:
+            return _logo_cache['data']
+        data = None
+        if not name.lower().endswith('.svg'):
+            import io
+            from PIL import Image
+            with st.site_logo.open('rb') as fh:
+                img = Image.open(io.BytesIO(fh.read()))
+                img.load()
+            img = img.convert('RGBA')
+            img.thumbnail((180, 180), Image.LANCZOS)
+            out = io.BytesIO()
+            img.save(out, 'PNG', optimize=True)
+            data = out.getvalue()
+        _logo_cache.update(key=name, data=data)
+        return data
+    except Exception as e:
+        log.warning('Email logo skipped: %s', e)
+        return None
+
+
+def _send(to, subject, html, text, logo=None):
     from .models import EmailLog
     status, err = 'sent', ''
     try:
@@ -31,6 +63,13 @@ def _send(to, subject, html, text):
                                      reply_to=getattr(settings, 'EMAIL_REPLY_TO', None) or None,
                                      headers={'Message-ID': make_msgid(domain=domain)})
         msg.attach_alternative(html, 'text/html')
+        if logo:
+            from email.mime.image import MIMEImage
+            img = MIMEImage(logo, 'png')
+            img.add_header('Content-ID', '<iajlogo>')
+            img.add_header('Content-Disposition', 'inline', filename='logo.png')
+            msg.mixed_subtype = 'related'
+            msg.attach(img)
         msg.send()
         if not settings.EMAIL_ENABLED:
             status = 'saved'
@@ -51,14 +90,15 @@ def send_email(to, subject, body, url='', button='', wait=False):
     to = [t for t in ([to] if isinstance(to, str) else to) if t]
     if not to:
         return
+    logo = _logo_png()
     ctx = {'subject': subject, 'body': body, 'url': absolute(url), 'button': button or 'فتح في الموقع',
-           'site_url': absolute('/')}
+           'site_url': absolute('/'), 'has_logo': bool(logo)}
     html = render_to_string('award/email/message.html', ctx)
     text = body + (f"\n\n{ctx['url']}" if url else '') + '\n\n— جائزة انتصار عباس جردانة'
     if wait:
-        _send(to, subject, html, text)
+        _send(to, subject, html, text, logo)
     else:
-        threading.Thread(target=_send, args=(to, subject, html, text), daemon=True).start()
+        threading.Thread(target=_send, args=(to, subject, html, text, logo), daemon=True).start()
 
 
 def notify(user, title, body='', url='', level='info', email=True, button=''):

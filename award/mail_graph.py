@@ -72,6 +72,13 @@ class GraphEmailBackend(BaseEmailBackend):
             message['replyTo'] = _recipients(msg.reply_to)
         atts = []
         for a in msg.attachments or []:
+            if hasattr(a, 'get_payload') and not isinstance(a, tuple):   # صورة مضمّنة (الشعار)
+                cid = (a.get('Content-ID') or '').strip('<>')
+                atts.append({'@odata.type': '#microsoft.graph.fileAttachment',
+                             'name': a.get_filename() or 'image.png', 'contentType': a.get_content_type(),
+                             'contentBytes': base64.b64encode(a.get_payload(decode=True)).decode(),
+                             'isInline': bool(cid), 'contentId': cid or None})
+                continue
             if isinstance(a, tuple):
                 name, content, mime = a
                 if isinstance(content, str):
