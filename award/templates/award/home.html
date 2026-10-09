@@ -67,6 +67,18 @@ section#{{ sid }} .timeline-date {
                 <p class="sc-text" aria-hidden="true">{{ content.hero_subtitle }}</p>
             </div>
         </div>
+        {% if has_side and hero_stats and portal.show_hero_stats %}
+        <!-- أرقام الجائزة: تحت نص الشارة، بمحاذاة صندوق النصوص تحت الفيديو (الكمبيوتر فقط) -->
+        <div class="hero-stats" id="heroStats" aria-label="أرقام الجائزة">
+            {% for st in hero_stats %}
+            <div class="hst{% if st.num == '' %} hst-cycle{% endif %}">
+                <i class="fas {{ st.icon }}" aria-hidden="true"></i>
+                <b{% if st.num != '' %} data-count="{{ st.num }}"{% endif %}>{% if st.num != '' %}{{ st.num }}{% else %}{{ st.text }}{% endif %}</b>
+                <span>{{ st.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     {% with show_card=hero_card.is_enabled %}
@@ -292,6 +304,26 @@ section#{{ sid }} .timeline-date {
     .has-side .side-credits { right: 4%; width: calc(100% - 4% - clamp(16px, 2.5vw, 48px) - min(700px, 45%) - 44px); max-width: none; }
     .has-side .sc-heading { font-size: clamp(24px, 2vw, 32px); }
     .has-side .sc-text { font-size: clamp(20px, 1.6vw, 26px); }
+}
+
+/* ---------- أرقام الجائزة (الكمبيوتر) ---------- */
+.hero-stats { display: none; }
+@media (min-width: 992px) {
+    .has-side .hero-stats { position: absolute; z-index: 4; right: 4%; bottom: 40px;
+        width: calc(100% - 4% - clamp(16px, 2.5vw, 48px) - min(700px, 45%) - 44px);
+        display: flex; flex-wrap: nowrap; gap: 10px; align-items: flex-start; }
+    .hst { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px;
+        padding: 12px 8px; border-radius: 16px; color: #fff; max-height: 100%;
+        background: linear-gradient(160deg, rgba(var(--deep-1,18,36,80),.72) 0%, rgba(var(--deep-2,10,22,50),.66) 55%, rgba(70,55,20,.62) 100%);
+        border: 1px solid rgba(197,160,89,.55); box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .25s ease, border-color .25s ease; }
+    .hst:hover { transform: translateY(-3px); border-color: var(--gold); }
+    .hst-cycle { flex-grow: 1.6; }
+    .hst i { color: var(--gold); font-size: 1.2rem; }
+    .hst b { font-size: clamp(1.5rem, 2vw, 2.4rem); font-weight: 900; line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums; }
+    .hst b:not([data-count]) { font-size: clamp(1.05rem, 1.3vw, 1.35rem); color: #f3d899; }
+    .hst span { font-size: .88rem; color: rgba(255,255,255,.85); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .hst b:not([data-count]) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 }
 
 /* ---------- البطاقة الشفافة ---------- */
@@ -1638,4 +1670,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<script>
+// أرقام الجائزة: بمحاذاة صندوق النصوص تحت الفيديو، ونص الشارة بمحاذاة الفيديو نفسه
+(function () {
+    var stats = document.getElementById('heroStats');
+    var hero = document.querySelector('.hero-split.has-side');
+    if (!stats || !hero) return;
+    var credits = hero.querySelector('.side-credits');
+    function align() {
+        if (window.innerWidth < 992) { stats.style.cssText = ''; if (credits) credits.style.cssText = ''; return; }
+        var h = hero.getBoundingClientRect(), video = hero.querySelector('.yt-card'), card = hero.querySelector('.yt-stack .hero-transparent-card');
+        if (!video) return;
+        var v = video.getBoundingClientRect();
+        if (card) {
+            var c = card.getBoundingClientRect();
+            stats.style.top = (c.top - h.top) + 'px'; stats.style.bottom = 'auto'; stats.style.height = c.height + 'px';
+            if (credits) { credits.style.top = (v.top - h.top) + 'px'; credits.style.transform = 'none'; credits.style.height = Math.max(160, c.top - v.top - 16) + 'px'; }
+        } else {
+            stats.style.top = 'auto'; stats.style.height = 'auto';
+            stats.style.bottom = (h.bottom - v.bottom) + 'px';
+            if (credits) { credits.style.top = (v.top - h.top) + 'px'; credits.style.transform = 'none'; credits.style.height = Math.max(160, v.height - stats.offsetHeight - 16) + 'px'; }
+        }
+    }
+    align();
+    window.addEventListener('resize', function () { clearTimeout(window._hsT); window._hsT = setTimeout(align, 150); });
+    window.addEventListener('load', align);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(align);
+    // عدّ تصاعدي للأرقام عند الظهور
+    stats.querySelectorAll('b[data-count]').forEach(function (b) {
+        var end = parseInt(b.getAttribute('data-count'), 10) || 0, t0 = null;
+        if (end < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        b.textContent = '0';
+        function step(ts) { if (!t0) t0 = ts; var p = Math.min(1, (ts - t0) / 1400); b.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); }
+        setTimeout(function () { requestAnimationFrame(step); }, 600);
+    });
+})();
+</script>
 {% endblock %}

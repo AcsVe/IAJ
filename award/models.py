@@ -1310,6 +1310,8 @@ class PortalSetting(models.Model):
     wm_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=0.95, verbose_name="شفافية الشعار (0–1)")
     captions_enabled = models.BooleanField(default=True, verbose_name="إظهار نص الشرح بجانب الشعار (الصور والفيديو)")
     show_cycle_filter = models.BooleanField(default=True, verbose_name="تصفية الصور والفيديو والأخبار حسب الدورة في الموقع")
+    show_hero_stats = models.BooleanField(default=True, verbose_name="إظهار أرقام الجائزة أعلى الصفحة الرئيسية (الكمبيوتر)",
+                                          help_text="المدارس المسجّلة، المشاريع، المجالات، المسارات — الرقم صفر لا يظهر.")
 
     class Meta:
         verbose_name = "إعدادات الحسابات والهيدر والتواصل"

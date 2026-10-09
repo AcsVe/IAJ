@@ -72,7 +72,7 @@ CACHED_MODELS = ('SiteSetting', 'ThemeSetting', 'HomeContent', 'FooterContent',
 
 
 HOME_KEY = 'iaj:home-bundle:v1'
-HOME_MODELS = ('Field', 'Track', 'TimelineEvent', 'Judge', 'Sponsor', 'News', 'Submission', 'Principle',
+HOME_MODELS = ('Profile', 'Field', 'Track', 'TimelineEvent', 'Judge', 'Sponsor', 'News', 'Submission', 'Principle',
                'HeroSlide', 'SiteSetting', 'TrackDetail', 'AwardCycle', 'Announcement', 'AnnouncementMedia')
 
 
@@ -138,6 +138,26 @@ def _home_announcements():
     return list(Announcement.objects.filter(is_published=True, show_on_home=True).prefetch_related('media')[:6])
 
 
+def _hero_stats():
+    """أرقام الجائزة تحت نص الشارة — الرقم صفر لا يُعرض"""
+    from .models import Profile, Submission, Track, Field, AwardCycle
+    out = []
+    try:
+        cyc = AwardCycle.current()
+        items = [
+            (Profile.objects.filter(role='school').count(), 'مدرسة مسجّلة', 'fa-school'),
+            (Submission.objects.exclude(status__in=('draft', 'withdrawn')).count(), 'مشروع مقدَّم', 'fa-diagram-project'),
+            (Field.objects.count(), 'مجالات', 'fa-layer-group'),
+            (Track.objects.filter(is_active=True).count(), 'مسارات', 'fa-route'),
+        ]
+        out = [{'num': n, 'label': l, 'icon': i} for n, l, i in items if n]
+        if cyc:
+            out.append({'num': '', 'text': cyc.short_name or cyc.name, 'label': f'{cyc.hijri_year}هـ / {cyc.year}م' if cyc.hijri_year else f'{cyc.year}م', 'icon': 'fa-award'})
+    except Exception:
+        pass
+    return out
+
+
 def get_home_bundle():
     data = cache.get(HOME_KEY)
     if data is not None:
@@ -162,6 +182,7 @@ def get_home_bundle():
         'sponsors': list(Sponsor.objects.all()),
         'latest_news': list(News.objects.filter(is_published=True)[:3]),
         'announcements': _home_announcements(),
+        'hero_stats': _hero_stats(),
         'total_submissions': Submission.objects.count(),
         'accepted_submissions': Submission.objects.filter(status='accepted').count(),
     }

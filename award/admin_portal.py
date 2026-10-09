@@ -739,6 +739,7 @@ class PortalSettingAdmin(admin.ModelAdmin):
                                             'description': 'يظهر الشعار أعلى كل صورة وفيديو في الموقع (المعرض، الفيديو، الأخبار، شرائح الصفحة الرئيسية). '
                                                            'نص الشرح يُكتب لكل صورة/فيديو في حقل «نص الشرح» ويمكن إخفاؤه لكل عنصر.'}),
         ('الدورات في الموقع', {'fields': ('show_cycle_filter',)}),
+        ('أرقام الجائزة في الصفحة الرئيسية', {'fields': ('show_hero_stats',)}),
     )
 
     def has_add_permission(self, request):
