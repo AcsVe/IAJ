@@ -801,7 +801,7 @@ section#{{ sid }} .timeline-date {
     function restartRoll(sl) {
         var inner = sl && sl.querySelector('.hc-inner');
         if (!inner) return;
-        inner.style.animation = 'none'; void inner.offsetWidth; inner.style.animation = '';
+        inner.style.transform = ''; inner.style.animation = 'none'; void inner.offsetWidth; inner.style.animation = '';
     }
     document.querySelectorAll('.hero-transparent-card').forEach(function (card) {
         measure(card);
@@ -841,8 +841,14 @@ section#{{ sid }} .timeline-date {
         }
         function go(n) {
             var old = slides[idx];
+            // تجميد النص المغادر في موضعه الحالي (وإلا يقفز لأوله فيظهر عنوانه فوق النص الجديد أثناء التلاشي)
+            var oin = old.querySelector('.hc-inner');
+            if (oin) { var tf = getComputedStyle(oin).transform; oin.style.animation = 'none'; oin.style.transform = (tf && tf !== 'none') ? tf : ''; }
             old.classList.remove('active'); old.classList.add('leaving'); old.setAttribute('aria-hidden', 'true');
-            setTimeout(function () { old.classList.remove('leaving'); }, (parseFloat(getComputedStyle(old).getPropertyValue('--hc-t')) || .6) * 1000 + 50);
+            setTimeout(function () {
+                old.classList.remove('leaving');
+                if (oin && !old.classList.contains('active')) { oin.style.transform = ''; oin.style.animation = ''; }
+            }, (parseFloat(getComputedStyle(old).getPropertyValue('--hc-t')) || .6) * 1000 + 50);
             idx = (n + slides.length) % slides.length;
             slides[idx].classList.add('active'); slides[idx].removeAttribute('aria-hidden');
             restartRoll(slides[idx]);
