@@ -268,7 +268,7 @@ case "$1" in
   lang)
     CFG="$HOME/.iaj_standby"; touch "$CFG"
     if [ "$LANG_UI" = "en" ]; then NEW=ar; else NEW=en; fi
-    grep -v '^LANG_UI=' "$CFG" > "$CFG.tmp" 2>/dev/null; echo "LANG_UI=$NEW" >> "$CFG.tmp"; mv "$CFG.tmp" "$CFG"
+    { grep -v '^LANG_UI=' "$CFG" 2>/dev/null || true; echo "LANG_UI=$NEW"; } > "$CFG.tmp"; mv "$CFG.tmp" "$CFG"
     if [ "$NEW" = "en" ]; then say "Messages are now in English (buttons stay in Arabic)"; else say "الرسائل الآن بالعربية"; fi
     ;;
 
