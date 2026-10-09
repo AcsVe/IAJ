@@ -1,4 +1,5 @@
 {% extends 'award/base.html' %}
+{% load award_extras %}
 
 {% block body_class %}is-home{% endblock %}
 
@@ -61,10 +62,14 @@ section#{{ sid }} .timeline-date {
         <!-- شارة الأفلام المتحركة فوق الصورة الرئيسية -->
         <div class="side-credits">
             <div class="side-credits-scroll">
-                <h3 class="sc-heading">{{ content.hero_title }}</h3>
-                <p class="sc-text">{{ content.hero_subtitle }}</p>
-                <h3 class="sc-heading" aria-hidden="true">{{ content.hero_title }}</h3>
-                <p class="sc-text" aria-hidden="true">{{ content.hero_subtitle }}</p>
+                <div class="sc-block">
+                    <h3 class="sc-heading">{{ content.hero_title }}</h3>
+                    {{ content.hero_subtitle|credits_blocks }}
+                </div>
+                <div class="sc-block" aria-hidden="true">
+                    <h3 class="sc-heading">{{ content.hero_title }}</h3>
+                    {{ content.hero_subtitle|credits_blocks }}
+                </div>
             </div>
         </div>
         {% if has_side and hero_stats and portal.show_hero_stats %}
@@ -296,6 +301,9 @@ section#{{ sid }} .timeline-date {
 .side-credits-scroll { width: 100%; animation: creditsRise 40s linear 4s infinite; }   /* يبدأ بعد 4 ثوانٍ */
 .side-credits:hover .side-credits-scroll { animation-play-state: paused; }
 .sc-heading { font-size: 24px; font-weight: 900; color: #fff; text-align: right; line-height: 1.8; text-shadow: 0 3px 15px rgba(0,0,0,0.55); padding: 8px 0; margin: 0; }
+.sc-block .sc-text { padding: 4px 0 14px; }
+.sc-block .sc-heading { padding-top: 14px; }
+.sc-block { padding-bottom: 40px; }
 .sc-text { font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.92); text-align: right; line-height: 1.9; text-shadow: 0 2px 10px rgba(0,0,0,0.45); padding: 6px 0 40px; margin: 0; }
 @keyframes creditsRise { from { transform: translateY(0); } to { transform: translateY(-50%); } }
 
@@ -320,7 +328,7 @@ section#{{ sid }} .timeline-date {
     .has-side .hero-stats .hst b { font-size: 1.15rem; font-weight: 900; line-height: 1.15; }
     .has-side .hero-stats .hst b:not([data-count]) { font-size: .78rem; color: #f3d899; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .has-side .hero-stats .hst span { font-size: .66rem; color: rgba(255,255,255,.85); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .has-side .hero-stats .hst-cycle { flex-grow: 1.5; }
+    .has-side .hero-stats .hst-cycle span { white-space: normal; }
 }
 @media (max-width: 767.98px) {
     .has-side .hero-stats .hst-cycle { display: none; }   /* الهاتف: أربعة أرقام فقط حتى تتسع الأسماء */
@@ -330,14 +338,15 @@ section#{{ sid }} .timeline-date {
 @media (min-width: 992px) {
     .has-side .hero-stats { position: absolute; z-index: 4; right: 4%; bottom: 40px;
         width: calc(100% - 4% - clamp(16px, 2.5vw, 48px) - min(700px, 45%) - 44px);
-        display: flex; flex-wrap: nowrap; gap: 10px; align-items: flex-start; }
+        display: flex; flex-wrap: nowrap; gap: 10px; align-items: stretch; }
     .hst { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px;
         padding: 12px 8px; border-radius: 16px; color: #fff; max-height: 100%;
         background: linear-gradient(160deg, rgba(var(--deep-1,18,36,80),.72) 0%, rgba(var(--deep-2,10,22,50),.66) 55%, rgba(70,55,20,.62) 100%);
         border: 1px solid rgba(197,160,89,.55); box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .25s ease, border-color .25s ease; }
     .hst:hover { transform: translateY(-3px); border-color: var(--gold); }
-    .hst-cycle { flex-grow: 1.6; }
+    .hst-cycle b { font-size: clamp(.95rem, 1.1vw, 1.2rem) !important; white-space: normal !important; line-height: 1.3; }
+    .hst-cycle span { white-space: normal !important; line-height: 1.35; }
     .hst i { color: var(--gold); font-size: 1.2rem; }
     .hst b { font-size: clamp(1.5rem, 2vw, 2.4rem); font-weight: 900; line-height: 1.1; color: #fff; font-variant-numeric: tabular-nums; }
     .hst b:not([data-count]) { font-size: clamp(1.05rem, 1.3vw, 1.35rem); color: #f3d899; }
@@ -380,7 +389,9 @@ section#{{ sid }} .timeline-date {
 .hc-count { font: 600 .78rem/1 Roboto, Arial, sans-serif; opacity: .75; direction: ltr; min-width: 34px; text-align: center; }
 .hc-progress { position: absolute; left: 64px; right: 120px; bottom: 23px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; direction: rtl; }
 .hc-progress span { display: block; height: 100%; width: 0; margin-right: 0; margin-left: auto; background: var(--gold); }
-.hc-progress.run span { width: 100%; transition: width var(--hc-dur, 5s) linear var(--hc-delay, 0s); }
+.hc-progress.run span { animation: hcBar var(--hc-dur, 5s) linear var(--hc-delay, 0s) forwards; }
+.hero-transparent-card:hover .hc-progress span { animation-play-state: paused; }   /* يتوقف مع النص ويكمل من نفس النقطة */
+@keyframes hcBar { from { width: 0; } to { width: 100%; } }
 .hc-nav[hidden] + .hc-progress { right: 18px; }
 @media (prefers-reduced-motion: reduce) { .hc-slide { transition: none !important; transform: none !important; filter: none !important; } }
 
@@ -805,7 +816,7 @@ section#{{ sid }} .timeline-date {
         var slides = [].slice.call(card.querySelectorAll('.hc-slide'));
         var count = card.querySelector('.hc-count'), bar = card.querySelector('.hc-progress');
         var speed = Math.max(4, parseFloat(card.dataset.speed) || 14), minS = Math.max(2, parseFloat(card.dataset.min) || 4);
-        var idx = 0, timer = null, paused = false;
+        var idx = 0, timer = null, paused = false, endAt = 0, remain = 0;
         function dur(sl) {
             var roll = parseFloat(sl.dataset.rollMs) || 0;
             var fixed = parseFloat(sl.getAttribute('data-sec'));   // مدة محددة لهذا النص من لوحة التحكم
@@ -815,7 +826,7 @@ section#{{ sid }} .timeline-date {
         }
         function schedule() {
             clearTimeout(timer); if (bar) bar.classList.remove('run');
-            if (paused || document.hidden) return;
+            if (document.hidden) return;
             var sl = slides[idx], ms = dur(sl);
             if (bar) {
                 // الخط بجانب السهمين يتحرك مع مرور النص بالضبط (إن كان طويلاً)، وإلا مع مدة بقاء النص
@@ -824,6 +835,8 @@ section#{{ sid }} .timeline-date {
                 bar.style.setProperty('--hc-dur', rs ? rs + 's' : ms + 'ms');
                 void bar.offsetWidth; bar.classList.add('run');
             }
+            if (paused) { remain = ms; return; }   // الماوس فوق البطاقة (مثلاً ضغط السهم): يبدأ العدّ عند الابتعاد
+            endAt = Date.now() + ms;
             timer = setTimeout(function () { go(idx + 1); }, ms);
         }
         function go(n) {
@@ -840,8 +853,17 @@ section#{{ sid }} .timeline-date {
         if (prev) prev.addEventListener('click', function () { go(idx - 1); });
         if (next) next.addEventListener('click', function () { go(idx + 1); });
         if (window.matchMedia('(hover: hover)').matches) {
-            card.addEventListener('mouseenter', function () { paused = true; schedule(); });
-            card.addEventListener('mouseleave', function () { paused = false; restartRoll(slides[idx]); schedule(); });
+            // التحويم يوقف النص والخط مؤقتاً، والابتعاد يكمل من نفس النقطة (بدون إعادة من البداية)
+            card.addEventListener('mouseenter', function () {
+                if (paused) return; paused = true;
+                remain = Math.max(800, endAt - Date.now()); clearTimeout(timer);
+            });
+            card.addEventListener('mouseleave', function () {
+                if (!paused) return; paused = false;
+                if (document.hidden) return;
+                endAt = Date.now() + remain;
+                timer = setTimeout(function () { go(idx + 1); }, remain);
+            });
         }
         var sx = null;
         card.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });

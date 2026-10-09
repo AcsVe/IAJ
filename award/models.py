@@ -423,7 +423,8 @@ class ThemeSetting(models.Model):
 class HomeContent(models.Model):
     # -- قسم الهيرو --
     hero_title = models.CharField(max_length=1000, default="جائزة انتصار عباس جردانة", verbose_name="العنوان الرئيسي الكبير")
-    hero_subtitle = models.TextField(default="للثقافة والتعليم", verbose_name="العنوان الفرعي (النص المتحرك)")
+    hero_subtitle = models.TextField(default="للثقافة والتعليم", verbose_name="نص الشارة المتحركة (عدة فقرات)",
+                                     help_text="سطر فارغ بين فقرتين = فقرة جديدة. سطر يبدأ بـ # = عنوان فرعي. مثال:\n# رؤيتنا\nنص الفقرة الأولى…")
     
     # -- قسم عن الجائزة --
     about_text = models.TextField(default="تخليداً لذكرى السيدة انتصار عباس جردانة، أُطلقت هذه الجائزة لتكريم المبادرات التطوعية...", verbose_name="نص عن الجائزة")
