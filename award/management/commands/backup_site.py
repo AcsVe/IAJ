@@ -139,6 +139,12 @@ class Command(BaseCommand):
                     if fn in skip_files or fn.endswith(('.pyc', '.log', '.dump', '.part')):
                         continue
                     full = os.path.join(d, fn)
-                    z.write(full, os.path.join('iaj', os.path.relpath(full, base)))
+                    arc = os.path.join('iaj', os.path.relpath(full, base)).replace(os.sep, '/')
+                    if fn.endswith('.sh'):
+                        # سكربتات الهاتف يجب أن تكون بنهايات أسطر Linux (Windows/git قد يحوّلها إلى CRLF)
+                        with open(full, 'rb') as fh:
+                            z.writestr(arc, fh.read().replace(b'\r\n', b'\n'))
+                    else:
+                        z.write(full, arc)
         os.replace(tmp, out)
         self.stdout.write(self.style.SUCCESS(f'✓ الكود: {out}'))
