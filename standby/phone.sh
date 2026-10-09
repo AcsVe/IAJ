@@ -14,6 +14,8 @@
 #   bash ~/iaj/standby/phone.sh handback       # (بعد Ctrl+C) رفع بيانات الهاتف — ثم على السيرفر: back_to_server.bat
 #   bash ~/iaj/standby/phone.sh status         # أين يعمل iajaward.org الآن
 #
+#   bash ~/iaj/standby/phone.sh configure      # مرة واحدة: الرموز + أزرار على الشاشة الرئيسية (Termux:Widget)
+#
 #  الإعدادات (اختياري) في ~/.iaj_standby:
 #     REMOTE=gdrive:IAJ-backups      # اسم الاتصال في rclone + المجلد في Drive
 #  رمز نفق الهاتف «iaj-standby» (نفق ثانٍ غير نفق السيرفر) في الملف: ~/.iaj_tunnel_token
@@ -65,6 +67,7 @@ case "$1" in
     rclone copy "$REMOTE/code" "$LOCAL_BK/code" --progress
     [ -f "$LOCAL_BK/code/iaj-code.zip" ] || die "لم أجد iaj-code.zip في Drive — شغّل backup_now.bat على السيرفر أولاً"
     unzip -oq "$LOCAL_BK/code/iaj-code.zip" -d "$HOME"
+    sed -i 's/\r$//' "$SITE"/standby/*.sh 2>/dev/null || true
     say "تم تحديث الكود في $SITE"
     ;;
 
@@ -147,6 +150,29 @@ case "$1" in
 
   status)
     cd "$SITE" && python standby/cf_switch.py status
+    ;;
+
+  configure)
+    ensure_env
+    # ١) الرموز — تُكتب بدون أن تظهر على الشاشة
+    if ! grep -q '^CF_API_TOKEN=.' "$SITE/.env"; then
+      read -r -s -p "  الصق رمز Cloudflare API (iaj-switch) ثم Enter: " T; echo
+      [ -n "$T" ] && echo "CF_API_TOKEN=$T" >> "$SITE/.env"
+    fi
+    if [ ! -s "$HOME/.iaj_tunnel_token" ]; then
+      read -r -s -p "  الصق رمز نفق الهاتف (iaj-standby، يبدأ بـ eyJ) ثم Enter: " T; echo
+      [ -n "$T" ] && printf '%s' "$T" > "$HOME/.iaj_tunnel_token" && chmod 600 "$HOME/.iaj_tunnel_token"
+    fi
+    chmod 600 "$SITE/.env" 2>/dev/null || true
+    # ٢) أزرار جاهزة (تطبيق Termux:Widget من F-Droid يعرضها على الشاشة الرئيسية)
+    mkdir -p "$HOME/.shortcuts"
+    mk() { printf '#!/data/data/com.termux/files/usr/bin/bash\n%s\necho; read -r -p "اضغط Enter للإغلاق" _\n' "$2" > "$HOME/.shortcuts/$1"; chmod +x "$HOME/.shortcuts/$1"; }
+    mk "IAJ 1 - تشغيل الطوارئ"  "bash ~/iaj/standby/phone.sh takeover"
+    mk "IAJ 2 - إنهاء الطوارئ"  "bash ~/iaj/standby/phone.sh handback"
+    mk "IAJ 3 - أين يعمل الموقع" "bash ~/iaj/standby/phone.sh status"
+    mk "IAJ 4 - تحديث الكود"    "bash ~/iaj/standby/phone.sh update-code && bash ~/iaj/standby/phone.sh configure"
+    say "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية"
+    cd "$SITE" && python standby/cf_switch.py status || true
     ;;
 
   *)
