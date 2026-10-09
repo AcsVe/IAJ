@@ -220,6 +220,7 @@ case "$1" in
     mk "IAJ 2 - إرجاع الموقع للسيرفر" "bash ~/iaj/standby/phone.sh server"
     mk "IAJ 3 - أين يعمل الموقع" "bash ~/iaj/standby/phone.sh status"
     mk "IAJ 4 - تحديث الكود"    "bash ~/iaj/standby/phone.sh update-code && bash ~/iaj/standby/phone.sh configure"
+    mk "IAJ 5 - نسخ بيانات الهاتف إلى Drive" "bash ~/iaj/standby/phone.sh backup"
     rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
     say "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية"
     cd "$SITE" && python standby/cf_switch.py status || true
