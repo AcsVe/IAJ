@@ -721,14 +721,16 @@ section#{{ sid }} .timeline-date {
             var over = inner.scrollHeight - room;
             if (over > 6 && room > 30) {
                 sl.classList.add('hc-long');
-                over = inner.scrollHeight - room;   // بعد إضافة الحشوة
+                // مثل شارة الأفلام: النص يصعد حتى يخرج كاملاً من أعلى الصندوق، ثم يأتي النص التالي مباشرة
+                // (بدل أن يتوقف على آخر سطر — الذي قد يكون كلمة أو نقطة فقط)
+                over = inner.scrollHeight;
                 var spd = parseFloat(sl.dataset.roll) || cardSpeed;             // سرعة هذا النص (أو العامة)
                 var rollS = Math.max(1, over / spd);
                 sl.style.setProperty('--roll', (-over) + 'px');
                 sl.style.setProperty('--roll-dur', rollS.toFixed(2) + 's');
                 sl.style.setProperty('--roll-delay', pause + 's');
                 sl.dataset.rollS = rollS; sl.dataset.pauseS = pause;
-                sl.dataset.rollMs = Math.round((pause + rollS + pause) * 1000);   // وقفة + مرور + وقفة
+                sl.dataset.rollMs = Math.round((pause + rollS + 0.2) * 1000);   // وقفة للقراءة + مرور كامل
             } else {
                 sl.dataset.rollMs = 0;
             }
@@ -1203,7 +1205,7 @@ section#timeline .timeline-h-node i { color: var(--gold); }
     background: linear-gradient(160deg, rgba(var(--deep-1,18,36,80),.97) 0%, rgba(var(--deep-2,10,22,50),.95) 55%, rgba(70,55,20,.94) 100%);
     border: 1px solid rgba(197,160,89,.6); box-shadow: 0 26px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.14);
     backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%); pointer-events: none; }
-.tl-pop::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -9px; border: 9px solid transparent; border-top-color: rgba(30,40,60,.96); }
+.tl-pop::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -9px; border: 9px solid transparent; border-top-color: rgba(var(--deep-2,10,22,50),.96); }
 @media (hover: hover) and (pointer: fine) {
     .timeline-h-item:hover .tl-pop, .timeline-h-item:focus-within .tl-pop { opacity: 1; visibility: visible; translate: 0 0; transition: opacity .2s ease, translate .2s ease, visibility 0s; }
 }
@@ -1392,7 +1394,7 @@ section#timeline .timeline-h-node i { color: var(--gold); }
 #fields .flip-card-back {
     justify-content: center; gap: 0; padding: 26px 28px;
     background: radial-gradient(110% 80% at 85% 0%, rgba(197,160,89,.45) 0%, transparent 55%),
-                linear-gradient(160deg, rgba(14,30,68,.97) 0%, rgba(8,18,44,.97) 100%) !important;
+                linear-gradient(160deg, rgba(var(--deep-1,18,36,80),.97) 0%, rgba(var(--deep-2,10,22,50),.95) 55%, rgba(70,55,20,.94) 100%) !important;   /* نفس ألوان بطاقات التحويم */
     border: 1px solid rgba(197,160,89,.75);
 }
 #fields .flip-card-back .fb-title { color: var(--gold, #c5a059) !important; font-weight: 900; font-size: clamp(1.35rem, 2vw, 1.9rem);
@@ -1406,8 +1408,11 @@ section#timeline .timeline-h-node i { color: var(--gold); }
     display: flex; align-items: center; gap: 10px; text-align: right; margin: 0;
     padding: 10px 12px; border-radius: 12px; text-decoration: none;
     font-size: clamp(1rem, 1.25vw, 1.15rem); font-weight: 700; line-height: 1.45; color: #fff !important;
-    background: rgba(255,255,255,.08) !important; border: 1px solid rgba(197,160,89,.45) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    /* المسارات بنفس تصميم بطاقات التحويم: زجاج داكن من لون الهيدر + لمسة ذهبية، ونص أبيض واضح */
+    background: linear-gradient(160deg, rgba(var(--deep-1,18,36,80),.92) 0%, rgba(var(--deep-2,10,22,50),.9) 55%, rgba(70,55,20,.9) 100%) !important;
+    border: 1px solid rgba(197,160,89,.6) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.14);
+    text-shadow: 0 1px 3px rgba(0,0,0,.35);
     transition: background-color .2s, color .2s, transform .2s, border-color .2s;
 }
 #fields .flip-card-back .flip-track:hover, #fields .flip-card-back .flip-track:focus-visible {
@@ -1460,8 +1465,8 @@ section#timeline .timeline-h-node i { color: var(--gold); }
 #fields .flip-gold .flip-card-back .fb-title::after { background: linear-gradient(90deg, transparent, rgb(var(--deep-2,10,22,50)), transparent); }
 #fields .flip-gold .fb-sub { color: rgba(var(--deep-2,10,22,50),.8); }
 #fields .flip-gold .flip-card-back .flip-track {
-    color: #fff !important; background: linear-gradient(135deg, rgba(var(--deep-1,18,36,80),.92), rgba(var(--deep-2,10,22,50),.88)) !important;
-    border: 1px solid rgba(var(--deep-2,10,22,50),.6) !important; box-shadow: 0 6px 16px rgba(var(--deep-2,10,22,50),.25), inset 0 1px 0 rgba(255,255,255,.12);
+    color: #fff !important; background: linear-gradient(160deg, rgba(var(--deep-1,18,36,80),.94) 0%, rgba(var(--deep-2,10,22,50),.92) 55%, rgba(70,55,20,.92) 100%) !important;
+    border: 1px solid rgba(197,160,89,.7) !important; box-shadow: 0 8px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.14);
 }
 #fields .flip-gold .flip-card-back .flip-track:hover, #fields .flip-gold .flip-card-back .flip-track:focus-visible {
     background: #fff !important; color: rgb(var(--deep-2,10,22,50)) !important; border-color: #fff !important;

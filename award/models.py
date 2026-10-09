@@ -874,8 +874,8 @@ class HeroCard(models.Model):
                                                   verbose_name="سرعة مرور النص الطويل (بكسل/ثانية)",
                                                   help_text="العامة لكل النصوص. رقم أصغر = أبطأ. مثال: 12 بطيء — 22 عادي — 40 سريع.")
     roll_pause = models.FloatField(default=2.5, validators=[MinValueValidator(0), MaxValueValidator(20)],
-                                   verbose_name="وقفة قبل بدء المرور وبعد انتهائه (ثوانٍ)",
-                                   help_text="ليقرأ الزائر أول النص قبل أن يتحرك، وآخره قبل الانتقال.")
+                                   verbose_name="وقفة قبل بدء مرور النص الطويل (ثوانٍ)",
+                                   help_text="ليقرأ الزائر أول النص قبل أن يصعد. بعد خروج النص كاملاً يظهر النص التالي مباشرة.")
     show_arrows = models.BooleanField(default=True, verbose_name="إظهار سهمي التنقل")
 
     class Meta:

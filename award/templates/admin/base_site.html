@@ -21,7 +21,11 @@
   .iaj-admin-search input:focus + button { color: #222; }
   @media (max-width: 767px) { .iaj-admin-search { order: 3; flex-basis: 100%; max-width: none; margin: 4px 0 0; } }
   /* اتجاه عربي سليم في كل اللوحة */
-  html[dir="rtl"] body { font-family: 'Cairo', Tahoma, 'Segoe UI', Arial, sans-serif; }
+  /* خط Cairo في كل لوحة التحكم (القوائم، الجداول، الحقول، الأزرار) */
+  :root, html[data-theme] { --font-family-primary: 'Cairo', Tahoma, 'Segoe UI', Arial, sans-serif; --font-family-monospace: Consolas, Menlo, monospace; }
+  html, body, #header, #nav-sidebar, .module, table, th, td, input, select, textarea, button, .button, label, legend, h1, h2, h3, h4, .breadcrumbs, #changelist-filter, .submit-row input, .submit-row a {
+      font-family: var(--font-family-primary) !important; }
+  textarea.vLargeTextField[name="custom_css"] { font-family: var(--font-family-monospace) !important; direction: ltr; }
   html[dir="rtl"] input, html[dir="rtl"] textarea, html[dir="rtl"] select { text-align: right; }
   html[dir="rtl"] input[type="url"], html[dir="rtl"] input[type="email"], html[dir="rtl"] .vURLField { direction: ltr; text-align: left; }
   /* أزرار المعاينة والحفظ */
