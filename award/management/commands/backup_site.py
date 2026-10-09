@@ -1,4 +1,4 @@
-"""
+r"""
 نسخة احتياطية: قاعدة البيانات (pg_dump) + مجلد الملفات media.
 
     python manage.py backup_site              # نسخة الآن
@@ -6,7 +6,9 @@
 
 • القاعدة: backups/db/iaj-YYYY-MM-DD_HHMM.dump  (تُحذف الأقدم تلقائياً)
 • الملفات: backups/media  (نسخة مطابقة تُحدَّث بالملفات الجديدة فقط)
-• يُفضّل وضع BACKUP_DIR في .env على قرص آخر أو فلاشة/مجلد OneDrive
+• نسخة «محمولة»: backups/db/iaj-YYYY-MM-DD_HHMMSS.json.gz — تُسترجع على أي جهاز (حتى الهاتف بدون PostgreSQL)
+• الكود: backups/code/iaj-code.zip — لتشغيل الموقع على جهاز احتياطي بدون GitHub
+• يُفضّل وضع BACKUP_DIR في .env على مجلد Google Drive (مثال: G:\My Drive\IAJ-backups)
 """
 import glob
 import os
@@ -53,30 +55,46 @@ class Command(BaseCommand):
     help = 'نسخة احتياطية للقاعدة والملفات'
 
     def add_arguments(self, parser):
-        parser.add_argument('--keep', type=int, default=14)
+        parser.add_argument('--keep', type=int, default=48, help='عدد النسخ المحفوظة من كل نوع')
+        parser.add_argument('--dir', default='', help='مجلد النسخ (بدلاً من BACKUP_DIR)')
+        parser.add_argument('--tag', default='', help='لاحقة لاسم الملف، مثل phone')
+        parser.add_argument('--no-code', action='store_true')
+        parser.add_argument('--no-media', action='store_true')
 
     def handle(self, *args, **opts):
         db = connections['default'].settings_dict
-        if 'postgresql' not in db['ENGINE']:
-            raise CommandError('النسخ الاحتياطي يعمل مع PostgreSQL فقط')
-        pg_dump = find_pg_tool('pg_dump')
-        if not pg_dump:
-            raise CommandError('لم أجد pg_dump — ضع مسار مجلد bin الخاص بـ PostgreSQL في .env باسم PG_BIN')
-
-        root = os.environ.get('BACKUP_DIR') or os.path.join(settings.BASE_DIR, 'backups')
+        root = opts['dir'] or os.environ.get('BACKUP_DIR') or os.path.join(settings.BASE_DIR, 'backups')
         db_dir = os.path.join(root, 'db')
         os.makedirs(db_dir, exist_ok=True)
+        stamp = f"{datetime.now():%Y-%m-%d_%H%M%S}" + (f"-{opts['tag']}" if opts['tag'] else '')
 
-        out = os.path.join(db_dir, f'iaj-{datetime.now():%Y-%m-%d_%H%M%S}.dump')
-        r = subprocess.run([pg_dump, *pg_args(db), '-Fc', '-f', out, db['NAME']],
-                           env=pg_env(db), capture_output=True, text=True)
-        if r.returncode != 0:
-            raise CommandError('فشل pg_dump:\n' + r.stderr)
-        self.stdout.write(self.style.SUCCESS(f'✓ القاعدة: {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
+        # ١) نسخة PostgreSQL الكاملة (على جهاز السيرفر)
+        if 'postgresql' in db['ENGINE']:
+            pg_dump = find_pg_tool('pg_dump')
+            if not pg_dump:
+                raise CommandError('لم أجد pg_dump — ضع مسار مجلد bin الخاص بـ PostgreSQL في .env باسم PG_BIN')
+            out = os.path.join(db_dir, f'iaj-{stamp}.dump')
+            r = subprocess.run([pg_dump, *pg_args(db), '-Fc', '-f', out, db['NAME']],
+                               env=pg_env(db), capture_output=True, text=True)
+            if r.returncode != 0:
+                raise CommandError('فشل pg_dump:\n' + r.stderr)
+            self.stdout.write(self.style.SUCCESS(f'✓ القاعدة (PostgreSQL): {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
 
-        dumps = sorted(glob.glob(os.path.join(db_dir, 'iaj-*.dump')))
-        for old in dumps[:-opts['keep']] if opts['keep'] > 0 else []:
-            os.remove(old)
+        # ٢) نسخة محمولة (JSON) تعمل على أي جهاز وأي قاعدة — للجهاز الاحتياطي والهاتف
+        out = os.path.join(db_dir, f'iaj-{stamp}.json.gz')
+        self._dump_json(out)
+        self.stdout.write(self.style.SUCCESS(f'✓ القاعدة (محمولة): {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
+
+        for pattern in ('iaj-*.dump', 'iaj-*.json.gz'):
+            files = sorted(glob.glob(os.path.join(db_dir, pattern)))
+            for old in files[:-opts['keep']] if opts['keep'] > 0 else []:
+                os.remove(old)
+
+        # ٣) الكود (بدون الأسرار والبيانات) — ليُشغَّل على جهاز احتياطي أو هاتف بلا حاجة لـ GitHub
+        if not opts['no_code']:
+            self._code_zip(os.path.join(root, 'code'))
+        if opts['no_media']:
+            return
 
         # الملفات: نسخ الجديد والمعدّل فقط
         src, dst = settings.MEDIA_ROOT, os.path.join(root, 'media')
@@ -92,3 +110,35 @@ class Command(BaseCommand):
                         shutil.copy2(s, t)
                         copied += 1
         self.stdout.write(self.style.SUCCESS(f'✓ الملفات: {copied} ملف جديد → {dst}'))
+
+    # ------------------------------------------------------------------
+    def _dump_json(self, out):
+        import gzip
+        from django.core.management import call_command
+        tmp = out + '.part'
+        with gzip.open(tmp, 'wt', encoding='utf-8') as fh:
+            call_command('dumpdata', natural_foreign=True, natural_primary=True, indent=None, stdout=fh,
+                         exclude=['contenttypes', 'auth.permission', 'sessions', 'admin.logentry'])
+        os.replace(tmp, out)
+
+    def _code_zip(self, code_dir):
+        import zipfile
+        os.makedirs(code_dir, exist_ok=True)
+        out = os.path.join(code_dir, 'iaj-code.zip')
+        base = str(settings.BASE_DIR)
+        skip_dirs = {'.git', 'venv', '.venv', 'env', 'media', 'backups', 'staticfiles', 'logs', '__pycache__', 'node_modules', 'Music'}
+        skip_files = {'.env', 'IAJ.env', 'db.sqlite3'}
+        tmp = out + '.part'
+        with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as z:
+            for d, dirs, files in os.walk(base):
+                dirs[:] = [x for x in dirs if x not in skip_dirs and not x.startswith('.')]
+                rel = os.path.relpath(d, base)
+                if rel.split(os.sep)[0] in skip_dirs:
+                    continue
+                for fn in files:
+                    if fn in skip_files or fn.endswith(('.pyc', '.log', '.dump', '.part')):
+                        continue
+                    full = os.path.join(d, fn)
+                    z.write(full, os.path.join('iaj', os.path.relpath(full, base)))
+        os.replace(tmp, out)
+        self.stdout.write(self.style.SUCCESS(f'✓ الكود: {out}'))

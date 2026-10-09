@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 >nul
-title IAJ - Start with Windows + daily backup
+title IAJ - Start with Windows + hourly backup
 cd /d "%~dp0"
 net session >nul 2>nul || (echo [X] Right-click this file and choose "Run as administrator". & pause & exit /b 1)
 call scripts\find_python.bat
@@ -24,7 +24,8 @@ if exist venv\Scripts\python.exe (
 
 schtasks /end /tn "IAJ Website" >nul 2>nul
 schtasks /create /f /tn "IAJ Website" %WHEN% /rl highest /tr "\"%PYFULL%\" \"%SITE%\serve.py\"" || (echo [X] Could not create the startup task & pause & exit /b 1)
-schtasks /create /f /tn "IAJ Daily Backup" /sc daily /st 02:00 %BKRU% /rl highest /tr "\"%PYFULL%\" \"%SITE%\manage.py\" backup_site" >nul || echo [!] Could not create the backup task
+schtasks /delete /f /tn "IAJ Daily Backup" >nul 2>nul
+schtasks /create /f /tn "IAJ Hourly Backup" /sc hourly /mo 1 %BKRU% /rl highest /tr "\"%PYFULL%\" \"%SITE%\manage.py\" backup_site" >nul || echo [!] Could not create the backup task
 
 REM open port 8000 for devices on the same network
 netsh advfirewall firewall delete rule name="IAJ Website" >nul 2>nul
@@ -37,7 +38,7 @@ powercfg /change hibernate-timeout-ac 0 >nul 2>nul
 schtasks /run /tn "IAJ Website" >nul
 echo.
 echo   Done. The website starts automatically with Windows.
-echo   Backup runs every day at 02:00 (folder: backups).
+echo   Backup runs every hour (folder: BACKUP_DIR in .env, or backups).
 echo   Log file: logs\server.log
 echo   Sleep is turned off while the PC is plugged in.
 echo   To stop it: run stop_autostart.bat as administrator.

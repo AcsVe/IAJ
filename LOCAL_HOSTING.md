@@ -80,3 +80,14 @@ EMAIL_HOST_PASSWORD=...
 | Brevo (مجاني 300 رسالة/يوم) | smtp-relay.brevo.com | 587 | بريد حساب Brevo (SMTP login) | SMTP key |
 
 بدون `EMAIL_HOST` تُحفظ الرسائل في `logs\emails` ويُفعَّل حساب المدرسة فوراً دون رسالة تفعيل. كل رسالة تظهر في «سجل رسائل البريد».
+
+## جهاز احتياطي / الهاتف عند انقطاع الإنترنت عن السيرفر
+1. **النسخ إلى Google Drive:** ثبّت Google Drive for desktop، وأضف إلى `.env`:  `BACKUP_DIR=G:\My Drive\IAJ-backups`  ثم شغّل `3_autostart.bat` مرة (النسخ كل ساعة) و`backup_now.bat` للتجربة.
+   كل نسخة فيها: `db\*.dump` (PostgreSQL) + `db\*.json.gz` (محمولة لأي جهاز) + `media` + `code\iaj-code.zip`.
+2. **نفق ثانٍ للهاتف:** في Cloudflare ← Tunnels ← Create a tunnel باسم `iaj-standby`، وضع له العنوان `standby.iajaward.org` → `http://localhost:8000`. احفظ الرمز (token).
+3. **الهاتف (Termux):** `pkg install rclone unzip` ← `rclone config` (اتصال Google Drive باسم gdrive) ←
+   `rclone copy gdrive:IAJ-backups/code ~/iaj-backups/code && unzip -o ~/iaj-backups/code/iaj-code.zip -d ~` ←
+   `bash ~/iaj/standby/phone.sh setup` ← ضع الرمز في `~/.iaj_tunnel_token` ←
+   `bash ~/iaj/standby/phone.sh restore` ← `bash ~/iaj/standby/phone.sh start --public`
+4. **عند الطوارئ:** في Cloudflare انقل العنوان `iajaward.org` من نفق السيرفر إلى نفق `iaj-standby`.
+5. **الرجوع:** على الهاتف `phone.sh backup` ← على السيرفر `restore_backup.bat` (اختر 1) ← أعد `iajaward.org` لنفق السيرفر ← أوقف الهاتف.
