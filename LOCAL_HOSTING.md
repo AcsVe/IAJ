@@ -89,5 +89,9 @@ EMAIL_HOST_PASSWORD=...
    `rclone copy gdrive:IAJ-backups/code ~/iaj-backups/code && unzip -o ~/iaj-backups/code/iaj-code.zip -d ~` ←
    `bash ~/iaj/standby/phone.sh setup` ← ضع الرمز في `~/.iaj_tunnel_token` ←
    `bash ~/iaj/standby/phone.sh restore` ← `bash ~/iaj/standby/phone.sh start --public`
-4. **عند الطوارئ:** في Cloudflare انقل العنوان `iajaward.org` من نفق السيرفر إلى نفق `iaj-standby`.
-5. **الرجوع:** على الهاتف `phone.sh backup` ← على السيرفر `restore_backup.bat` (اختر 1) ← أعد `iajaward.org` لنفق السيرفر ← أوقف الهاتف.
+4. **رمز Cloudflare API** (للتحويل التلقائي): My Profile ← API Tokens ← Create Custom Token بصلاحيات
+   `Zone: Zone: Read` + `Zone: DNS: Edit` (النطاق iajaward.org) + `Account: Cloudflare Tunnel: Edit`،
+   ثم ضع `CF_API_TOKEN=...` في `.env` على السيرفر وفي `~/iaj/.env` على الهاتف.
+5. **عند الطوارئ (على الهاتف):** `bash ~/iaj/standby/phone.sh takeover` ← أحدث بيانات + تشغيل + تحويل iajaward.org للهاتف.
+6. **الرجوع:** الهاتف: Ctrl+C ثم `phone.sh handback` ← السيرفر: `back_to_server.bat` (ينقل البيانات ويعيد iajaward.org).
+   لمعرفة أين يعمل الموقع الآن: `site_where.bat` أو `phone.sh status`.

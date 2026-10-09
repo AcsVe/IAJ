@@ -9,6 +9,11 @@
 #   bash ~/iaj/standby/phone.sh start --public # تشغيل + ربطه بنفق الهاتف في Cloudflare (iaj-standby)
 #   bash ~/iaj/standby/phone.sh backup         # رفع بيانات الهاتف إلى Drive (قبل الرجوع للسيرفر)
 #
+#   ★ للطوارئ (أمر واحد لكل اتجاه):
+#   bash ~/iaj/standby/phone.sh takeover       # أحدث بيانات + تشغيل + تحويل iajaward.org إلى الهاتف
+#   bash ~/iaj/standby/phone.sh handback       # (بعد Ctrl+C) رفع بيانات الهاتف — ثم على السيرفر: back_to_server.bat
+#   bash ~/iaj/standby/phone.sh status         # أين يعمل iajaward.org الآن
+#
 #  الإعدادات (اختياري) في ~/.iaj_standby:
 #     REMOTE=gdrive:IAJ-backups      # اسم الاتصال في rclone + المجلد في Drive
 #  رمز نفق الهاتف «iaj-standby» (نفق ثانٍ غير نفق السيرفر) في الملف: ~/.iaj_tunnel_token
@@ -102,7 +107,49 @@ case "$1" in
     say "تم. على السيرفر: restore_backup.bat ← اختر 1 (نسخة الهاتف)، ثم أعد iajaward.org لنفق السيرفر من لوحة Cloudflare"
     ;;
 
+  takeover)
+    [ -f "$SITE/manage.py" ] || die "الكود غير موجود — شغّل: bash phone.sh update-code"
+    [ -s "$HOME/.iaj_tunnel_token" ] || die "ضع رمز نفق الهاتف في ~/.iaj_tunnel_token أولاً"
+    grep -q '^CF_API_TOKEN=.' "$SITE/.env" 2>/dev/null || die "ضع CF_API_TOKEN=... في $SITE/.env أولاً (رمز API من Cloudflare)"
+    bash "$0" restore
+    cd "$SITE"
+    termux-wake-lock 2>/dev/null || true
+    say "تشغيل نفق الهاتف"
+    cloudflared tunnel --no-autoupdate run --token "$(cat "$HOME/.iaj_tunnel_token")" > "$HOME/cloudflared.log" 2>&1 &
+    CF=$!
+    say "تشغيل الموقع"
+    python serve.py &
+    WEB=$!
+    trap 'kill $WEB $CF 2>/dev/null; termux-wake-unlock 2>/dev/null' EXIT INT TERM
+    for i in $(seq 1 60); do
+      python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/',timeout=2)" 2>/dev/null && break
+      sleep 2
+    done
+    say "تحويل iajaward.org إلى الهاتف"
+    if python standby/cf_switch.py phone; then
+      # تسجيل أن الهاتف هو من يشغّل الموقع الآن (يقرؤه السيرفر عند الرجوع)
+      NOW=$(python -c "from datetime import datetime;from zoneinfo import ZoneInfo;print(datetime.now(ZoneInfo('Asia/Amman')).strftime('%Y-%m-%d_%H%M%S'))")
+      echo "phone $NOW" > "$LOCAL_BK/db/ACTIVE_SITE.txt"
+      rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" || true
+    else
+      say "لم يتم التحويل — الموقع يعمل على الهاتف محلياً فقط. راجع الرسالة أعلاه"
+    fi
+    say "الهاتف يشغّل iajaward.org الآن — اترك Termux مفتوحاً. للإيقاف عند عودة السيرفر: Ctrl+C ثم: bash phone.sh handback"
+    wait $WEB
+    ;;
+
+  handback)
+    bash "$0" backup
+    echo
+    echo "  الخطوة التالية على جهاز السيرفر (بعد عودة الإنترنت إليه): شغّل  back_to_server.bat"
+    echo "  سيأخذ بيانات الهاتف من Drive ويعيد iajaward.org إلى السيرفر تلقائياً."
+    ;;
+
+  status)
+    cd "$SITE" && python standby/cf_switch.py status
+    ;;
+
   *)
-    sed -n '3,16p' "$0"
+    sed -n '3,22p' "$0"
     ;;
 esac

@@ -75,7 +75,7 @@ class Command(BaseCommand):
             self._restore_json(path)
 
         if opts['media']:
-            src = os.path.join(root or os.path.dirname(os.path.dirname(path)), 'media')
+            src = os.path.join(root or os.path.dirname(os.path.dirname(os.path.abspath(path))), 'media')
             self._copy_media(src)
         self.stdout.write(self.style.SUCCESS('✓ تم الاسترجاع — أعد تشغيل الموقع'))
 
