@@ -26,6 +26,7 @@ schtasks /end /tn "IAJ Website" >nul 2>nul
 schtasks /create /f /tn "IAJ Website" %WHEN% /rl highest /tr "\"%PYFULL%\" \"%SITE%\serve.py\"" || (echo [X] Could not create the startup task & pause & exit /b 1)
 schtasks /delete /f /tn "IAJ Daily Backup" >nul 2>nul
 schtasks /create /f /tn "IAJ Hourly Backup" /sc hourly /mo 1 %BKRU% /rl highest /tr "\"%PYFULL%\" \"%SITE%\manage.py\" backup_site" >nul || echo [!] Could not create the backup task
+schtasks /create /f /tn "IAJ Failover Watchdog" /sc minute /mo 5 %BKRU% /rl highest /tr "\"%PYFULL%\" \"%SITE%\standby\cf_switch.py\" auto" >nul || echo [!] Could not create the watchdog task
 
 REM open port 8000 for devices on the same network
 netsh advfirewall firewall delete rule name="IAJ Website" >nul 2>nul

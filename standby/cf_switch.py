@@ -75,7 +75,7 @@ class CF:
 def main():
     load_env()
     cmd = (sys.argv[1] if len(sys.argv) > 1 else 'status').lower()
-    if cmd not in ('status', 'phone', 'server'):
+    if cmd not in ('status', 'phone', 'server', 'auto'):
         print(__doc__)
         return
     token = os.environ.get('CF_API_TOKEN', '').strip()
@@ -120,6 +120,35 @@ def main():
     def status_line(tun):
         st = (tun.get('status') or '').lower()
         return ({'healthy': '🟢 متصل', 'degraded': '🟡 متصل جزئياً', 'inactive': '⚪ متوقف', 'down': '🔴 منقطع'} if not EN else {'healthy': '[OK] connected', 'degraded': '[~] degraded', 'inactive': '[-] stopped', 'down': '[X] down'}).get(st, st)
+
+    if cmd == 'auto':
+        # حارس على السيرفر (كل 5 دقائق): إذا كان الموقع موجّهاً للهاتف والهاتف منقطع والسيرفر متصل
+        # مرتين متتاليتين ← نعيد الموقع للسيرفر تلقائياً (يحمي من توقف الهاتف أو إغلاق Termux)
+        state = os.path.join(HERE, '..', 'logs', 'failover_watchdog.txt')
+        os.makedirs(os.path.dirname(state), exist_ok=True)
+        recs = records()
+        on_phone = any(r['content'].startswith(t_standby['id']) for r in recs.values())
+        sb_up = (t_standby.get('status') or '').lower() in ('healthy', 'degraded')
+        main_up = (t_main.get('status') or '').lower() in ('healthy', 'degraded')
+        stamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        if not on_phone or sb_up or not main_up:
+            open(state, 'w').write('0')
+            print(f'{stamp} OK (on_phone={on_phone}, phone_up={sb_up}, server_up={main_up})')
+            return
+        n = int(open(state).read().strip() or 0) + 1 if os.path.isfile(state) else 1
+        open(state, 'w').write(str(n))
+        if n < 2:
+            print(f'{stamp} الموقع على الهاتف والهاتف منقطع — سأتحقق مرة أخرى بعد 5 دقائق')
+            return
+        content = f"{t_main['id']}.cfargotunnel.com"
+        for h, rec in recs.items():
+            if rec['content'] != content:
+                cf.call('PATCH', f"/zones/{zone}/dns_records/{rec['id']}", json={'content': content, 'proxied': True})
+        open(state, 'w').write('0')
+        with open(os.path.join(HERE, '..', 'logs', 'failover.log'), 'a', encoding='utf-8') as fh:
+            fh.write(f'{stamp} الهاتف منقطع — أُعيد iajaward.org إلى السيرفر تلقائياً\n')
+        print(f'{stamp} ✅ الهاتف منقطع — أُعيد iajaward.org إلى السيرفر تلقائياً')
+        return
 
     if cmd == 'status':
         print(t(f'\nنفق السيرفر  «{main_name}»: {status_line(t_main)}', f'\nServer tunnel  {main_name}: {status_line(t_main)}'))
