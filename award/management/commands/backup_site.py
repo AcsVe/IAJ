@@ -52,6 +52,12 @@ def pg_args(db):
             '-U', str(db.get('USER') or 'postgres')]
 
 
+
+def _t(ar, en):
+    """رسائل بالإنجليزية على الهاتف إن اختار المستخدم ذلك (Termux لا يعرض العربية جيداً)"""
+    return en if os.environ.get('IAJ_LANG') == 'en' else ar
+
+
 class Command(BaseCommand):
     help = 'نسخة احتياطية للقاعدة والملفات'
 
@@ -80,12 +86,12 @@ class Command(BaseCommand):
                                env=pg_env(db), capture_output=True, text=True)
             if r.returncode != 0:
                 raise CommandError('فشل pg_dump:\n' + r.stderr)
-            self.stdout.write(self.style.SUCCESS(f'✓ القاعدة (PostgreSQL): {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
+            self.stdout.write(self.style.SUCCESS(_t('✓ القاعدة (PostgreSQL)', '✓ Database (PostgreSQL)') + f': {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
 
         # ٢) نسخة محمولة (JSON) تعمل على أي جهاز وأي قاعدة — للجهاز الاحتياطي والهاتف
         out = os.path.join(db_dir, f'iaj-{stamp}.json.gz')
         self._dump_json(out)
-        self.stdout.write(self.style.SUCCESS(f'✓ القاعدة (محمولة): {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
+        self.stdout.write(self.style.SUCCESS(_t('✓ القاعدة (محمولة)', '✓ Database (portable)') + f': {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
 
         for pattern in ('iaj-*.dump', 'iaj-*.json.gz'):
             files = sorted(glob.glob(os.path.join(db_dir, pattern)))
@@ -111,7 +117,7 @@ class Command(BaseCommand):
                             os.path.getsize(s) != os.path.getsize(t):
                         shutil.copy2(s, t)
                         copied += 1
-        self.stdout.write(self.style.SUCCESS(f'✓ الملفات: {copied} ملف جديد → {dst}'))
+        self.stdout.write(self.style.SUCCESS(_t(f'✓ الملفات: {copied} ملف جديد → {dst}', f'✓ Files: {copied} new -> {dst}')))
 
     # ------------------------------------------------------------------
     def _dump_json(self, out):
@@ -149,4 +155,4 @@ class Command(BaseCommand):
                     else:
                         z.write(full, arc)
         os.replace(tmp, out)
-        self.stdout.write(self.style.SUCCESS(f'✓ الكود: {out}'))
+        self.stdout.write(self.style.SUCCESS(_t('✓ الكود', '✓ Code') + f': {out}'))

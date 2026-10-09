@@ -43,6 +43,13 @@ def load_env():
                     os.environ[k] = v
 
 
+EN = os.environ.get('IAJ_LANG', os.environ.get('LANG_UI', '')) == 'en'
+
+
+def t(ar, en):
+    return en if EN else ar
+
+
 def die(msg):
     print(f'\n✖ {msg}')
     sys.exit(1)
@@ -58,10 +65,10 @@ class CF:
         try:
             data = r.json()
         except ValueError:
-            die(f'رد غير متوقع من Cloudflare ({r.status_code})')
+            die(t(f'رد غير متوقع من Cloudflare ({r.status_code})', f'Unexpected reply from Cloudflare ({r.status_code})'))
         if not data.get('success'):
             errs = '; '.join(e.get('message', '') for e in data.get('errors', []))
-            die(f'Cloudflare رفض الطلب: {errs or r.status_code}\n  (تأكد من صلاحيات رمز API)')
+            die(t(f'Cloudflare رفض الطلب: {errs or r.status_code}\n  (تأكد من صلاحيات رمز API)', f'Cloudflare refused: {errs or r.status_code}\n  (check the API token permissions)'))
         return data.get('result')
 
 
@@ -73,7 +80,7 @@ def main():
         return
     token = os.environ.get('CF_API_TOKEN', '').strip()
     if not token:
-        die('لا يوجد CF_API_TOKEN في ملف .env — أنشئ رمز API من Cloudflare وضعه فيه')
+        die(t('لا يوجد CF_API_TOKEN في ملف .env — أنشئ رمز API من Cloudflare وضعه فيه', 'No CF_API_TOKEN in .env - create a Cloudflare API token and add it'))
     zone_name = os.environ.get('CF_ZONE', 'iajaward.org')
     main_name = os.environ.get('CF_MAIN_TUNNEL', 'iajaward')
     standby_name = os.environ.get('CF_STANDBY_TUNNEL', 'iaj-standby')
@@ -81,21 +88,21 @@ def main():
 
     zones = cf.call('GET', '/zones', params={'name': zone_name})
     if not zones:
-        die(f'لم أجد النطاق {zone_name} — هل الرمز يملك صلاحية Zone:Read عليه؟')
+        die(t(f'لم أجد النطاق {zone_name} — هل الرمز يملك صلاحية Zone:Read عليه؟', f'Zone {zone_name} not found - does the token have Zone:Read?'))
     zone, acc = zones[0]['id'], zones[0]['account']['id']
 
     def tunnel(name):
         res = cf.call('GET', f'/accounts/{acc}/cfd_tunnel', params={'name': name, 'is_deleted': 'false'})
         if not res:
-            die(f'لم أجد النفق «{name}» في Cloudflare')
+            die(t(f'لم أجد النفق «{name}» في Cloudflare', f'Tunnel "{name}" not found in Cloudflare'))
         return res[0]
 
     t_main, t_standby = tunnel(main_name), tunnel(standby_name)
-    by_target = {f"{t_main['id']}.cfargotunnel.com": f'السيرفر ({main_name})',
-                 f"{t_standby['id']}.cfargotunnel.com": f'الهاتف ({standby_name})'}
+    by_target = {f"{t_main['id']}.cfargotunnel.com": t(f'السيرفر ({main_name})', f'SERVER ({main_name})'),
+                 f"{t_standby['id']}.cfargotunnel.com": t(f'الهاتف ({standby_name})', f'PHONE ({standby_name})')}
 
-    def ingress(t):
-        res = cf.call('GET', f"/accounts/{acc}/cfd_tunnel/{t['id']}/configurations") or {}
+    def ingress(tun):
+        res = cf.call('GET', f"/accounts/{acc}/cfd_tunnel/{tun['id']}/configurations") or {}
         return (res.get('config') or {}).get('ingress') or []
 
     # الأسماء العامة للموقع = أسماء نفق السيرفر (مثل iajaward.org و www.iajaward.org)
@@ -110,19 +117,19 @@ def main():
                 out[h] = rec[0]
         return out
 
-    def status_line(t):
-        st = (t.get('status') or '').lower()
-        return {'healthy': '🟢 متصل', 'degraded': '🟡 متصل جزئياً', 'inactive': '⚪ متوقف', 'down': '🔴 منقطع'}.get(st, st)
+    def status_line(tun):
+        st = (tun.get('status') or '').lower()
+        return ({'healthy': '🟢 متصل', 'degraded': '🟡 متصل جزئياً', 'inactive': '⚪ متوقف', 'down': '🔴 منقطع'} if not EN else {'healthy': '[OK] connected', 'degraded': '[~] degraded', 'inactive': '[-] stopped', 'down': '[X] down'}).get(st, st)
 
     if cmd == 'status':
-        print(f'\nنفق السيرفر  «{main_name}»: {status_line(t_main)}')
-        print(f'نفق الهاتف   «{standby_name}»: {status_line(t_standby)}\n')
+        print(t(f'\nنفق السيرفر  «{main_name}»: {status_line(t_main)}', f'\nServer tunnel  {main_name}: {status_line(t_main)}'))
+        print(t(f'نفق الهاتف   «{standby_name}»: {status_line(t_standby)}\n', f'Phone tunnel   {standby_name}: {status_line(t_standby)}\n'))
         for h, rec in records().items():
-            print(f'  {h}  ←  {by_target.get(rec["content"], rec["content"])}')
+            print(f'  {h}  {t("←", "->")}  {by_target.get(rec["content"], rec["content"])}')
         return
 
     target = t_standby if cmd == 'phone' else t_main
-    who = 'الهاتف' if cmd == 'phone' else 'السيرفر'
+    who = (t('الهاتف', 'the PHONE') if cmd == 'phone' else t('السيرفر', 'the SERVER'))
 
     # ١) النفق المستهدف يجب أن يعرف أسماء الموقع (يُضاف مرة واحدة لنفق الهاتف)
     rules = ingress(target)
@@ -136,31 +143,31 @@ def main():
         cfg = res.get('config') or {}
         cfg['ingress'] = named + catch_all[-1:]
         cf.call('PUT', f"/accounts/{acc}/cfd_tunnel/{target['id']}/configurations", json={'config': cfg})
-        print(f'✓ أُضيفت الأسماء {", ".join(missing)} إلى نفق {who}')
+        print(t(f'✓ أُضيفت الأسماء {", ".join(missing)} إلى نفق {who}', f'✓ Added {", ".join(missing)} to the tunnel of {who}'))
 
     # ٢) التأكد أن النفق المستهدف متصل (ننتظر حتى 60 ثانية)
     for i in range(12):
-        t = cf.call('GET', f"/accounts/{acc}/cfd_tunnel/{target['id']}")
-        if (t.get('status') or '').lower() in ('healthy', 'degraded'):
+        tn = cf.call('GET', f"/accounts/{acc}/cfd_tunnel/{target['id']}")
+        if (tn.get('status') or '').lower() in ('healthy', 'degraded'):
             break
         if i == 0:
-            print(f'… انتظار اتصال نفق {who}')
+            print(t(f'… انتظار اتصال نفق {who}', f'... waiting for the tunnel of {who}'))
         time.sleep(5)
     else:
-        die(f'نفق {who} غير متصل — شغّل الموقع عليه أولاً (على الهاتف: phone.sh takeover)')
+        die(t(f'نفق {who} غير متصل — شغّل الموقع عليه أولاً (على الهاتف: phone.sh takeover)', f'The tunnel of {who} is not connected - start the site there first'))
 
     # ٣) توجيه DNS للنفق المستهدف
     content = f"{target['id']}.cfargotunnel.com"
     recs = records()
     if not recs:
-        die('لم أجد سجلات DNS للموقع (CNAME)')
+        die(t('لم أجد سجلات DNS للموقع (CNAME)', 'No DNS (CNAME) records found for the site'))
     for h, rec in recs.items():
         if rec['content'] == content:
-            print(f'  {h} يشير إلى {who} أصلاً')
+            print(t(f'  {h} يشير إلى {who} أصلاً', f'  {h} already points to {who}'))
             continue
         cf.call('PATCH', f"/zones/{zone}/dns_records/{rec['id']}", json={'content': content, 'proxied': True})
-        print(f'✓ {h}  ←  {who}')
-    print(f'\n✅ الموقع يعمل الآن من {who} (خلال دقيقة على الأكثر).')
+        print(t(f'✓ {h}  ←  {who}', f'✓ {h}  ->  {who}'))
+    print(t(f'\n✅ الموقع يعمل الآن من {who} (خلال دقيقة على الأكثر).', f'\n✅ The site now runs from {who} (within a minute).'))
 
 
 if __name__ == '__main__':

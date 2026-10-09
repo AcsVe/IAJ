@@ -40,6 +40,12 @@ def newest_backup(root, allow_dump=True, tag=''):
     return max(files, key=key) if files else None
 
 
+
+def _t(ar, en):
+    """رسائل بالإنجليزية على الهاتف إن اختار المستخدم ذلك (Termux لا يعرض العربية جيداً)"""
+    return en if os.environ.get('IAJ_LANG') == 'en' else ar
+
+
 class Command(BaseCommand):
     help = 'استرجاع نسخة احتياطية للقاعدة (وملفات media اختيارياً)'
 
@@ -60,10 +66,10 @@ class Command(BaseCommand):
         if root:
             path = newest_backup(root, allow_dump=is_pg, tag=opts['tag'])
             if not path:
-                raise CommandError(f'لا توجد نسخ في: {root}')
+                raise CommandError(_t(f'لا توجد نسخ في: {root}', f'No backups in: {root}'))
         if not path or not os.path.isfile(path):
             raise CommandError('الملف غير موجود')
-        self.stdout.write(f'النسخة: {path}')
+        self.stdout.write(_t('النسخة', 'Backup') + f': {path}')
         if not opts['yes']:
             raise CommandError('سيتم استبدال كل البيانات الحالية — أعد التشغيل مع --yes للتأكيد')
 
@@ -77,7 +83,7 @@ class Command(BaseCommand):
         if opts['media']:
             src = os.path.join(root or os.path.dirname(os.path.dirname(os.path.abspath(path))), 'media')
             self._copy_media(src)
-        self.stdout.write(self.style.SUCCESS('✓ تم الاسترجاع — أعد تشغيل الموقع'))
+        self.stdout.write(self.style.SUCCESS(_t('✓ تم الاسترجاع — أعد تشغيل الموقع', '✓ Restored - restart the website')))
 
     def _restore_pg(self, db, path):
         tool = find_pg_tool('pg_restore')
@@ -98,7 +104,7 @@ class Command(BaseCommand):
 
     def _copy_media(self, src):
         if not os.path.isdir(src):
-            self.stdout.write(self.style.WARNING(f'لا يوجد مجلد ملفات في: {src}'))
+            self.stdout.write(self.style.WARNING(_t(f'لا يوجد مجلد ملفات في: {src}', f'No media folder in: {src}')))
             return
         dst, n = settings.MEDIA_ROOT, 0
         for d, _, files in os.walk(src):
@@ -109,4 +115,4 @@ class Command(BaseCommand):
                 if not os.path.exists(t) or os.path.getsize(s) != os.path.getsize(t):
                     shutil.copy2(s, t)
                     n += 1
-        self.stdout.write(self.style.SUCCESS(f'✓ الملفات: {n} ملف → {dst}'))
+        self.stdout.write(self.style.SUCCESS(_t(f'✓ الملفات: {n} ملف → {dst}', f'✓ Files: {n} -> {dst}')))
