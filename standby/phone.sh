@@ -16,6 +16,9 @@
 #   bash ~/iaj/standby/phone.sh status         # أين يعمل iajaward.org الآن
 #
 #   bash ~/iaj/standby/phone.sh configure      # مرة واحدة: الرموز + أزرار على الشاشة الرئيسية (Termux:Widget)
+#   bash ~/iaj/standby/phone.sh check          # فحص سريع: هل يفتح iajaward.org + آخر نسخة احتياطية
+#   bash ~/iaj/standby/phone.sh monitor        # تشغيل/إيقاف مراقبة الموقع (إشعار إذا توقف) — يحتاج Termux:API
+#   bash ~/iaj/standby/phone.sh try            # تجربة الموقع على الهاتف فقط (بدون تحويل iajaward.org)
 #
 #  الإعدادات (اختياري) في ~/.iaj_standby:
 #     REMOTE=gdrive:IAJ-backups      # اسم الاتصال في rclone + المجلد في Drive
@@ -49,6 +52,35 @@ THREADS=4
 EOF
     say "أُنشئ ملف الإعدادات $SITE/.env (يمكنك نسخ إعدادات البريد من السيرفر إليه لاحقاً)"
   fi
+}
+
+
+site_ok() {  # يطبع: رمز الاستجابة وزمنها — 000 إذا لم يفتح
+  python - "$1" <<'PY'
+import sys, time, urllib.request, ssl
+url = sys.argv[1]
+t = time.time()
+try:
+    r = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'IAJ-monitor'}), timeout=20)
+    print(r.status, round(time.time() - t, 1))
+except urllib.error.HTTPError as e:
+    print(e.code, round(time.time() - t, 1))
+except Exception:
+    print('000', round(time.time() - t, 1))
+PY
+}
+
+net_ok() { python -c "import urllib.request;urllib.request.urlopen('https://www.google.com/generate_204',timeout=10)" 2>/dev/null; }
+
+last_backup() {  # عمر آخر نسخة من الكمبيوتر في Drive (بالدقائق)
+  rclone lsl "$REMOTE/db" --include "iaj-*.json.gz" --exclude "*-phone.json.gz" 2>/dev/null | sort -k2,3 | tail -1 | \
+    python -c "
+import sys, datetime
+line = sys.stdin.read().split()
+if len(line) < 4: print('?'); sys.exit()
+ts = datetime.datetime.fromisoformat((line[1] + 'T' + line[2])[:26])
+age = (datetime.datetime.now() - ts).total_seconds() / 60
+print(int(age), line[3])"
 }
 
 case "$1" in
@@ -221,12 +253,87 @@ case "$1" in
     mk "IAJ 3 - أين يعمل الموقع" "bash ~/iaj/standby/phone.sh status"
     mk "IAJ 4 - تحديث الكود"    "bash ~/iaj/standby/phone.sh update-code && bash ~/iaj/standby/phone.sh configure"
     mk "IAJ 5 - نسخ بيانات الهاتف إلى Drive" "bash ~/iaj/standby/phone.sh backup"
+    mk "IAJ 6 - فحص سريع للموقع" "bash ~/iaj/standby/phone.sh check"
+    mk "IAJ 7 - المراقبة (تشغيل أو إيقاف)" "bash ~/iaj/standby/phone.sh monitor"
+    mk "IAJ 8 - تجربة على الهاتف فقط" "bash ~/iaj/standby/phone.sh try"
     rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
     say "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية"
     cd "$SITE" && python standby/cf_switch.py status || true
     ;;
 
+  check)
+    echo
+    if ! net_ok; then die "الهاتف نفسه بلا إنترنت — لا يمكن الفحص"; fi
+    read -r CODE SECS <<< "$(site_ok https://iajaward.org/)"
+    if [ "$CODE" = "200" ]; then echo "  ✅ iajaward.org يعمل (${SECS} ثانية)"; else echo "  ❌ iajaward.org لا يعمل (الرمز: $CODE)"; fi
+    read -r AGE NAME <<< "$(last_backup)"
+    if [ "$AGE" = "?" ] || [ -z "$AGE" ]; then echo "  ⚠ لم أجد نسخاً احتياطية في Drive"
+    elif [ "$AGE" -le 90 ]; then echo "  ✅ آخر نسخة من الكمبيوتر قبل $AGE دقيقة"
+    else echo "  ⚠ آخر نسخة من الكمبيوتر قبل $AGE دقيقة — قد يكون الكمبيوتر بلا إنترنت أو مطفأ"; fi
+    echo
+    cd "$SITE" && python standby/cf_switch.py status 2>/dev/null | grep -v Warning || true
+    ;;
+
+  monitor)
+    PIDF="$HOME/.iaj_monitor.pid"
+    if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; then
+      kill "$(cat "$PIDF")" 2>/dev/null; rm -f "$PIDF"
+      termux-notification-remove iaj-mon 2>/dev/null || true
+      say "أُوقفت مراقبة الموقع"
+      termux-wake-unlock 2>/dev/null || true
+      exit 0
+    fi
+    command -v termux-notification >/dev/null || pkg install -y termux-api >/dev/null 2>&1 || true
+    command -v termux-notification >/dev/null || die "ثبّت تطبيق Termux:API من F-Droid ثم: pkg install termux-api"
+    termux-wake-lock 2>/dev/null || true
+    nohup bash "$0" monitor-loop > "$HOME/iaj-monitor.log" 2>&1 &
+    echo $! > "$PIDF"
+    termux-notification --id iaj-mon --ongoing --title "مراقبة موقع الجائزة تعمل" \
+      --content "فحص iajaward.org كل 5 دقائق — اضغط زر المراقبة مرة أخرى للإيقاف" --priority low 2>/dev/null || true
+    say "بدأت المراقبة — ستصلك إشعار إذا توقف iajaward.org. للإيقاف: اضغط نفس الزر مرة أخرى"
+    ;;
+
+  monitor-loop)
+    set +e   # المراقبة لا تتوقف بسبب خطأ عابر
+    FAILS=0; DOWN=0
+    while true; do
+      if net_ok; then
+        read -r CODE SECS <<< "$(site_ok https://iajaward.org/)"
+        if [ "$CODE" = "200" ]; then
+          if [ $DOWN = 1 ]; then
+            termux-notification --id iaj-alert --title "✅ موقع الجائزة عاد للعمل" --content "iajaward.org يفتح الآن ($(date +%H:%M))" 2>/dev/null || true
+          fi
+          FAILS=0; DOWN=0
+        else
+          FAILS=$((FAILS+1))
+          if [ $FAILS -ge 2 ] && [ $DOWN = 0 ]; then   # فشل مرتين متتاليتين = توقف حقيقي
+            DOWN=1
+            read -r AGE NAME <<< "$(last_backup)"
+            termux-notification --id iaj-alert --priority max --vibrate 500,300,500 --sound \
+              --title "⚠ موقع الجائزة متوقف" \
+              --content "iajaward.org لا يفتح (الرمز $CODE). آخر نسخة من الكمبيوتر قبل ${AGE:-?} دقيقة. إن كان الكمبيوتر بلا إنترنت: اضغط IAJ 1" 2>/dev/null || true
+          fi
+        fi
+      fi
+      sleep 300
+    done
+    ;;
+
+  try)
+    [ -f "$SITE/manage.py" ] || die "الكود غير موجود — اضغط IAJ 4"
+    if pgrep -x cloudflared >/dev/null; then die "الطوارئ تعمل الآن على الهاتف — لا يمكن التجربة في نفس الوقت"; fi
+    pkill -f "python serve.py" 2>/dev/null || true
+    ensure_env
+    cd "$SITE"
+    say "تجربة على الهاتف فقط — iajaward.org لا يتأثر. للإيقاف: Ctrl+C"
+    ( for i in $(seq 1 40); do
+        python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/',timeout=2)" 2>/dev/null && { termux-open-url http://127.0.0.1:8000/ 2>/dev/null; break; }
+        sleep 2
+      done ) &
+    python serve.py
+    ;;
+
   *)
-    sed -n '3,22p' "$0"
+    sed -n '3,30p' "$0"
     ;;
 esac
