@@ -11,7 +11,8 @@
 #
 #   ★ للطوارئ (أمر واحد لكل اتجاه):
 #   bash ~/iaj/standby/phone.sh takeover       # أحدث بيانات + تشغيل + تحويل iajaward.org إلى الهاتف
-#   bash ~/iaj/standby/phone.sh handback       # (بعد Ctrl+C) رفع بيانات الهاتف — ثم على السيرفر: back_to_server.bat
+#   bash ~/iaj/standby/phone.sh handback       # (احتياط) رفع بيانات الهاتف يدوياً — ثم على السيرفر: back_to_server.bat
+#   bash ~/iaj/standby/phone.sh server         # إعادة iajaward.org للسيرفر فوراً (بدون نقل بيانات)
 #   bash ~/iaj/standby/phone.sh status         # أين يعمل iajaward.org الآن
 #
 #   bash ~/iaj/standby/phone.sh configure      # مرة واحدة: الرموز + أزرار على الشاشة الرئيسية (Termux:Widget)
@@ -114,31 +115,68 @@ case "$1" in
     [ -f "$SITE/manage.py" ] || die "الكود غير موجود — شغّل: bash phone.sh update-code"
     [ -s "$HOME/.iaj_tunnel_token" ] || die "ضع رمز نفق الهاتف في ~/.iaj_tunnel_token أولاً"
     grep -q '^CF_API_TOKEN=.' "$SITE/.env" 2>/dev/null || die "ضع CF_API_TOKEN=... في $SITE/.env أولاً (رمز API من Cloudflare)"
+    # إيقاف أي تشغيل قديم على الهاتف (حتى لا يتعارض مع المنفذ 8000)
+    pkill -f "python serve.py" 2>/dev/null || true
+    pkill -x cloudflared 2>/dev/null || true
+    sleep 1
     bash "$0" restore
     cd "$SITE"
     termux-wake-lock 2>/dev/null || true
+    say "تشغيل الموقع"
+    python serve.py > "$HOME/iaj-serve.log" 2>&1 &
+    WEB=$!
+    OK=0
+    for i in $(seq 1 60); do
+      kill -0 $WEB 2>/dev/null || break
+      python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/',timeout=2)" 2>/dev/null && { OK=1; break; }
+      sleep 2
+    done
+    if [ $OK != 1 ]; then
+      kill $WEB 2>/dev/null; tail -20 "$HOME/iaj-serve.log"
+      die "الموقع لم يعمل على الهاتف — لم يُحوَّل شيء، iajaward.org ما زال على السيرفر"
+    fi
     say "تشغيل نفق الهاتف"
     cloudflared tunnel --no-autoupdate run --token "$(cat "$HOME/.iaj_tunnel_token")" > "$HOME/cloudflared.log" 2>&1 &
     CF=$!
-    say "تشغيل الموقع"
-    python serve.py &
-    WEB=$!
-    trap 'kill $WEB $CF 2>/dev/null; termux-wake-unlock 2>/dev/null' EXIT INT TERM
-    for i in $(seq 1 60); do
-      python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/',timeout=2)" 2>/dev/null && break
-      sleep 2
-    done
+    FP0=$(python manage.py standby_fingerprint 2>/dev/null | tail -1)
+
+    DONE=0
+    finish() {
+      [ $DONE = 1 ] && return; DONE=1
+      kill $WEB $CF 2>/dev/null
+      say "إيقاف الموقع على الهاتف"
+      FP1=$(python manage.py standby_fingerprint 2>/dev/null | tail -1)
+      if [ "$FP0" = "$FP1" ]; then
+        # لم يُسجَّل شيء على الهاتف ← نعيد الموقع للسيرفر فوراً بلا نقل بيانات
+        if python standby/cf_switch.py server; then
+          echo "server $(date +%F_%H%M%S)" > "$LOCAL_BK/db/ACTIVE_SITE.txt"
+          rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" 2>/dev/null || true
+        else
+          say "السيرفر غير متصل — iajaward.org سيبقى متوقفاً حتى يعود السيرفر أو تعيد تشغيل الطوارئ"
+        fi
+      else
+        # سُجّلت بيانات على الهاتف ← نرفعها، والسيرفر يأخذها بـ back_to_server.bat
+        bash "$0" backup || true
+        echo
+        echo "  ⚠ الآن على السيرفر شغّل:  back_to_server.bat  (ينقل بيانات الهاتف ويعيد الموقع)"
+      fi
+      termux-wake-unlock 2>/dev/null || true
+    }
+    trap finish EXIT INT TERM
+
     say "تحويل iajaward.org إلى الهاتف"
     if python standby/cf_switch.py phone; then
-      # تسجيل أن الهاتف هو من يشغّل الموقع الآن (يقرؤه السيرفر عند الرجوع)
       NOW=$(python -c "from datetime import datetime;from zoneinfo import ZoneInfo;print(datetime.now(ZoneInfo('Asia/Amman')).strftime('%Y-%m-%d_%H%M%S'))")
       echo "phone $NOW" > "$LOCAL_BK/db/ACTIVE_SITE.txt"
-      rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" || true
+      rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" 2>/dev/null || true
     else
-      say "لم يتم التحويل — الموقع يعمل على الهاتف محلياً فقط. راجع الرسالة أعلاه"
+      die "لم يتم التحويل — iajaward.org ما زال على السيرفر"
     fi
-    say "الهاتف يشغّل iajaward.org الآن — اترك Termux مفتوحاً. للإيقاف عند عودة السيرفر: Ctrl+C ثم: bash phone.sh handback"
-    wait $WEB
+    say "✅ الهاتف يشغّل iajaward.org الآن — لا تغلق هذه النافذة. للإنهاء: Ctrl+C (يُعاد الموقع للسيرفر تلقائياً)"
+    # مراقبة: إذا توقف الموقع أو النفق على الهاتف لأي سبب ← finish يعيد الموقع للسيرفر
+    while kill -0 $WEB 2>/dev/null && kill -0 $CF 2>/dev/null; do sleep 5; done
+    say "توقف الموقع أو النفق على الهاتف"
+    exit 0
     ;;
 
   handback)
@@ -150,6 +188,17 @@ case "$1" in
 
   status)
     cd "$SITE" && python standby/cf_switch.py status
+    ;;
+
+  server)
+    echo
+    echo "  إعادة iajaward.org إلى السيرفر فوراً، بدون نقل أي بيانات من الهاتف."
+    echo "  (إن كان الهاتف يشغّل الموقع وسُجّلت عليه بيانات: أوقفه بـ Ctrl+C في نافذته بدل هذا الزر)"
+    read -r -p "  اكتب YES للمتابعة: " OK
+    [ "$OK" = "YES" ] || die "تم الإلغاء"
+    cd "$SITE" && python standby/cf_switch.py server && \
+      echo "server $(date +%F_%H%M%S)" > "$LOCAL_BK/db/ACTIVE_SITE.txt" && \
+      rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" 2>/dev/null || true
     ;;
 
   configure)
@@ -168,9 +217,10 @@ case "$1" in
     mkdir -p "$HOME/.shortcuts"
     mk() { printf '#!/data/data/com.termux/files/usr/bin/bash\n%s\necho; read -r -p "اضغط Enter للإغلاق" _\n' "$2" > "$HOME/.shortcuts/$1"; chmod +x "$HOME/.shortcuts/$1"; }
     mk "IAJ 1 - تشغيل الطوارئ"  "bash ~/iaj/standby/phone.sh takeover"
-    mk "IAJ 2 - إنهاء الطوارئ"  "bash ~/iaj/standby/phone.sh handback"
+    mk "IAJ 2 - إرجاع الموقع للسيرفر" "bash ~/iaj/standby/phone.sh server"
     mk "IAJ 3 - أين يعمل الموقع" "bash ~/iaj/standby/phone.sh status"
     mk "IAJ 4 - تحديث الكود"    "bash ~/iaj/standby/phone.sh update-code && bash ~/iaj/standby/phone.sh configure"
+    rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
     say "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية"
     cd "$SITE" && python standby/cf_switch.py status || true
     ;;
