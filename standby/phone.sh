@@ -12,6 +12,7 @@
 #   ★ للطوارئ (أمر واحد لكل اتجاه):
 #   bash ~/iaj/standby/phone.sh takeover       # أحدث بيانات + تشغيل + تحويل iajaward.org إلى الهاتف
 #   bash ~/iaj/standby/phone.sh handback       # (احتياط) رفع بيانات الهاتف يدوياً — ثم على السيرفر: back_to_server.bat
+#   bash ~/iaj/standby/phone.sh stop           # إنهاء الطوارئ (مثل Ctrl+C في نافذتها): إرجاع للسيرفر أو رفع البيانات
 #   bash ~/iaj/standby/phone.sh server         # إعادة iajaward.org للسيرفر فوراً (بدون نقل بيانات)
 #   bash ~/iaj/standby/phone.sh status         # أين يعمل iajaward.org الآن
 #
@@ -278,6 +279,7 @@ case "$1" in
     mkdir -p "$HOME/.shortcuts"
     mk() { printf '#!/data/data/com.termux/files/usr/bin/bash\n%s\necho; read -r -p "Enter ↵" _\n' "$2" > "$HOME/.shortcuts/$1"; chmod +x "$HOME/.shortcuts/$1"; }
     mk "IAJ 1 - تشغيل الطوارئ"  "bash ~/iaj/standby/phone.sh takeover"
+    mk "IAJ 1 - إنهاء الطوارئ" "bash ~/iaj/standby/phone.sh stop"
     mk "IAJ 2 - إرجاع الموقع للسيرفر" "bash ~/iaj/standby/phone.sh server"
     mk "IAJ 3 - أين يعمل الموقع" "bash ~/iaj/standby/phone.sh status"
     mk "IAJ 4 - تحديث الكود"    "bash ~/iaj/standby/phone.sh update-code && bash ~/iaj/standby/phone.sh configure"
@@ -290,6 +292,20 @@ case "$1" in
     rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
     say "$(T "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية" "Done. Buttons are ready in ~/.shortcuts - install Termux:Widget from F-Droid and add the widget to the home screen")"
     cd "$SITE" && python standby/cf_switch.py status || true
+    ;;
+
+  stop)
+    # إنهاء الطوارئ من زر: يرسل Ctrl+C لنافذة التشغيل، فتُعاد الأمور تلقائياً (إرجاع للسيرفر أو رفع البيانات)
+    PID=$(pgrep -f "phone.sh takeover" | grep -v "^$$\$" | head -1)
+    if [ -z "$PID" ]; then
+      say "$(T "الطوارئ ليست قيد التشغيل على هذا الهاتف" "Emergency mode is not running on this phone")"
+      cd "$SITE" && python standby/cf_switch.py status 2>/dev/null | grep -v Warning || true
+      exit 0
+    fi
+    say "$(T "إنهاء الطوارئ… (قد يستغرق دقيقة)" "Stopping emergency mode... (may take a minute)")"
+    kill -INT "$PID" 2>/dev/null || true
+    for i in $(seq 1 45); do kill -0 "$PID" 2>/dev/null || break; sleep 2; done
+    cd "$SITE" && python standby/cf_switch.py status 2>/dev/null | grep -v Warning || true
     ;;
 
   github)
