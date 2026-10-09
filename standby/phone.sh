@@ -19,6 +19,8 @@
 #   bash ~/iaj/standby/phone.sh check          # فحص سريع: هل يفتح iajaward.org + آخر نسخة احتياطية
 #   bash ~/iaj/standby/phone.sh monitor        # تشغيل/إيقاف مراقبة الموقع (إشعار إذا توقف) — يحتاج Termux:API
 #   bash ~/iaj/standby/phone.sh try            # تجربة الموقع على الهاتف فقط (بدون تحويل iajaward.org)
+#   bash ~/iaj/standby/phone.sh lock           # قفل/فتح الأزرار الحساسة (حماية من الضغط بالخطأ)
+#   bash ~/iaj/standby/phone.sh github         # إضافة/تغيير رمز GitHub (تحديث الكود بدون السيرفر)
 #
 #  الإعدادات (اختياري) في ~/.iaj_standby:
 #     REMOTE=gdrive:IAJ-backups      # اسم الاتصال في rclone + المجلد في Drive
@@ -37,6 +39,11 @@ export PYTHONUTF8=1
 LANG_UI="${LANG_UI:-ar}"
 export IAJ_LANG="$LANG_UI"
 T() { if [ "$LANG_UI" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+guard() {   # الأزرار الحساسة لا تعمل وهي مقفلة (حماية من الضغط بالخطأ)
+  if [ -f "$HOME/.iaj_lock" ] && [ -z "$IAJ_NOGUARD" ]; then
+    die "$(T "🔒 الأزرار الحساسة مقفلة — اضغط «IAJ 0 - قفل أو فتح الأزرار» لفتحها" "🔒 Sensitive buttons are locked - press IAJ 0 to unlock")"
+  fi
+}
 say() { printf '\n\033[1;33m» %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✖ %s\033[0m\n' "$*"; exit 1; }
 
@@ -98,6 +105,17 @@ case "$1" in
     ;;
 
   update-code)
+    # ١) من GitHub مباشرة (لا يحتاج السيرفر) — إن وُجد رمز GitHub
+    if [ -s "$HOME/.iaj_github_token" ] && [ -f "$SITE/standby/gh_update.py" ]; then
+      say "$(T "تنزيل الكود من GitHub" "Downloading code from GitHub")"
+      if python "$SITE/standby/gh_update.py"; then
+        sed -i 's/\r$//' "$SITE"/standby/*.sh 2>/dev/null || true
+        say "$(T "تم تحديث الكود في $SITE" "Code updated in $SITE")"
+        exit 0
+      fi
+      say "$(T "تعذّر GitHub — أحاول من Google Drive" "GitHub failed - trying Google Drive")"
+    fi
+    # ٢) من Google Drive (النسخة التي يضعها السيرفر)
     say "$(T "تنزيل الكود من $REMOTE/code" "Downloading code from $REMOTE/code")"
     mkdir -p "$LOCAL_BK/code"
     rclone copy "$REMOTE/code" "$LOCAL_BK/code" --progress
@@ -136,6 +154,7 @@ case "$1" in
     ;;
 
   backup)
+    guard
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود" "Code not found")"
     cd "$SITE"
     say "$(T "نسخ بيانات الهاتف" "Backing up phone data")"
@@ -147,6 +166,7 @@ case "$1" in
     ;;
 
   takeover)
+    guard
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — شغّل: bash phone.sh update-code" "Code not found - run: bash phone.sh update-code")"
     [ -s "$HOME/.iaj_tunnel_token" ] || die "$(T "ضع رمز نفق الهاتف في ~/.iaj_tunnel_token أولاً" "Put the phone tunnel token in ~/.iaj_tunnel_token first")"
     grep -q '^CF_API_TOKEN=.' "$SITE/.env" 2>/dev/null || die "$(T "ضع CF_API_TOKEN=... في $SITE/.env أولاً (رمز API من Cloudflare)" "Add CF_API_TOKEN=... to $SITE/.env first (Cloudflare API token)")"
@@ -191,7 +211,7 @@ case "$1" in
         fi
       else
         # سُجّلت بيانات على الهاتف ← نرفعها، والسيرفر يأخذها بـ back_to_server.bat
-        bash "$0" backup || true
+        IAJ_NOGUARD=1 bash "$0" backup || true
         echo
         echo "$(T "  ⚠ الآن على السيرفر شغّل:  back_to_server.bat  (ينقل بيانات الهاتف ويعيد الموقع)" "  ⚠ Now on the server run:  back_to_server.bat  (moves the phone data and the site back)")"
       fi
@@ -215,7 +235,7 @@ case "$1" in
     ;;
 
   handback)
-    bash "$0" backup
+    IAJ_NOGUARD=1 bash "$0" backup
     echo
     echo "$(T "  الخطوة التالية على جهاز السيرفر (بعد عودة الإنترنت إليه): شغّل  back_to_server.bat" "  Next, on the server (once it is online again): run  back_to_server.bat")"
     echo "$(T "  سيأخذ بيانات الهاتف من Drive ويعيد iajaward.org إلى السيرفر تلقائياً." "  It takes the phone data from Drive and moves iajaward.org back automatically.")"
@@ -226,6 +246,7 @@ case "$1" in
     ;;
 
   server)
+    guard
     echo
     echo "$(T "  إعادة iajaward.org إلى السيرفر فوراً، بدون نقل أي بيانات من الهاتف." "  Move iajaward.org back to the server now, WITHOUT moving any data from the phone.")"
     echo "$(T "  (إن كان الهاتف يشغّل الموقع وسُجّلت عليه بيانات: أوقفه بـ Ctrl+C في نافذته بدل هذا الزر)" "  (If the phone is serving the site and has new data: stop it with Ctrl+C in its window instead)")"
@@ -247,6 +268,11 @@ case "$1" in
       read -r -s -p "$(T "  الصق رمز نفق الهاتف (iaj-standby، يبدأ بـ eyJ) ثم Enter: " "  Paste the phone tunnel token (iaj-standby, starts with eyJ), then Enter: ")" TK; echo
       [ -n "$TK" ] && printf '%s' "$TK" > "$HOME/.iaj_tunnel_token" && chmod 600 "$HOME/.iaj_tunnel_token"
     fi
+    if [ ! -s "$HOME/.iaj_github_token" ] && [ ! -f "$HOME/.iaj_github_skip" ]; then
+      read -r -s -p "$(T "  (اختياري) الصق رمز GitHub للقراءة — أو Enter للتخطي: " "  (optional) Paste a read-only GitHub token - or Enter to skip: ")" TK; echo
+      if [ -n "$TK" ]; then printf '%s' "$TK" > "$HOME/.iaj_github_token"; chmod 600 "$HOME/.iaj_github_token"; else touch "$HOME/.iaj_github_skip"; fi
+    fi
+    [ -f "$HOME/.iaj_lock_init" ] || { touch "$HOME/.iaj_lock" "$HOME/.iaj_lock_init"; }   # مقفلة افتراضياً أول مرة
     chmod 600 "$SITE/.env" 2>/dev/null || true
     # ٢) أزرار جاهزة (تطبيق Termux:Widget من F-Droid يعرضها على الشاشة الرئيسية)
     mkdir -p "$HOME/.shortcuts"
@@ -260,9 +286,27 @@ case "$1" in
     mk "IAJ 7 - المراقبة (تشغيل أو إيقاف)" "bash ~/iaj/standby/phone.sh monitor"
     mk "IAJ 8 - تجربة على الهاتف فقط" "bash ~/iaj/standby/phone.sh try"
     mk "IAJ 9 - English - عربي" "bash ~/iaj/standby/phone.sh lang"
+    mk "IAJ 0 - قفل أو فتح الأزرار" "bash ~/iaj/standby/phone.sh lock"
     rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
     say "$(T "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية" "Done. Buttons are ready in ~/.shortcuts - install Termux:Widget from F-Droid and add the widget to the home screen")"
     cd "$SITE" && python standby/cf_switch.py status || true
+    ;;
+
+  github)
+    read -r -s -p "$(T "  الصق رمز GitHub للقراءة ثم Enter: " "  Paste the read-only GitHub token, then Enter: ")" TK; echo
+    [ -n "$TK" ] || die "$(T "تم الإلغاء" "Cancelled")"
+    printf '%s' "$TK" > "$HOME/.iaj_github_token"; chmod 600 "$HOME/.iaj_github_token"; rm -f "$HOME/.iaj_github_skip"
+    say "$(T "حُفظ الرمز — زر IAJ 4 يحدّث الآن من GitHub مباشرة" "Saved - IAJ 4 now updates straight from GitHub")"
+    ;;
+
+  lock)
+    if [ -f "$HOME/.iaj_lock" ]; then
+      rm -f "$HOME/.iaj_lock"
+      say "$(T "🔓 الأزرار مفتوحة — يمكنك استخدام تشغيل الطوارئ والإرجاع. أعد القفل بعد الانتهاء" "🔓 Buttons unlocked - remember to lock again when done")"
+    else
+      touch "$HOME/.iaj_lock"
+      say "$(T "🔒 الأزرار الحساسة مقفلة (1، 2، 5، 8). الأزرار الأخرى تعمل" "🔒 Sensitive buttons locked (1, 2, 5, 8). Other buttons still work")"
+    fi
     ;;
 
   lang)
@@ -331,6 +375,7 @@ case "$1" in
     ;;
 
   try)
+    guard
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — اضغط IAJ 4" "Code not found - press IAJ 4")"
     if pgrep -x cloudflared >/dev/null; then die "$(T "الطوارئ تعمل الآن على الهاتف — لا يمكن التجربة في نفس الوقت" "Emergency mode is running on this phone - cannot run a trial at the same time")"; fi
     pkill -f "python serve.py" 2>/dev/null || true
