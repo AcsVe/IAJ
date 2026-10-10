@@ -423,6 +423,9 @@ class ThemeSetting(models.Model):
 class HomeContent(models.Model):
     # -- قسم الهيرو --
     hero_title = models.CharField(max_length=1000, default="جائزة انتصار عباس جردانة", verbose_name="العنوان الرئيسي الكبير")
+    credits_speed = models.PositiveSmallIntegerField(default=14, validators=[MinValueValidator(4), MaxValueValidator(80)],
+                                                     verbose_name="سرعة شارة الأفلام (بكسل/ثانية)",
+                                                     help_text="رقم أكبر = أسرع. 10 بطيء — 14 عادي — 25 سريع.")
     hero_subtitle = models.TextField(default="للثقافة والتعليم", verbose_name="نص الشارة المتحركة (عدة فقرات)",
                                      help_text="سطر فارغ بين فقرتين = فقرة جديدة. سطر يبدأ بـ # = عنوان فرعي. مثال:\n# رؤيتنا\nنص الفقرة الأولى…")
     
@@ -819,6 +822,41 @@ class TickerSetting(models.Model):
     effects_on_logos = models.BooleanField(default=False, verbose_name="تطبيق النبض والتلاشي على صور الأخبار أيضاً؟")
     class Meta: verbose_name = "إعدادات الشريط"; verbose_name_plural = "إعدادات الشريط"
     def __str__(self): return "إعدادات الشريط الإخباري"
+
+
+class CreditsBlock(models.Model):
+    """فقرات شارة الأفلام (النص الذي يصعد ببطء أعلى الصفحة الرئيسية) — لكل فقرة عنوان ونص ولون وحجم"""
+    heading = models.CharField(max_length=300, blank=True, default='', verbose_name="العنوان (اختياري)")
+    body_text = models.TextField(blank=True, default='', verbose_name="النص (اختياري)",
+                                 help_text="سطر فارغ داخل النص = فقرة جديدة.")
+    heading_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون العنوان",
+                                     help_text="فارغ = أبيض")
+    body_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون النص",
+                                  help_text="فارغ = أبيض")
+    heading_size = models.PositiveSmallIntegerField(default=100, validators=[MinValueValidator(50), MaxValueValidator(250)],
+                                                    verbose_name="حجم خط العنوان (%)",
+                                                    help_text="100 = الحجم العادي. 80 أصغر — 130 أكبر. يتناسب تلقائياً مع الهاتف.")
+    body_size = models.PositiveSmallIntegerField(default=100, validators=[MinValueValidator(50), MaxValueValidator(250)],
+                                                 verbose_name="حجم خط النص (%)",
+                                                 help_text="100 = الحجم العادي. 80 أصغر — 130 أكبر.")
+    order = models.IntegerField(default=0, verbose_name="الترتيب")
+    is_active = models.BooleanField(default=True, verbose_name="ظاهر؟")
+
+    class Meta:
+        verbose_name = "فقرة في شارة الأفلام"
+        verbose_name_plural = "شارة الأفلام — الفقرات (عنوان + نص + لون + حجم)"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.heading or (self.body_text or '')[:60] or f'فقرة {self.pk}'
+
+    @property
+    def heading_k(self):
+        return f'{(self.heading_size or 100) / 100:.2f}'
+
+    @property
+    def body_k(self):
+        return f'{(self.body_size or 100) / 100:.2f}'
 
 
 class HeroTextSlide(models.Model):

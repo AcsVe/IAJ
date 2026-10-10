@@ -21,12 +21,16 @@ def get_site_bundle():
         return data
     from .models import (
         SiteSetting, ThemeSetting, HomeContent, FooterContent, SectionBackground,
-        TickerItem, TickerSetting, HeroCard, HeroTextSlide,
+        TickerItem, TickerSetting, HeroCard, HeroTextSlide, CreditsBlock,
     )
     try:
         section_bgs = {sb.section_id: sb for sb in SectionBackground.objects.all()}
     except Exception:
         section_bgs = {}
+    try:
+        credits_blocks = [b for b in CreditsBlock.objects.filter(is_active=True) if b.heading or b.body_text]
+    except Exception:
+        credits_blocks = []
     try:
         ticker_items = list(TickerItem.objects.filter(is_active=True))
     except Exception:
@@ -58,6 +62,7 @@ def get_site_bundle():
         'section_bgs': section_bgs,
         'global_ticker_items': ticker_items,
         'global_ticker_settings': _first(TickerSetting),
+        'credits_blocks': credits_blocks,
     }
     cache.set(KEY, data, TTL)
     return data
@@ -68,7 +73,7 @@ def clear_site_bundle(*args, **kwargs):
 
 
 CACHED_MODELS = ('SiteSetting', 'ThemeSetting', 'HomeContent', 'FooterContent',
-                 'SectionBackground', 'TickerItem', 'TickerSetting', 'HeroCard', 'HeroTextSlide')
+                 'SectionBackground', 'TickerItem', 'TickerSetting', 'HeroCard', 'HeroTextSlide', 'CreditsBlock')
 
 
 HOME_KEY = 'iaj:home-bundle:v1'

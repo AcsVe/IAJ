@@ -40,6 +40,7 @@ def home(request):
         **get_home_bundle(),
         'hero_card': b['hero_card'],
         'hero_text_items': b['hero_text_items'],
+        'credits_blocks': b.get('credits_blocks', []),
         'section_bgs': b['section_bgs'],
     }
     return render(request, 'award/home.html', context)

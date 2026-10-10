@@ -127,7 +127,7 @@ def admin_search(q, request, per_model=8):
         return []
     try:   # نفس الأسماء العربية الواضحة المستخدمة في قائمة لوحة التحكم
         from .admin import ADMIN_SECTIONS
-        labels = {name: label for _, items in ADMIN_SECTIONS for name, label in items}
+        labels = {name: label for _t, _r, items in ADMIN_SECTIONS for name, label in items}
     except Exception:
         labels = {}
     groups = []

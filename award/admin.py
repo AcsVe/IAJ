@@ -5,7 +5,7 @@ from .models import (
     Field, Track, Submission, SiteSetting, HeroSlide, TimelineEvent,
     Judge, ThemeSetting, HomeContent, FooterContent, SuccessPageContent,
     SectionBackground, Sponsor, FAQ, Winner, WinnerCategory, MediaGallery,
-    ContactMessage, TickerItem, SlideshowCard, TickerSetting, News,
+    ContactMessage, TickerItem, SlideshowCard, TickerSetting, News, CreditsBlock,
     Photo, Video, SuccessStory, HeroCard, StoredFile, Principle, HeroTextSlide, TrackDetail
 )
 from django.utils.html import format_html
@@ -300,8 +300,9 @@ class ThemeSettingAdmin(admin.ModelAdmin):
 class HomeContentAdmin(admin.ModelAdmin):
     fieldsets = (
         ('النص المتحرك أعلى الصفحة', {
-            'fields': ('hero_title', 'hero_subtitle'),
-            'description': 'العنوان والنص اللذان يتحركان للأعلى فوق الصورة الرئيسية.',
+            'fields': ('hero_title', 'hero_subtitle', 'credits_speed'),
+            'description': mark_safe('العنوان والنص اللذان يتحركان للأعلى (شارة الأفلام). لإضافة <b>فقرات بعناوين وألوان وأحجام مختلفة</b>: '
+                                     '<a href="/admin/award/creditsblock/"><b>شارة الأفلام — الفقرات</b></a>.'),
         }),
         ('أزرار التسجيل', {'fields': ('btn_navbar', 'btn_hero')}),
         ('قسم «عن الجائزة»', {'fields': ('title_about', 'about_text', 'vision_text', 'mission_text'),
@@ -489,6 +490,29 @@ class SlideshowCardAdmin(admin.ModelAdmin):
     list_filter = ('card_type', 'is_active')
     list_editable = ('order', 'is_active')
     list_display_links = ('card_type',)
+
+
+@admin.register(CreditsBlock)
+class CreditsBlockAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'heading_size', 'body_size', 'order', 'is_active')
+    list_editable = ('heading_size', 'body_size', 'order', 'is_active')
+    search_fields = ('heading', 'body_text')
+    fieldsets = (
+        (None, {'fields': ('heading', 'body_text'),
+                'description': 'تظهر الفقرات بالترتيب بعد العنوان الرئيسي ونص «نصوص الصفحة الرئيسية». '
+                               'السرعة من «نصوص الصفحة الرئيسية» ← «سرعة شارة الأفلام».'}),
+        ('اللون وحجم الخط', {'fields': ('heading_color', 'heading_size', 'body_color', 'body_size')}),
+        ('العرض', {'fields': ('order', 'is_active')}),
+    )
+    actions = ['make_active', 'make_inactive']
+
+    @admin.action(description='إظهار الفقرات المحددة')
+    def make_active(self, request, qs):
+        for o in qs: o.is_active = True; o.save(update_fields=['is_active'])
+
+    @admin.action(description='إخفاء الفقرات المحددة')
+    def make_inactive(self, request, qs):
+        for o in qs: o.is_active = False; o.save(update_fields=['is_active'])
 
 
 @admin.register(HeroTextSlide)
