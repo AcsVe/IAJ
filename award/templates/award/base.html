@@ -12,7 +12,24 @@
     {% for u in site_fonts.urls %}<link href="{{ u }}" rel="stylesheet">
     {% empty %}<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Noto+Kufi+Arabic:wght@700;800;900&display=swap" rel="stylesheet">
     {% endfor %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+{% load static %}
+    {# أيقونات SVG مدمجة بدل خط Font Awesome الخارجي (تُرسم على السيرفر — award/svg_icons.py) #}
+    <style>
+        .fa, .fas, .far, .fab, .fa-solid, .fa-regular, .fa-brands { display: inline-block; font-style: normal; font-variant: normal; line-height: 1; text-rendering: auto; }
+        svg.ic { display: inline-block; height: 1em; overflow: visible; vertical-align: -.125em; flex-shrink: 0; }
+        .fa-fw { width: 1.25em; text-align: center; }
+        .fa-xs { font-size: .75em; } .fa-sm { font-size: .875em; } .fa-lg { font-size: 1.25em; line-height: .05em; vertical-align: -.075em; }
+        .fa-xl { font-size: 1.5em; } .fa-2xs { font-size: .625em; } .fa-2xl { font-size: 2em; }
+        .fa-1x { font-size: 1em; } .fa-2x { font-size: 2em; } .fa-3x { font-size: 3em; } .fa-4x { font-size: 4em; } .fa-5x { font-size: 5em; }
+        .fa-6x { font-size: 6em; } .fa-7x { font-size: 7em; } .fa-8x { font-size: 8em; } .fa-9x { font-size: 9em; } .fa-10x { font-size: 10em; }
+        .fa-spin { animation: fa-spin 2s linear infinite; } .fa-pulse, .fa-spin-pulse { animation: fa-spin 1s steps(8) infinite; }
+        @keyframes fa-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+        .fa-rotate-90 { transform: rotate(90deg); } .fa-rotate-180 { transform: rotate(180deg); } .fa-rotate-270 { transform: rotate(270deg); }
+        .fa-flip-horizontal { transform: scaleX(-1); } .fa-flip-vertical { transform: scaleY(-1); } .fa-flip-both { transform: scale(-1); }
+        .fa-ul { list-style: none; margin-inline-start: 2.5em; padding: 0; } .fa-li { position: absolute; inset-inline-start: -2em; width: 2em; text-align: center; line-height: inherit; }
+        @media (prefers-reduced-motion: reduce) { .fa-spin, .fa-pulse, .fa-spin-pulse { animation: none; } }
+    </style>
+    <script src="{% static 'award/js/icons.js' %}" defer></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">

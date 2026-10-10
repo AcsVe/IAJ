@@ -28,6 +28,7 @@ echo Installing new packages if needed...
 "%PY%" -m pip install -q --disable-pip-version-check -r requirements.txt
 echo Updating database tables...
 "%PY%" manage.py migrate --noinput || (echo [X] migrate failed & pause & exit /b 1)
+"%PY%" manage.py build_icons_js >nul 2>nul
 "%PY%" manage.py collectstatic --noinput >nul
 
 REM إعادة تشغيل الموقع إن كان يعمل تلقائياً مع Windows

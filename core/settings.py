@@ -76,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'award.middleware.AdminArabicMiddleware',   # لوحة Django بالعربية RTL
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'award.middleware.SvgIconsMiddleware',      # أيقونات SVG مدمجة بدل خط Font Awesome
 ]
 
 ROOT_URLCONF = 'core.urls'
