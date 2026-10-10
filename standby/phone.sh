@@ -181,7 +181,11 @@ case "$1" in
     fi
     # إيقاف أي تشغيل قديم على الهاتف (حتى لا يتعارض مع المنفذ 8000)
     pkill -f "python serve.py" 2>/dev/null || true
-    pkill -x cloudflared 2>/dev/null || true
+    # إيقاف نفق هذا الموقع فقط (نفق نظام التذاكر rastkt على نفس الهاتف لا يُلمس)
+    KEY=$(head -c 40 "$HOME/.iaj_tunnel_token")
+    for p in $(pgrep -x cloudflared 2>/dev/null); do
+      tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null | grep -qF "$KEY" && kill "$p" 2>/dev/null || true
+    done
     sleep 1
     bash "$0" restore
     cd "$SITE"
@@ -224,7 +228,7 @@ case "$1" in
         echo
         echo "$(T "  ⚠ الآن على السيرفر شغّل:  back_to_server.bat  (ينقل بيانات الهاتف ويعيد الموقع)" "  ⚠ Now on the server run:  back_to_server.bat  (moves the phone data and the site back)")"
       fi
-      termux-wake-unlock 2>/dev/null || true
+      pgrep -f "rastkt/standby/phone.sh takeover" >/dev/null 2>&1 || termux-wake-unlock 2>/dev/null || true
     }
     trap finish EXIT INT TERM
 
@@ -304,7 +308,7 @@ case "$1" in
 
   stop)
     # إنهاء الطوارئ من زر: يرسل Ctrl+C لنافذة التشغيل، فتُعاد الأمور تلقائياً (إرجاع للسيرفر أو رفع البيانات)
-    PID=$(pgrep -f "phone.sh takeover" | grep -v "^$$\$" | head -1)
+    PID=$(pgrep -f "iaj/standby/phone.sh takeover" | grep -v "^$$\$" | head -1)
     if [ -z "$PID" ]; then
       say "$(T "الطوارئ ليست قيد التشغيل على هذا الهاتف" "Emergency mode is not running on this phone")"
       cd "$SITE" && python standby/cf_switch.py status 2>/dev/null | grep -v Warning || true
@@ -401,7 +405,7 @@ case "$1" in
   try)
     guard
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — اضغط IAJ 4" "Code not found - press IAJ 4")"
-    if pgrep -x cloudflared >/dev/null; then die "$(T "الطوارئ تعمل الآن على الهاتف — لا يمكن التجربة في نفس الوقت" "Emergency mode is running on this phone - cannot run a trial at the same time")"; fi
+    if pgrep -f "iaj/standby/phone.sh takeover" >/dev/null; then die "$(T "الطوارئ تعمل الآن على الهاتف — لا يمكن التجربة في نفس الوقت" "Emergency mode is running on this phone - cannot run a trial at the same time")"; fi
     pkill -f "python serve.py" 2>/dev/null || true
     ensure_env
     cd "$SITE"

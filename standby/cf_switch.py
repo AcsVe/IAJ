@@ -106,8 +106,12 @@ def main():
         return (res.get('config') or {}).get('ingress') or []
 
     # الأسماء العامة للموقع = أسماء نفق السيرفر (مثل iajaward.org و www.iajaward.org)
-    hosts = [r['hostname'] for r in ingress(t_main) if r.get('hostname')]
-    hosts = [h for h in hosts if not h.startswith('standby.')] or [zone_name]
+    # فقط أسماء هذا الموقع (المنفذ 8000) — أسماء أنظمة أخرى على نفس النفق (مثل 1.iajaward.org للتذاكر) لا تُلمس
+    port = os.environ.get('PORT', '8000')
+    rules = [r for r in ingress(t_main) if r.get('hostname') and not r['hostname'].startswith('standby.')]
+    mine = [r['hostname'] for r in rules if str(r.get('service', '')).rstrip('/').endswith(':' + port)]
+    others = {h.strip() for h in os.environ.get('CF_OTHER_HOSTS', '1.' + zone_name).split(',') if h.strip()}
+    hosts = mine or [r['hostname'] for r in rules if r['hostname'] not in others] or [zone_name]
 
     def records():
         out = {}
