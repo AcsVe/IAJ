@@ -171,6 +171,14 @@ case "$1" in
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — شغّل: bash phone.sh update-code" "Code not found - run: bash phone.sh update-code")"
     [ -s "$HOME/.iaj_tunnel_token" ] || die "$(T "ضع رمز نفق الهاتف في ~/.iaj_tunnel_token أولاً" "Put the phone tunnel token in ~/.iaj_tunnel_token first")"
     grep -q '^CF_API_TOKEN=.' "$SITE/.env" 2>/dev/null || die "$(T "ضع CF_API_TOKEN=... في $SITE/.env أولاً (رمز API من Cloudflare)" "Add CF_API_TOKEN=... to $SITE/.env first (Cloudflare API token)")"
+    # الطوارئ للحالة التي يكون فيها السيرفر متوقفاً فقط — إذا كان يعمل لا داعي لتحويل الموقع للهاتف
+    if (cd "$SITE" && python standby/cf_switch.py server-up 2>/dev/null); then
+      echo
+      echo "$(T "  ✋ السيرفر يعمل الآن والموقع سليم — لا حاجة لتشغيل الطوارئ." "  ✋ The server is up and the site is fine - no need for the emergency mode.")"
+      echo "$(T "  (الطوارئ تُستخدم فقط عندما يتوقف الكمبيوتر أو ينقطع عنه الإنترنت)" "  (Use it only when the PC is off or has no internet)")"
+      read -r -p "$(T "  للتشغيل رغم ذلك اكتب FORCE، أو اضغط Enter للإلغاء: " "  To run anyway type FORCE, or press Enter to cancel: ")" ANS
+      [ "$ANS" = "FORCE" ] || die "$(T "تم الإلغاء — الموقع باقٍ على السيرفر" "Cancelled - the site stays on the server")"
+    fi
     # إيقاف أي تشغيل قديم على الهاتف (حتى لا يتعارض مع المنفذ 8000)
     pkill -f "python serve.py" 2>/dev/null || true
     pkill -x cloudflared 2>/dev/null || true

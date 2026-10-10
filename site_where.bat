@@ -5,4 +5,6 @@ call scripts\find_python.bat
 set PYTHONUTF8=1
 "%PY%" standby\cf_switch.py status
 echo.
+schtasks /query /tn "IAJ Failover Watchdog" >nul 2>nul || echo [!] The watchdog task is missing - right-click 3_autostart.bat and choose "Run as administrator"
+echo.
 pause

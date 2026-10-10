@@ -75,7 +75,7 @@ class CF:
 def main():
     load_env()
     cmd = (sys.argv[1] if len(sys.argv) > 1 else 'status').lower()
-    if cmd not in ('status', 'phone', 'server', 'auto'):
+    if cmd not in ('status', 'phone', 'server', 'auto', 'server-up'):
         print(__doc__)
         return
     token = os.environ.get('CF_API_TOKEN', '').strip()
@@ -121,40 +121,77 @@ def main():
         st = (tun.get('status') or '').lower()
         return ({'healthy': '🟢 متصل', 'degraded': '🟡 متصل جزئياً', 'inactive': '⚪ متوقف', 'down': '🔴 منقطع'} if not EN else {'healthy': '[OK] connected', 'degraded': '[~] degraded', 'inactive': '[-] stopped', 'down': '[X] down'}).get(st, st)
 
+    def is_up(tun):
+        return (tun.get('status') or '').lower() in ('healthy', 'degraded')
+
+    if cmd == 'server-up':
+        # للهاتف: هل السيرفر يعمل؟ (رمز خروج 0 = نعم) — يمنع تشغيل الطوارئ والسيرفر سليم
+        sys.exit(0 if is_up(t_main) else 1)
+
+    logs = os.path.join(HERE, '..', 'logs')
+
     if cmd == 'auto':
         # حارس على السيرفر (كل 5 دقائق): إذا كان الموقع موجّهاً للهاتف والهاتف منقطع والسيرفر متصل
-        # مرتين متتاليتين ← نعيد الموقع للسيرفر تلقائياً (يحمي من توقف الهاتف أو إغلاق Termux)
-        state = os.path.join(HERE, '..', 'logs', 'failover_watchdog.txt')
-        os.makedirs(os.path.dirname(state), exist_ok=True)
+        # ← نتحقق مرة ثانية بعد 30 ثانية، ثم نعيد الموقع للسيرفر (يحمي من توقف الهاتف أو إغلاق Termux)
+        os.makedirs(logs, exist_ok=True)
+        stamp = time.strftime('%Y-%m-%d %H:%M:%S')
+        with open(os.path.join(logs, 'watchdog_last.txt'), 'w', encoding='utf-8') as fh:
+            fh.write(stamp)   # دليل أن الحارس يعمل (يظهر في site_where.bat)
         recs = records()
         on_phone = any(r['content'].startswith(t_standby['id']) for r in recs.values())
-        sb_up = (t_standby.get('status') or '').lower() in ('healthy', 'degraded')
-        main_up = (t_main.get('status') or '').lower() in ('healthy', 'degraded')
-        stamp = time.strftime('%Y-%m-%d %H:%M:%S')
-        if not on_phone or sb_up or not main_up:
-            open(state, 'w').write('0')
-            print(f'{stamp} OK (on_phone={on_phone}, phone_up={sb_up}, server_up={main_up})')
+        if not on_phone or is_up(t_standby) or not is_up(t_main):
+            print(f'{stamp} OK (on_phone={on_phone}, phone_up={is_up(t_standby)}, server_up={is_up(t_main)})')
             return
-        n = int(open(state).read().strip() or 0) + 1 if os.path.isfile(state) else 1
-        open(state, 'w').write(str(n))
-        if n < 2:
-            print(f'{stamp} الموقع على الهاتف والهاتف منقطع — سأتحقق مرة أخرى بعد 5 دقائق')
+        time.sleep(30)
+        t_sb2 = tunnel(standby_name)
+        if is_up(t_sb2):
+            print(f'{stamp} phone tunnel came back - nothing changed')
             return
         content = f"{t_main['id']}.cfargotunnel.com"
         for h, rec in recs.items():
             if rec['content'] != content:
                 cf.call('PATCH', f"/zones/{zone}/dns_records/{rec['id']}", json={'content': content, 'proxied': True})
-        open(state, 'w').write('0')
-        with open(os.path.join(HERE, '..', 'logs', 'failover.log'), 'a', encoding='utf-8') as fh:
-            fh.write(f'{stamp} الهاتف منقطع — أُعيد iajaward.org إلى السيرفر تلقائياً\n')
+        with open(os.path.join(logs, 'failover.log'), 'a', encoding='utf-8') as fh:
+            fh.write(f'{stamp} الهاتف منقطع والموقع موجّه له — أُعيد iajaward.org إلى السيرفر تلقائياً\n')
         print(f'{stamp} ✅ الهاتف منقطع — أُعيد iajaward.org إلى السيرفر تلقائياً')
         return
 
     if cmd == 'status':
         print(t(f'\nنفق السيرفر  «{main_name}»: {status_line(t_main)}', f'\nServer tunnel  {main_name}: {status_line(t_main)}'))
         print(t(f'نفق الهاتف   «{standby_name}»: {status_line(t_standby)}\n', f'Phone tunnel   {standby_name}: {status_line(t_standby)}\n'))
-        for h, rec in records().items():
+        recs = records()
+        for h, rec in recs.items():
             print(f'  {h}  {t("←", "->")}  {by_target.get(rec["content"], rec["content"])}')
+        on_phone = any(r['content'].startswith(t_standby['id']) for r in recs.values())
+        on_target = t_standby if on_phone else t_main
+        print()
+        if is_up(on_target):
+            print(t('✅ الموقع يعمل.', '✅ The site is up.'))
+        elif on_phone and is_up(t_main):
+            print(t('❌ الموقع متوقف: موجّه للهاتف والهاتف منقطع.\n   الحل الآن: switch_to_server.bat (على السيرفر)',
+                    '❌ The site is DOWN: it points to the phone and the phone is offline.\n   Fix now: switch_to_server.bat (on the server)'))
+        elif on_phone:
+            print(t('❌ الموقع متوقف: الهاتف والسيرفر كلاهما منقطعان.', '❌ The site is DOWN: both the phone and the server are offline.'))
+        else:
+            print(t('❌ الموقع متوقف: السيرفر منقطع — تأكد أن الكمبيوتر يعمل ومتصل بالإنترنت، أو شغّل الطوارئ من الهاتف.',
+                    '❌ The site is DOWN: the server is offline - check the PC and its internet, or start the emergency mode on the phone.'))
+        last = os.path.join(logs, 'watchdog_last.txt')
+        if os.path.isfile(os.path.join(HERE, '..', 'manage.py')) and os.name == 'nt':
+            if os.path.isfile(last):
+                age = (time.time() - os.path.getmtime(last)) / 60
+                ok = age < 15
+                print(t(f'{"✅" if ok else "⚠"} حارس السيرفر: آخر فحص قبل {age:.0f} دقيقة' + ('' if ok else ' — لا يعمل! شغّل 3_autostart.bat كمسؤول'),
+                        f'{"✅" if ok else "⚠"} Server watchdog: last check {age:.0f} min ago' + ('' if ok else ' - NOT running! Run 3_autostart.bat as administrator')))
+            else:
+                print(t('⚠ حارس السيرفر غير مفعّل — شغّل 3_autostart.bat كمسؤول (زر يمين ← Run as administrator)',
+                        '⚠ Server watchdog is not set up - run 3_autostart.bat as administrator'))
+            flog = os.path.join(logs, 'failover.log')
+            if os.path.isfile(flog):
+                lines = open(flog, encoding='utf-8', errors='ignore').read().strip().splitlines()[-3:]
+                if lines:
+                    print(t('\nآخر تدخلات الحارس:', '\nLast watchdog actions:'))
+                    for ln in lines:
+                        print('  ' + ln)
         return
 
     target = t_standby if cmd == 'phone' else t_main
