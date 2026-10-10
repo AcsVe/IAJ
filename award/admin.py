@@ -186,7 +186,7 @@ class HeroSlideAdmin(admin.ModelAdmin):
 
     @admin.action(description='إظهار الشرائح المحددة')
     def make_active(self, request, qs):
-        qs.update(is_active=True)
+        for o in qs: o.is_active = True; o.save(update_fields=['is_active'])
         from .site_cache import clear_home_bundle
         clear_home_bundle()
 
@@ -458,9 +458,30 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
 @admin.register(TickerItem)
 class TickerItemAdmin(admin.ModelAdmin):
-    list_display = ('message_html', 'is_active', 'order')
+    list_display = ('message_html', 'heading', 'is_active', 'order')
     list_editable = ('is_active', 'order')
     list_display_links = ('message_html',)
+    search_fields = ('heading', 'message_html')
+    fieldsets = (
+        (None, {'fields': ('heading', 'message_html', 'logo')}),
+        ('الألوان (اختياري — الفارغ يأخذ ألوان الشريط العامة)', {'fields': ('heading_bg', 'heading_color', 'text_color')}),
+        ('العرض', {'fields': ('order', 'is_active')}),
+    )
+    actions = ['make_active', 'make_inactive']
+
+    @admin.action(description='إظهار الأخبار المحددة')
+    def make_active(self, request, qs):
+        for o in qs: o.is_active = True; o.save(update_fields=['is_active'])
+
+    @admin.action(description='إخفاء الأخبار المحددة')
+    def make_inactive(self, request, qs):
+        for o in qs: o.is_active = False; o.save(update_fields=['is_active'])
+
+    def changelist_view(self, request, extra_context=None):
+        from django.contrib import messages
+        messages.info(request, mark_safe('سرعة الشريط ولونه العام وحجم الخط من: '
+                                         '<a href="/admin/award/tickersetting/"><b>إعدادات الشريط</b></a> ← «السرعة (بكسل/ثانية)»: رقم أكبر = أسرع.'))
+        return super().changelist_view(request, extra_context)
 
 
 class SlideshowCardAdmin(admin.ModelAdmin):

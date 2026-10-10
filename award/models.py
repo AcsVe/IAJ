@@ -717,7 +717,15 @@ class ContactMessage(models.Model):
     def __str__(self): return f"رسالة من {self.name}"
 
 class TickerItem(models.Model):
+    heading = models.CharField(max_length=120, blank=True, default='', verbose_name="العنوان (اختياري)",
+                               help_text="يظهر قبل النص داخل شارة ملوّنة. مثال: عاجل — جديد — تذكير")
+    heading_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون خط العنوان",
+                                     help_text="فارغ = لون داكن تلقائي")
+    heading_bg = models.CharField(max_length=9, blank=True, default='', verbose_name="لون خلفية العنوان",
+                                  help_text="فارغ = لون خط الشريط (الذهبي)")
     message_html = models.TextField(verbose_name="النص (يدعم HTML)")
+    text_color = models.CharField(max_length=9, blank=True, default='', verbose_name="لون النص",
+                                  help_text="فارغ = لون خط الشريط من «إعدادات الشريط»")
     logo = models.ImageField(max_length=500, upload_to='ticker/', blank=True, null=True, verbose_name="لوغو (اختياري)")
     is_active = models.BooleanField(default=True, verbose_name="مفعّل؟")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
