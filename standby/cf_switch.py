@@ -169,8 +169,17 @@ def main():
         on_phone = any(r['content'].startswith(t_standby['id']) for r in recs.values())
         on_target = t_standby if on_phone else t_main
         print()
-        if is_up(on_target):
+        code = None
+        try:
+            code = requests.get(f'https://{hosts[0]}/', timeout=15, allow_redirects=False,
+                                headers={'User-Agent': 'iaj-status'}).status_code
+        except Exception:
+            pass
+        if is_up(on_target) and code and code < 500:
             print(t('✅ الموقع يعمل.', '✅ The site is up.'))
+        elif is_up(on_target):
+            print(t(f'❌ النفق متصل لكن موقع الجائزة نفسه لا يستجيب ({code or "لا رد"}) — متوقف؟ على الكمبيوتر: iaj_on.bat',
+                    f'❌ The tunnel is connected but the award site itself does not respond ({code or "no reply"}) - stopped? On the PC: iaj_on.bat'))
         elif on_phone and is_up(t_main):
             print(t('❌ الموقع متوقف: موجّه للهاتف والهاتف منقطع.\n   الحل الآن: switch_to_server.bat (على السيرفر)',
                     '❌ The site is DOWN: it points to the phone and the phone is offline.\n   Fix now: switch_to_server.bat (on the server)'))
