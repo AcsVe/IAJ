@@ -228,7 +228,7 @@ case "$1" in
         echo
         echo "$(T "  ⚠ الآن على السيرفر شغّل:  back_to_server.bat  (ينقل بيانات الهاتف ويعيد الموقع)" "  ⚠ Now on the server run:  back_to_server.bat  (moves the phone data and the site back)")"
       fi
-      pgrep -f "rastkt/standby/phone.sh takeover" >/dev/null 2>&1 || termux-wake-unlock 2>/dev/null || true
+      pgrep -f "(rastkt|venues)/standby/phone.sh takeover" >/dev/null 2>&1 || termux-wake-unlock 2>/dev/null || true
     }
     trap finish EXIT INT TERM
 
