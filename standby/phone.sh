@@ -45,6 +45,8 @@ guard() {   # الأزرار الحساسة لا تعمل وهي مقفلة (ح�
     die "$(T "🔒 الأزرار الحساسة مقفلة — اضغط «IAJ 0 - قفل أو فتح الأزرار» لفتحها" "🔒 Sensitive buttons are locked - press IAJ 0 to unlock")"
   fi
 }
+neon_on() { grep -qE '^(NEON_BACKUP_URL|CLOUD_DATABASE_URL)=.' "$SITE/.env" 2>/dev/null; }
+ensure_pg8000() { python -c "import pg8000" 2>/dev/null || pip install -q pg8000 >/dev/null 2>&1 || true; }
 say() { printf '\n\033[1;33m» %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✖ %s\033[0m\n' "$*"; exit 1; }
 
@@ -99,7 +101,7 @@ case "$1" in
     say "$(T "تثبيت Python والأدوات (قد يستغرق دقائق)" "Installing Python and tools (may take a few minutes)")"
     pkg update -y
     pkg install -y python python-pillow rclone cloudflared unzip
-    pip install "Django==5.2.15" "whitenoise==6.12.0" "waitress==3.0.2" "dj-database-url==3.1.2" \
+    pip install "Django==5.2.15" "whitenoise==6.12.0" "waitress==3.0.2" "dj-database-url==3.1.2" "pg8000==1.31.5" \
                 requests django-quill-editor tzdata sqlparse asgiref
     termux-setup-storage || true
     say "$(T "تم. الخطوة التالية: اربط Google Drive بالأمر:  rclone config   (اسم الاتصال: gdrive)" "Done. Next: connect Google Drive with:  rclone config   (remote name: gdrive)")"
@@ -134,8 +136,29 @@ case "$1" in
     rclone copy "$REMOTE/db" "$LOCAL_BK/db" --include "*.json.gz" --max-age 30d --progress
     say "$(T "تنزيل الصور والملفات (المرة الأولى أطول — بعدها الجديد فقط)" "Downloading images and files (first time is longer - then only new files)")"
     rclone copy "$REMOTE/media" "$SITE/media" --progress
+    if neon_on; then
+      ensure_pg8000
+      say "$(T "جلب أحدث نسخة من Neon أيضاً (تُستخدم الأحدث بين Drive وNeon)" "Also fetching the latest copy from Neon (the newer of Drive/Neon is used)")"
+      python "$SITE/standby/neon_store.py" pull "$LOCAL_BK/db" || say "$(T "تعذّر Neon — أكمل بنسخة Drive" "Neon failed - continuing with the Drive copy")"
+    fi
     cd "$SITE"
     python manage.py restore_site --latest "$LOCAL_BK" --yes
+    ;;
+
+  neon)
+    guard
+    [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — شغّل: bash phone.sh update-code" "Code not found - run: bash phone.sh update-code")"
+    ensure_env
+    neon_on || die "$(T "لا يوجد رابط Neon — شغّل configure وألصقه عند الطلب" "No Neon link - run configure and paste it when asked")"
+    ensure_pg8000
+    say "$(T "تنزيل أحدث نسخة من Neon وتثبيتها على الهاتف" "Downloading the latest copy from Neon onto the phone")"
+    rm -rf "$LOCAL_BK/neon"; mkdir -p "$LOCAL_BK/neon"
+    python "$SITE/standby/neon_store.py" pull "$LOCAL_BK/neon" || die "$(T "تعذّر التنزيل من Neon" "Download from Neon failed")"
+    N=$(ls -t "$LOCAL_BK/neon"/*.json.gz 2>/dev/null | head -1)
+    [ -n "$N" ] || die "$(T "لم يُنزَّل شيء" "Nothing was downloaded")"
+    pkill -f "python serve.py" 2>/dev/null || true
+    cd "$SITE" && python manage.py restore_site "$N" --yes
+    say "$(T "تم. بيانات Neon على الهاتف الآن — للتشغيل للعامة: زر IAJ 1 (الصور من Drive)" "Done. Neon data is on the phone - to serve it publicly: IAJ 1 (images come from Drive)")"
     ;;
 
   start)
@@ -285,6 +308,11 @@ case "$1" in
       read -r -s -p "$(T "  (اختياري) الصق رمز GitHub للقراءة — أو Enter للتخطي: " "  (optional) Paste a read-only GitHub token - or Enter to skip: ")" TK; echo
       if [ -n "$TK" ]; then printf '%s' "$TK" > "$HOME/.iaj_github_token"; chmod 600 "$HOME/.iaj_github_token"; else touch "$HOME/.iaj_github_skip"; fi
     fi
+    if ! neon_on && [ ! -f "$SITE/.neon_skip" ]; then
+      read -r -s -p "$(T "  (اختياري) الصق رابط Neon لموقع الجائزة — أو Enter للتخطي: " "  (optional) Paste the award site's Neon link - or Enter to skip: ")" NU; echo
+      if [ -n "$NU" ]; then echo "NEON_BACKUP_URL=$NU" >> "$SITE/.env"; ensure_pg8000; python "$SITE/standby/neon_store.py" info || true
+      else touch "$SITE/.neon_skip"; fi
+    fi
     [ -f "$HOME/.iaj_lock_init" ] || { touch "$HOME/.iaj_lock" "$HOME/.iaj_lock_init"; }   # مقفلة افتراضياً أول مرة
     chmod 600 "$SITE/.env" 2>/dev/null || true
     # ٢) أزرار جاهزة (تطبيق Termux:Widget من F-Droid يعرضها على الشاشة الرئيسية)
@@ -300,6 +328,7 @@ case "$1" in
     mk "IAJ 7 - المراقبة (تشغيل أو إيقاف)" "bash ~/iaj/standby/phone.sh monitor"
     mk "IAJ 8 - تجربة على الهاتف فقط" "bash ~/iaj/standby/phone.sh try"
     mk "IAJ 9 - English - عربي" "bash ~/iaj/standby/phone.sh lang"
+    mk "IAJ N - استرجاع من Neon إلى الهاتف" "bash ~/iaj/standby/phone.sh neon"
     mk "IAJ 0 - قفل أو فتح الأزرار" "bash ~/iaj/standby/phone.sh lock"
     rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
     say "$(T "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية" "Done. Buttons are ready in ~/.shortcuts - install Termux:Widget from F-Droid and add the widget to the home screen")"

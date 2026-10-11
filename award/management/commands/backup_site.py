@@ -92,6 +92,7 @@ class Command(BaseCommand):
         out = os.path.join(db_dir, f'iaj-{stamp}.json.gz')
         self._dump_json(out)
         self.stdout.write(self.style.SUCCESS(_t('✓ القاعدة (محمولة)', '✓ Database (portable)') + f': {out} ({os.path.getsize(out) / 1024 / 1024:.1f} MB)'))
+        self._neon_push(out)
 
         for pattern in ('iaj-*.dump', 'iaj-*.json.gz'):
             files = sorted(glob.glob(os.path.join(db_dir, pattern)))
@@ -120,6 +121,17 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(_t(f'✓ الملفات: {copied} ملف جديد → {dst}', f'✓ Files: {copied} new -> {dst}')))
 
     # ------------------------------------------------------------------
+    def _neon_push(self, path):
+        """نسخة سحابية ثانية في Neon (إن كان NEON_BACKUP_URL أو CLOUD_DATABASE_URL في .env) — لا تُفشل النسخ"""
+        try:
+            import sys
+            sys.path.insert(0, os.path.join(settings.BASE_DIR, 'standby'))
+            import neon_store
+            if neon_store._url():
+                neon_store.push(path)
+        except BaseException as e:   # noqa: BLE001
+            self.stdout.write(_t(f'⚠ Neon: تعذّر الرفع ({e})', f'⚠ Neon: upload failed ({e})'))
+
     def _dump_json(self, out):
         import gzip
         from django.core.management import call_command
