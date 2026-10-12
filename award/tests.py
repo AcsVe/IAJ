@@ -95,10 +95,15 @@ class RegistrationFlowTest(TestCase):
         self.assertContains(r, 'الصيغ المسموحة')
 
         r = c.post(f'/portal/submissions/{sub.pk}/edit/', {**data, 'action': 'submit', 'document': self._pdf()})
+        self.assertContains(r, 'الإقرارات')   # الإقرارات مطلوبة قبل الإرسال
+        decl = {'declare_truth': 'on', 'declare_original': 'on', 'declare_consent': 'on'}
+        r = c.post(f'/portal/submissions/{sub.pk}/edit/', {**data, **decl, 'action': 'submit', 'document': self._pdf()})
         self.assertEqual(r.status_code, 302)
         sub.refresh_from_db()
         self.assertEqual(sub.status, 'submitted')
         self.assertIsNotNone(sub.sent_at)
+        self.assertIsNotNone(sub.declared_at)
+        self.assertEqual(c.get(f'/portal/submissions/{sub.pk}/receipt/').status_code, 200)
         self.assertTrue(sub.document.name.startswith('private/submissions/'))
 
         # إشعارات: المدرسة + الإدارة
@@ -145,6 +150,8 @@ class RegistrationFlowTest(TestCase):
         r = jc.get(f'/judge/{a.pk}/')
         self.assertNotContains(r, 'مدرسة الأمل')   # تحكيم بدون أسماء
         self.assertEqual(jc.get(url).status_code, 200)   # المحكّم يفتح الملف
+        self.assertContains(r, 'تعارض المصالح')   # إقرار قبل التقييم
+        jc.post(f'/judge/{a.pk}/', {'action': 'coi_ok'})
         r = jc.post(f'/judge/{a.pk}/', {f'c{c1.pk}': '8', f'c{c2.pk}': '25', 'action': 'finish'})
         self.assertContains(r, 'يجب أن تكون بين')
         r = jc.post(f'/judge/{a.pk}/', {f'c{c1.pk}': '8', f'c{c2.pk}': '15', 'action': 'finish', 'recommendation': 'yes'})
@@ -166,6 +173,9 @@ class RegistrationFlowTest(TestCase):
         r = c.get(f'/portal/submissions/{sub.pk}/')
         self.assertNotContains(r, 'pt-status st-winner')
         self.assertContains(r, 'pt-status st-judging')
+        with self.assertRaises(workflow.NotApproved):
+            workflow.publish_results(self.cycle)
+        workflow.approve_results(self.cycle, self.admin)
         self.assertEqual(workflow.publish_results(self.cycle), 1)
         sub.refresh_from_db()
         self.assertFalse(sub.results_hidden)
@@ -376,6 +386,9 @@ class ManagerConsoleTest(TestCase):
         self.sub.refresh_from_db()
         self.assertEqual(self.sub.status, 'winner')
         self.assertTrue(Winner.objects.filter(submission=self.sub, cycle=self.cycle, rank=1).exists())
+        c.post('/manage/results/', {'act': 'publish'})   # ممنوع قبل اعتماد اللجنة
+        self.assertFalse(Notification.objects.filter(user=self.school, title__contains='مبارك').exists())
+        c.post('/manage/results/', {'act': 'approve', 'note': 'محضر'})
         c.post('/manage/results/', {'act': 'publish'})
         self.assertTrue(Notification.objects.filter(user=self.school, title__contains='مبارك').exists())
         # إعلان وسائط يظهر في الرئيسية
@@ -387,9 +400,14 @@ class ManagerConsoleTest(TestCase):
         self.assertEqual(a.media.count(), 2)
         self.assertContains(self.client_class().get('/'), 'إعلان الفائزين')
         self.assertContains(self.client_class().get(f'/announcements/{a.pk}/'), 'dQw4w9WgXcQ')
-        # تصدير CSV
-        r = c.post('/manage/submissions/', {'ids': [self.sub.pk], 'bulk': 'export'})
+        # تصدير CSV و Excel
+        r = c.post('/manage/submissions/', {'ids': [self.sub.pk], 'bulk': 'export_csv'})
         self.assertIn('مشروع الطاقة', r.content.decode('utf-8'))
+        r = c.post('/manage/submissions/', {'ids': [self.sub.pk], 'bulk': 'export'})
+        import io
+        from openpyxl import load_workbook
+        wb = load_workbook(io.BytesIO(r.content))
+        self.assertEqual(wb['الطلبات']['J2'].value, 'مشروع الطاقة')
 
     def test_school_cannot_open_manage(self):
         self.client.login(username='s@x.org', password='Sch-pass-2026')
@@ -428,3 +446,67 @@ class AdminToolsTests(TestCase):
         self.assertEqual(self.client.get('/admin/award/news/').status_code, 200)
         self.assertEqual(self.client.get('/admin/award/submission/').status_code, 403)
         self.assertEqual(self.client.get('/manage/').status_code, 404)
+
+
+@override_settings(MEDIA_ROOT=TMP_MEDIA, EMAIL_HOST='', EMAIL_ENABLED=False, EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+class SimulationTest(TestCase):
+    """المحاكاة الآلية تمر بكل المراحل بنجاح، ثم «مسح بيانات التجربة» يحذف كل شيء ولا يلمس البيانات الحقيقية"""
+
+    def setUp(self):
+        import django.db
+        self._close = django.db.connection.close
+        django.db.connection.close = lambda: None
+        from django.core.cache import cache
+        cache.clear()
+        f = Field.objects.create(name_ar='العلوم', name_en='Science')
+        f2 = Field.objects.create(name_ar='البيئة', name_en='Env')
+        Track.objects.create(field=f, name_ar='الطاقة', name_en='Energy')
+        Track.objects.create(field=f2, name_ar='المياه', name_en='Water')
+        now = timezone.now()
+        self.real = AwardCycle.objects.create(name='الدورة الحقيقية', year=2026, opens_at=now - timedelta(days=1),
+                                              closes_at=now + timedelta(days=30), is_current=True)
+        u = User.objects.create_user('real@x.org', 'real@x.org', 'Real-pass-2026')
+        Profile.objects.create(user=u, role='school', school_name='مدرسة حقيقية')
+        self.real_sub = Submission.objects.create(cycle=self.real, owner=u, school_name='مدرسة حقيقية', contact_person='x',
+                                                  email='real@x.org', phone='1', project_title='حقيقي', status='submitted')
+        rj = User.objects.create_user('rj@x.org', 'rj@x.org', 'Rj-pass-2026')
+        Profile.objects.create(user=rj, role='judge')
+
+    def tearDown(self):
+        import django.db
+        django.db.connection.close = self._close
+
+    def test_simulation_and_clear(self):
+        from .simulation import Sim
+        from . import cleanup
+        run = Sim(seed=7).run()
+        self.assertEqual(run.failed, 0, run.report)
+        self.assertGreater(run.passed, 60)
+        self.assertEqual(AwardCycle.current(), self.real)
+        self.assertFalse(Assignment.objects.filter(judge__email='rj@x.org').exists())   # المحكّم الحقيقي لم يُستخدم
+        c = cleanup.simulation_counts()
+        self.assertGreater(c['submissions'], 0)
+        r = cleanup.clear_simulation()
+        c = cleanup.simulation_counts()
+        self.assertEqual((c['submissions'], c['users'], c['cycles']), (0, 0, 0))
+        self.assertTrue(Submission.objects.filter(pk=self.real_sub.pk).exists())
+        self.assertTrue(User.objects.filter(email='real@x.org').exists())
+        self.assertTrue(r['backup'])
+
+    def test_test_mode_marks_new_data(self):
+        from .models import PortalSetting
+        ps = PortalSetting.get()
+        ps.test_mode = True
+        ps.save()
+        r = self.client.post('/accounts/signup/', {'school_name': 'مدرسة تجربة', 'contact_person': 'أ', 'phone': '0790000000',
+                                                   'email': 't@x.org', 'password1': 'Strong-pass-2026', 'password2': 'Strong-pass-2026'})
+        p = Profile.objects.filter(user__email='t@x.org').first()
+        if p:   # قد يتطلب النموذج حقول موقع إضافية
+            self.assertTrue(p.is_simulation)
+        mgr = User.objects.create_superuser('m@x.org', 'm@x.org', 'M-pass-2026')
+        self.client.force_login(mgr)
+        self.assertEqual(self.client.get('/manage/tools/').status_code, 200)
+        r = self.client.post('/manage/tools/', {'act': 'clear_sim', 'confirm': 'مسح'})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(Profile.objects.filter(user__email='t@x.org').exists())
+        self.assertTrue(Submission.objects.filter(pk=self.real_sub.pk).exists())

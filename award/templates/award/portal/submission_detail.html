@@ -20,6 +20,7 @@
 {{ sub.school_note }}</div>{% endif %}
 
   <div class="d-flex flex-wrap gap-2 mb-2">
+    {% if sub.sent_at %}<a href="/portal/submissions/{{ sub.pk }}/receipt/" target="_blank" class="pt-btn pt-btn-light"><i class="fas fa-receipt"></i> إيصال الاستلام</a>{% endif %}
     {% if sub.can_edit %}<a href="{% url 'submission_edit' sub.pk %}" class="pt-btn pt-btn-gold"><i class="fas fa-pen"></i> {% if sub.status == 'revision' %}تعديل وإعادة الإرسال{% else %}إكمال وإرسال{% endif %}</a>{% endif %}
     {% if sub.can_withdraw %}
     <form method="post" action="{% url 'submission_withdraw' sub.pk %}" onsubmit="return confirm('{% if sub.status == 'draft' %}حذف هذه المسودة نهائياً؟{% else %}سحب الطلب من المسابقة؟ لا يمكن التراجع.{% endif %}')">{% csrf_token %}
@@ -27,6 +28,42 @@
     {% endif %}
   </div>
 </div>
+
+{% if published or appeals or invitation %}
+<div class="pt-card" id="results" style="border-top-color:var(--gold)">
+  <h2><i class="fas fa-award ms-1" style="color:var(--gold)"></i> النتيجة وما بعدها</h2>
+  {% if certificates %}<div class="d-flex flex-wrap gap-2 mb-3">{% for c in certificates %}<a href="{{ c.get_absolute_url }}" target="_blank" class="pt-btn pt-btn-gold"><i class="fas fa-certificate"></i> {{ c.get_kind_display }}</a>{% endfor %}</div>{% endif %}
+  {% if invitation %}<div class="pt-note"><b><i class="fas fa-envelope-open-text"></i> أنتم مدعوون لحفل التكريم</b>{% if sub.cycle.ceremony_date %} — {{ sub.cycle.ceremony_date|date:"Y-m-d H:i" }}{% endif %}{% if sub.cycle.ceremony_place %} — {{ sub.cycle.ceremony_place }}{% endif %}
+    · ردّكم: <b>{{ invitation.get_rsvp_display }}</b> · <a href="/rsvp/{{ invitation.code }}/">{% if invitation.rsvp == 'pending' %}تأكيد الحضور{% else %}تعديل الرد{% endif %}</a></div>{% endif %}
+  {% if feedback and feedback.rows %}
+  <h3 style="font-size:1.05rem;font-weight:900;color:var(--primary)">تقرير التغذية الراجعة <small class="text-muted">(متوسط {{ feedback.n }} محكّم — بدون أسماء)</small></h3>
+  <div class="mb-2">المتوسط العام: <b style="font-size:1.2rem">{{ feedback.avg }}</b> / 100</div>
+  {% for r in feedback.rows %}<div class="mb-2"><div class="d-flex justify-content-between"><span>{{ r.name }}</span><small><b>{{ r.avg }}</b> / {{ r.max }} ({{ r.pct }}%)</small></div>
+    <div style="background:#eef0f4;border-radius:8px;height:9px;overflow:hidden"><div style="width:{{ r.pct }}%;height:100%;background:{% if r.pct >= 75 %}#188038{% elif r.pct >= 50 %}#c5a059{% else %}#e8710a{% endif %}"></div></div></div>{% endfor %}
+  {% if feedback.best and feedback.weak and feedback.best.name != feedback.weak.name %}<p class="pt-help">أقوى جوانب المشروع: <b>{{ feedback.best.name }}</b> · أكثر ما يحتاج تطويراً: <b>{{ feedback.weak.name }}</b></p>{% endif %}
+  {% for c in feedback.comments %}<div class="pt-help" style="white-space:pre-line">« {{ c }} »</div>{% endfor %}
+  {% endif %}
+  {% for ap in appeals %}<div class="pt-note{% if ap.status == 'open' %} warn{% endif %}"><b>اعتراضكم ({{ ap.created_at|date:"Y-m-d" }}): {{ ap.get_status_display }}</b>
+{{ ap.body }}{% if ap.response %}
+
+<b>رد اللجنة:</b> {{ ap.response }}{% endif %}</div>{% endfor %}
+  {% if can_appeal %}<details class="mt-2"><summary style="cursor:pointer;font-weight:800">تقديم اعتراض على النتيجة (حتى {{ appeal_until|date:"Y-m-d" }})</summary>
+    <form method="post" action="/portal/submissions/{{ sub.pk }}/appeal/" class="mt-2">{% csrf_token %}
+      <textarea name="body" class="form-control" rows="4" required minlength="20" placeholder="اذكروا أسباب الاعتراض بوضوح ومحددات (معيار، معلومة لم تُراعَ…)"></textarea>
+      <button class="pt-btn pt-btn-gold mt-2" onclick="return confirm('إرسال الاعتراض؟ يُسمح باعتراض واحد فقط.')"><i class="fas fa-paper-plane"></i> إرسال الاعتراض</button></form></details>{% endif %}
+</div>
+{% endif %}
+{% if show_impact %}
+<div class="pt-card" id="impact"><h2><i class="fas fa-seedling ms-1" style="color:var(--gold)"></i> متابعة أثر المشروع</h2>
+  <p class="pt-sub">حدّثونا عمّا حدث للمشروع بعد الفوز: تطبيقه، توسّعه، المستفيدون، مشاركات أخرى…{% if impact_due %} <b>(مطلوب بعد {{ impact_due|date:"Y-m-d" }})</b>{% endif %}</p>
+  {% for r in impact_reports %}<div class="pt-note"><small>{{ r.created_at|date:"Y-m-d" }}{% if r.beneficiaries %} · المستفيدون: {{ r.beneficiaries }}{% endif %}</small><div style="white-space:pre-line">{{ r.body }}</div></div>{% endfor %}
+  <form method="post" action="/portal/submissions/{{ sub.pk }}/impact/" enctype="multipart/form-data">{% csrf_token %}
+    <textarea name="body" class="form-control" rows="3" required minlength="20" placeholder="ماذا تحقق؟"></textarea>
+    <div class="row g-2 mt-1"><div class="col-md-4"><input type="number" name="beneficiaries" min="0" class="form-control" placeholder="عدد المستفيدين"></div>
+    <div class="col-md-5"><input type="file" name="attachment" class="form-control"></div>
+    <div class="col-md-3"><button class="pt-btn pt-btn-gold pt-btn-block">إرسال التقرير</button></div></div></form>
+</div>
+{% endif %}
 
 <div class="row g-4">
   <div class="col-lg-8">

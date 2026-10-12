@@ -80,6 +80,8 @@ STATUS_CHOICES = (
     ('withdrawn', 'مسحوب'),
 )
 FINAL_STATUSES = ('accepted', 'rejected', 'winner')
+STAGE_CHOICES = (('initial', 'التحكيم الأولي (الفرز)'), ('shortlist', 'القائمة القصيرة'), ('final', 'التحكيم النهائي'))
+SIM_DOMAIN = 'sim.iaj.invalid'   # حسابات المحاكاة الآلية — لا يُرسل لها بريد
 EDITABLE_STATUSES = ('draft', 'revision')
 
 
@@ -122,6 +124,13 @@ class Submission(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإنشاء")
     sent_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ الإرسال")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="آخر تحديث")
+    judging_stage = models.CharField(max_length=10, choices=STAGE_CHOICES, default='initial', verbose_name="مرحلة التحكيم")
+    declared_truth = models.BooleanField(default=False, verbose_name="إقرار صحة المعلومات")
+    declared_original = models.BooleanField(default=False, verbose_name="إقرار أصالة العمل وملكيته")
+    declared_consent = models.BooleanField(default=False, verbose_name="موافقة أولياء الأمور على نشر الصور")
+    declared_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ الإقرارات")
+    is_simulation = models.BooleanField(default=False, db_index=True, verbose_name="تجريبي؟",
+                                        help_text="بيانات محاكاة/تجربة — تُحذف بزر «مسح بيانات التجربة» ولا تظهر في إحصاءات الموقع.")
 
     class Meta:
         verbose_name = "طلب ترشح"
@@ -174,14 +183,34 @@ class Submission(models.Model):
         return self.status not in ('accepted', 'rejected', 'winner', 'withdrawn')
 
     # ---------- التحكيم ----------
+    def stage_done(self):
+        """التقييمات المنتهية في مرحلة التحكيم الحالية (أو كل المنتهية إن لم يُقيَّم شيء فيها بعد)"""
+        done = [a for a in self.assignments.all() if a.is_done]
+        cur = [a for a in done if a.stage == self.judging_stage]
+        return cur or done
+
     @property
     def avg_score(self):
-        totals = [a.total for a in self.assignments.all() if a.is_done]
+        totals = [a.total for a in self.stage_done()]
         return round(sum(totals) / len(totals), 1) if totals else None
 
     @property
+    def score_spread(self):
+        totals = [a.total for a in self.stage_done()]
+        return round(max(totals) - min(totals), 1) if len(totals) > 1 else 0
+
+    @property
+    def has_discrepancy(self):
+        pts = self.cycle.discrepancy_points if self.cycle else 0
+        return bool(pts) and self.score_spread >= pts
+
+    @property
+    def stage_label(self):
+        return dict(STAGE_CHOICES).get(self.judging_stage, '')
+
+    @property
     def judging_progress(self):
-        items = list(self.assignments.all())
+        items = [a for a in self.assignments.all() if a.stage == self.judging_stage] or list(self.assignments.all())
         return f"{sum(1 for a in items if a.is_done)}/{len(items)}" if items else '—'
 
 
@@ -970,6 +999,13 @@ class StoredFile(models.Model):
 #   الدورات، الحسابات، التحكيم، الإشعارات    #
 # ========================================= #
 
+TIE_BREAK_CHOICES = (
+    ('criterion', 'الأعلى في المعيار الأكبر وزناً'),
+    ('strong', 'عدد توصيات «أوصي بشدة»'),
+    ('min', 'الأعلى في أدنى درجة (اتفاق المحكّمين)'),
+)
+
+
 class AwardCycle(models.Model):
     name = models.CharField(max_length=200, verbose_name="اسم الدورة", help_text="مثال: الدورة الأولى")
     year = models.PositiveIntegerField(verbose_name="السنة")
@@ -1004,6 +1040,31 @@ class AwardCycle(models.Model):
     results_published = models.BooleanField(default=False, verbose_name="النتائج منشورة؟",
                                             help_text="قبل النشر ترى المدارس «قيد التحكيم» حتى لو حدّدتم النتيجة. "
                                                       "عند النشر تُرسل الإشعارات للجميع.")
+    # ---------- نزاهة التحكيم ----------
+    judging_closes_at = models.DateTimeField(null=True, blank=True, verbose_name="آخر موعد للتحكيم",
+                                             help_text="بعده تُقفل الدرجات ولا يستطيع المحكّم التعديل (يمكن تمديده). فارغ = بدون قفل.")
+    discrepancy_points = models.PositiveSmallIntegerField(default=20, verbose_name="فرق الدرجات الذي يستدعي محكّماً إضافياً",
+                                                          help_text="إذا اختلفت درجات المحكّمين على طلب بهذا القدر أو أكثر (من 100) يُسند تلقائياً لمحكّم إضافي. 0 = إيقاف.")
+    tie_break = models.CharField(max_length=10, default='criterion', choices=TIE_BREAK_CHOICES, verbose_name="كسر التعادل",
+                                 help_text="عند تساوي المتوسط بين طلبين في نفس المسار.")
+    # ---------- اعتماد ونشر النتائج ----------
+    require_approval = models.BooleanField(default=True, verbose_name="اعتماد اللجنة قبل النشر؟",
+                                           help_text="لا يمكن نشر النتائج قبل تسجيل اعتماد لجنة الجائزة. أي تعديل على الفائزين بعد الاعتماد يلغيه.")
+    results_approved_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ اعتماد النتائج")
+    results_approved_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+',
+                                            verbose_name="اعتمدها")
+    results_approval_note = models.TextField(blank=True, default='', verbose_name="محضر / ملاحظة الاعتماد")
+    results_published_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ نشر النتائج")
+    appeal_days = models.PositiveSmallIntegerField(default=7, verbose_name="مهلة الاعتراض بعد النشر (أيام)",
+                                                   help_text="0 = لا اعتراضات.")
+    share_feedback = models.BooleanField(default=True, verbose_name="تقرير تغذية راجعة للمدارس بعد النشر؟",
+                                         help_text="متوسط كل معيار بدون أسماء المحكّمين.")
+    share_judge_comments = models.BooleanField(default=False, verbose_name="إظهار ملاحظات المحكّمين العامة في التقرير؟")
+    ceremony_date = models.DateTimeField(null=True, blank=True, verbose_name="موعد حفل التكريم")
+    ceremony_place = models.CharField(max_length=255, blank=True, default='', verbose_name="مكان الحفل")
+    impact_after_days = models.PositiveSmallIntegerField(default=180, verbose_name="متابعة أثر الفائزين بعد (أيام)",
+                                                         help_text="يُطلب من المدارس الفائزة تقرير متابعة بعد هذه المدة من النشر. 0 = إيقاف.")
+    is_simulation = models.BooleanField(default=False, editable=False, verbose_name="دورة محاكاة؟")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1054,6 +1115,22 @@ class AwardCycle(models.Model):
         if now <= self.closes_at:
             return 'open'
         return 'results' if self.results_published else 'closed'
+
+    @property
+    def judging_locked(self):
+        from django.utils import timezone
+        return bool(self.judging_closes_at and timezone.now() > self.judging_closes_at)
+
+    @property
+    def is_approved(self):
+        return bool(self.results_approved_at)
+
+    @property
+    def appeal_until(self):
+        from datetime import timedelta
+        if not (self.results_published and self.results_published_at and self.appeal_days):
+            return None
+        return self.results_published_at + timedelta(days=self.appeal_days)
 
     def available_tracks(self):
         qs = self.tracks.filter(is_active=True) if self.pk and self.tracks.exists() else Track.objects.filter(is_active=True)
@@ -1124,6 +1201,8 @@ class Profile(models.Model):
     judge_fields = models.ManyToManyField(Field, blank=True, verbose_name="مجالات التحكيم",
                                           help_text="التوزيع التلقائي يُسند للمحكّم طلبات هذه المجالات فقط (فارغ = كل المجالات).")
     email_notifications = models.BooleanField(default=True, verbose_name="استلام الإشعارات بالبريد")
+    is_simulation = models.BooleanField(default=False, db_index=True, verbose_name="حساب تجريبي؟",
+                                        help_text="يُحذف مع «مسح بيانات التجربة».")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ التسجيل")
 
     class Meta:
@@ -1199,11 +1278,14 @@ class Assignment(models.Model):
     comment = models.TextField(blank=True, default='', verbose_name="ملاحظات المحكّم العامة")
     recommendation = models.CharField(max_length=10, blank=True, default='', choices=RECOMMEND_CHOICES, verbose_name="التوصية")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="تاريخ إنهاء التقييم")
+    stage = models.CharField(max_length=10, choices=STAGE_CHOICES, default='initial', verbose_name="المرحلة")
+    coi_confirmed_at = models.DateTimeField(null=True, blank=True, verbose_name="أقرّ بعدم تعارض المصالح")
+    reminded_at = models.DateTimeField(null=True, blank=True, verbose_name="آخر تذكير")
 
     class Meta:
         verbose_name = "إسناد تحكيم"
         verbose_name_plural = "إسناد الطلبات للمحكّمين"
-        unique_together = ('submission', 'judge')
+        unique_together = ('submission', 'judge', 'stage')
         ordering = ['-assigned_at']
 
     def __str__(self):
@@ -1359,6 +1441,12 @@ class PortalSetting(models.Model):
     show_cycle_filter = models.BooleanField(default=True, verbose_name="تصفية الصور والفيديو والأخبار حسب الدورة في الموقع")
     show_hero_stats = models.BooleanField(default=True, verbose_name="إظهار أرقام الجائزة أعلى الصفحة الرئيسية (الكمبيوتر)",
                                           help_text="المدارس المسجّلة، المشاريع، المجالات، المسارات — الرقم صفر لا يظهر.")
+    test_mode = models.BooleanField(default=False, verbose_name="وضع التجربة (المحاكاة اليدوية)",
+                                    help_text="أثناء التفعيل: كل حساب أو طلب جديد يُعلَّم «تجريبي» — ثم تحذفونه كله بزر «مسح بيانات التجربة».")
+    two_factor = models.CharField(max_length=10, default='off', choices=(
+        ('off', 'إيقاف'), ('staff', 'الإدارة فقط'), ('all', 'الإدارة والمحكّمون')),
+        verbose_name="التحقق بخطوتين (رمز بالبريد)",
+        help_text="بعد كلمة المرور يُرسل رمز من 6 أرقام إلى البريد. يحتاج إعداد البريد ليعمل.")
 
     class Meta:
         verbose_name = "إعدادات الحسابات والهيدر والتواصل"
@@ -1563,3 +1651,175 @@ class AnnouncementMedia(models.Model):
     @property
     def yt(self):
         return youtube_id(self.youtube_url)
+
+
+# ========================================= #
+#   اكتمال برنامج الجائزة: قرارات، نزاهة،    #
+#   اعتراضات، شهادات، دعوات، أثر، سجل        #
+# ========================================= #
+
+class DecisionTemplate(models.Model):
+    """نصوص جاهزة لأسباب القبول/التعليق/الرفض/طلب الاستكمال"""
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name="للحالة")
+    title = models.CharField(max_length=120, verbose_name="العنوان المختصر")
+    body = models.TextField(verbose_name="النص الذي يصل للمدرسة")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+
+    class Meta:
+        verbose_name = "قالب قرار"
+        verbose_name_plural = "قوالب أسباب القرارات"
+        ordering = ['status', 'order', 'id']
+
+    def __str__(self):
+        return f"{self.get_status_display()} — {self.title}"
+
+
+class ConflictDeclaration(models.Model):
+    """تعارض مصالح: محكّم لا يقيّم طلباً معيناً أو أي طلب من مدرسة معينة"""
+    judge = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='conflicts', verbose_name="المحكّم")
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, null=True, blank=True, related_name='conflicts',
+                                   verbose_name="الطلب")
+    school_name = models.CharField(max_length=255, blank=True, default='', verbose_name="أو كل طلبات المدرسة")
+    reason = models.CharField(max_length=500, blank=True, default='', verbose_name="السبب")
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "تعارض مصالح"
+        verbose_name_plural = "إقرارات تعارض المصالح"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.judge} ✕ {self.submission.ref if self.submission_id else self.school_name}"
+
+
+APPEAL_STATUS = (('open', 'قيد الدراسة'), ('accepted', 'مقبول — أُعيد النظر'), ('rejected', 'مرفوض — النتيجة ثابتة'))
+
+
+class Appeal(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='appeals', verbose_name="الطلب")
+    by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, related_name='+', verbose_name="مقدّم الاعتراض")
+    body = models.TextField(verbose_name="نص الاعتراض")
+    status = models.CharField(max_length=10, choices=APPEAL_STATUS, default='open', verbose_name="الحالة")
+    response = models.TextField(blank=True, default='', verbose_name="رد اللجنة")
+    responded_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    responded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "اعتراض"
+        verbose_name_plural = "الاعتراضات على النتائج"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"اعتراض {self.submission.ref}"
+
+
+def _code():
+    import secrets
+    return secrets.token_hex(5).upper()
+
+
+CERT_KINDS = (('winner', 'شهادة فوز'), ('participation', 'شهادة مشاركة'), ('judge', 'شهادة شكر — محكّم'))
+
+
+class Certificate(models.Model):
+    code = models.CharField(max_length=20, unique=True, default=_code, verbose_name="رمز التحقق")
+    kind = models.CharField(max_length=15, choices=CERT_KINDS, verbose_name="النوع")
+    cycle = models.ForeignKey(AwardCycle, on_delete=models.CASCADE, related_name='certificates', verbose_name="الدورة")
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, null=True, blank=True, related_name='certificates')
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, null=True, blank=True, related_name='certificates',
+                             verbose_name="المحكّم (لشهادات الشكر)")
+    recipient = models.CharField(max_length=255, verbose_name="باسم")
+    title = models.CharField(max_length=500, blank=True, default='', verbose_name="المشروع / الوصف")
+    rank = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="المركز")
+    issued_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإصدار")
+    revoked = models.BooleanField(default=False, verbose_name="ملغاة؟")
+
+    class Meta:
+        verbose_name = "شهادة"
+        verbose_name_plural = "الشهادات"
+        ordering = ['cycle', 'kind', 'rank', 'recipient']
+
+    def __str__(self):
+        return f"{self.get_kind_display()} — {self.recipient} ({self.code})"
+
+    def get_absolute_url(self):
+        return f'/certificate/{self.code}/'
+
+
+RSVP_CHOICES = (('pending', 'بانتظار الرد'), ('yes', 'سيحضر'), ('no', 'يعتذر'))
+
+
+class Invitation(models.Model):
+    code = models.CharField(max_length=20, unique=True, default=_code)
+    cycle = models.ForeignKey(AwardCycle, on_delete=models.CASCADE, related_name='invitations', verbose_name="الدورة")
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, null=True, blank=True, related_name='invitations')
+    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    name = models.CharField(max_length=255, verbose_name="المدعو")
+    email = models.EmailField(blank=True, default='', verbose_name="البريد")
+    rsvp = models.CharField(max_length=10, choices=RSVP_CHOICES, default='pending', verbose_name="الرد")
+    guests = models.PositiveSmallIntegerField(default=1, verbose_name="عدد الحضور")
+    note = models.CharField(max_length=500, blank=True, default='', verbose_name="ملاحظة")
+    sent_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "دعوة حفل"
+        verbose_name_plural = "دعوات حفل التكريم"
+        ordering = ['rsvp', 'name']
+
+    def __str__(self):
+        return f"{self.name} — {self.get_rsvp_display()}"
+
+
+class ImpactReport(models.Model):
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='impact_reports', verbose_name="الطلب")
+    by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, related_name='+')
+    body = models.TextField(verbose_name="ماذا حدث للمشروع بعد الفوز؟")
+    beneficiaries = models.PositiveIntegerField(null=True, blank=True, verbose_name="عدد المستفيدين (تقريباً)")
+    attachment = models.FileField(max_length=500, upload_to=submission_upload, blank=True, verbose_name="مرفق (اختياري)")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="التاريخ")
+
+    class Meta:
+        verbose_name = "تقرير أثر"
+        verbose_name_plural = "تقارير متابعة أثر الفائزين"
+        ordering = ['-created_at']
+
+
+class AuditLog(models.Model):
+    user = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+', verbose_name="المستخدم")
+    action = models.CharField(max_length=60, verbose_name="الإجراء")
+    target = models.CharField(max_length=255, blank=True, default='', verbose_name="على")
+    detail = models.TextField(blank=True, default='', verbose_name="التفاصيل")
+    ip = models.CharField(max_length=45, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="الوقت")
+
+    class Meta:
+        verbose_name = "سجل عملية"
+        verbose_name_plural = "سجل العمليات الحساسة"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.created_at:%Y-%m-%d %H:%M} {self.action} {self.target}"
+
+
+class ReminderSent(models.Model):
+    """حتى لا يتكرر نفس التذكير"""
+    key = models.CharField(max_length=120, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class SimulationRun(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="الوقت")
+    by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    cycle = models.ForeignKey(AwardCycle, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    passed = models.PositiveSmallIntegerField(default=0)
+    failed = models.PositiveSmallIntegerField(default=0)
+    report = models.TextField(blank=True, default='')
+    password = models.CharField(max_length=40, blank=True, default='', verbose_name="كلمة مرور حسابات المحاكاة")
+
+    class Meta:
+        verbose_name = "تشغيل محاكاة"
+        verbose_name_plural = "تقارير المحاكاة"
+        ordering = ['-created_at']

@@ -107,7 +107,7 @@ def is_award_manager(user):
 def award_manager_users():
     from django.contrib.auth.models import User
     return User.objects.filter(Q(is_superuser=True) | Q(profile__role='manager') | Q(groups__name=GROUP_AWARD),
-                               is_active=True).distinct()
+                               is_active=True).exclude(profile__is_simulation=True).distinct()
 
 
 def sync_role_groups(**kwargs):

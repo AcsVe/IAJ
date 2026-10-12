@@ -2,7 +2,7 @@
 {% block portal %}
 <div class="pt-card">
   <div class="d-flex justify-content-between flex-wrap gap-2">
-    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0">{{ sub.ref }} · {{ sub.field|default:"" }} / {{ sub.track|default:"" }}</p></div>
+    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0">{{ sub.ref }} · {{ sub.field|default:"" }} / {{ sub.track|default:"" }} · {{ a.get_stage_display }}</p></div>
     <div class="text-center"><div class="pt-total" id="liveTotal">{{ a.total }}</div><small class="text-muted">من 100</small></div>
   </div>
   <dl class="pt-kv mt-3">
@@ -14,10 +14,28 @@
   </dl>
 </div>
 
+{% if need_coi %}
+<div class="pt-card" style="border-top-color:#e8710a">
+  <h2><i class="fas fa-handshake-slash ms-1" style="color:#e8710a"></i> إقرار تعارض المصالح</h2>
+  <p>قبل التقييم: هل لك صلة بهذا المشروع أو بالمدرسة المقدِّمة (عمل فيها، قرابة مع الطلبة أو المشرف، إشراف أو مساعدة في المشروع، أو أي مصلحة شخصية)؟</p>
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end">{% csrf_token %}
+    <button name="action" value="coi_ok" class="pt-btn pt-btn-gold"><i class="fas fa-check"></i> أقرّ بعدم وجود أي تعارض — ابدأ التقييم</button>
+  </form>
+  <details class="mt-3"><summary style="cursor:pointer;font-weight:800;color:#c62828">لدي تعارض مصالح</summary>
+    <form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="action" value="coi_conflict">
+      <input type="text" name="reason" class="form-control mb-2" placeholder="السبب باختصار (يظهر للإدارة فقط)">
+      <label class="form-check mb-2"><input type="radio" name="scope" value="submission" checked class="form-check-input"> هذا الطلب فقط</label>
+      <label class="form-check mb-2"><input type="radio" name="scope" value="school" class="form-check-input"> كل طلبات هذه المدرسة</label>
+      <button class="pt-btn pt-btn-danger" onclick="return confirm('تسجيل التعارض وإلغاء إسناد الطلب إليك؟')"><i class="fas fa-ban"></i> تسجيل التعارض والاعتذار عن التقييم</button>
+    </form></details>
+</div>
+{% else %}
 <div class="pt-card">
   <h2>التقييم {% if a.is_done %}<span class="pt-status st-accepted" style="font-size:.85rem">منتهٍ {{ a.completed_at|date:"Y-m-d" }}</span>{% endif %}</h2>
   {% for e in errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
-  {% if locked %}<div class="pt-note">انتهت مرحلة التحكيم لهذا الطلب — التقييم للعرض فقط.</div>{% endif %}
+  {% if deadline_passed %}<div class="pt-note warn">انتهى موعد التحكيم ({{ sub.cycle.judging_closes_at|date:"Y-m-d H:i" }}) — الدرجات مقفلة. للتمديد تواصل مع إدارة الجائزة.</div>
+  {% elif locked %}<div class="pt-note">انتهت مرحلة التحكيم لهذا الطلب — التقييم للعرض فقط.</div>
+  {% elif sub.cycle.judging_closes_at %}<div class="pt-note">آخر موعد للتحكيم: <b>{{ sub.cycle.judging_closes_at|date:"Y-m-d H:i" }}</b></div>{% endif %}
   {% if not rows %}<div class="pt-note warn">لم تُضَف معايير تحكيم بعد. تواصل مع إدارة الجائزة.</div>{% endif %}
   <form method="post" id="scoreForm">{% csrf_token %}
     {% for r in rows %}
@@ -41,6 +59,7 @@
     </div>{% endif %}
   </form>
 </div>
+{% endif %}
 <script>
 (function(){var ins=document.querySelectorAll('.pt-score'),out=document.getElementById('liveTotal');
 function calc(){var n=0,d=0;ins.forEach(function(i){var w=parseFloat(i.dataset.w)||1,m=parseFloat(i.dataset.max)||1,v=parseFloat(i.value);if(!isNaN(v)){n+=Math.min(v,m)/m*w}d+=w});out.textContent=d?(Math.round(n/d*1000)/10):0}

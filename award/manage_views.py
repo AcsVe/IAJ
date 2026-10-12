@@ -15,9 +15,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .models import (Announcement, AnnouncementMedia, Assignment, AwardCycle, Directorate, Field, Governorate,
-                     JudgingCommittee, Notification, Profile, STATUS_CHOICES, Submission, SubmissionFile,
-                     SubmissionMessage, Track, Winner, WinnerCategory)
+from .models import (Announcement, AnnouncementMedia, Appeal, Assignment, AwardCycle, ConflictDeclaration,
+                     DecisionTemplate, Directorate, Field, Governorate, JudgingCommittee, Notification, PortalSetting,
+                     Profile, STAGE_CHOICES, STATUS_CHOICES, Submission, SubmissionFile, SubmissionMessage, Track,
+                     Winner, WinnerCategory)
+from .audit import audit
 from .notify import notify
 from .portal_views import is_manager
 from . import workflow
@@ -31,6 +33,14 @@ ACTIONS = [  # (الحالة، نص الزر، أيقونة، لون)
     ('accepted', 'قبول', 'fa-check', 'success'),
     ('rejected', 'رفض', 'fa-xmark', 'danger'),
 ]
+NEEDS_REASON = ('revision', 'on_hold', 'rejected')   # يُطلب سبب يصل للمدرسة
+
+
+def _templates():
+    out = {}
+    for t in DecisionTemplate.objects.all():
+        out.setdefault(t.status, []).append({'t': t.title, 'b': t.body})
+    return out
 
 
 def manager_required(view):
@@ -58,7 +68,8 @@ def _cycle(request):
 
 def _ctx(request, nav, **kw):
     unread = SubmissionMessage.objects.filter(from_staff=False, is_read=False).count()
-    return {'nav': nav, 'mg_unread': unread, 'cycles': AwardCycle.objects.all(), 'cur_cycle': kw.pop('cycle', None), **kw}
+    return {'nav': nav, 'mg_unread': unread, 'cycles': AwardCycle.objects.all(), 'cur_cycle': kw.pop('cycle', None),
+            'mg_appeals': Appeal.objects.filter(status='open').count(), 'mg_test_mode': PortalSetting.get().test_mode, **kw}
 
 
 # =====================================================
@@ -98,6 +109,12 @@ def _filtered_subs(request, cycle):
     f = request.GET
     if f.get('status'):
         qs = qs.filter(status=f['status'])
+    if f.get('stage') in dict(STAGE_CHOICES):
+        qs = qs.filter(judging_stage=f['stage'])
+    if f.get('test') == '1':
+        qs = qs.filter(is_simulation=True)
+    elif f.get('test') == '0':
+        qs = qs.filter(is_simulation=False)
     for key, field in (('track', 'track_id'), ('field', 'field_id'), ('gov', 'owner__profile__governorate_id'),
                        ('dir', 'owner__profile__directorate_id')):
         if f.get(key, '').isdigit():
@@ -121,8 +138,13 @@ def submissions(request):
     base, qs = _filtered_subs(request, cycle)
     st_counts = _counts(base.order_by(), 'status')
     qs = qs.prefetch_related('assignments__scores__criterion').order_by('-sent_at', '-submitted_at')
+    subs = list(qs[:1000])
+    if request.GET.get('flag') == 'disc':
+        subs = [x for x in subs if x.has_discrepancy]
     return render(request, 'award/manage/submissions.html', _ctx(
-        request, 'subs', cycle=cycle, subs=qs[:1000], total=qs.count(), base_total=base.count(),
+        request, 'subs', cycle=cycle, subs=subs, total=len(subs), base_total=base.count(),
+        stages=STAGE_CHOICES, tpl=_templates(), needs_reason=NEEDS_REASON,
+        n_test=base.filter(is_simulation=True).count(),
         status_tabs=[(k, STATUS[k], st_counts.get(k, 0)) for k, _ in STATUS_CHOICES if st_counts.get(k) or k == request.GET.get('status')],
         tracks=_with_counts(Track.objects.filter(is_active=True), _counts(base.order_by(), 'track_id')),
         fields_=_with_counts(Field.objects.all(), _counts(base.order_by(), 'field_id')),
@@ -137,6 +159,7 @@ def _with_counts(qs, counts):
 
 
 def _bulk(request, cycle):
+    from . import cleanup
     ids = [int(i) for i in request.POST.getlist('ids') if i.isdigit()]
     subs = Submission.objects.filter(pk__in=ids).select_related('cycle', 'owner')
     act = request.POST.get('bulk')
@@ -146,10 +169,21 @@ def _bulk(request, cycle):
         messages.warning(request, 'لم تحدّد أي طلب.')
         return redirect(back)
     if act in STATUS:
+        if act in NEEDS_REASON and not note:
+            messages.error(request, f'«{STATUS[act]}» يحتاج سبباً يصل للمدرسة — اختر من القوالب أو اكتب الملاحظة.')
+            return redirect(back)
         n = sum(1 for s in subs if workflow.change_status(s, act, by=request.user, note=note))
-        messages.success(request, f'تم تغيير حالة {n} طلب إلى «{STATUS[act]}».')
+        if act in ('accepted', 'rejected'):
+            audit(request, f'قرار جماعي: {STATUS[act]}', f'{n} طلب', ', '.join(s.ref for s in subs))
+        messages.success(request, f'تم تغيير حالة {n} طلب إلى «{STATUS[act]}».' +
+                         (' تصل النتيجة للمدارس عند نشر النتائج.' if act in ('accepted', 'rejected', 'winner') else ''))
+    elif act and act.startswith('stage_') and act[6:] in dict(STAGE_CHOICES):
+        n = workflow.set_stage(subs, act[6:], by=request.user)
+        messages.success(request, f'نُقل {n} طلب إلى «{dict(STAGE_CHOICES)[act[6:]]}». استخدم «توزيع تلقائي» لإسناد محكّمي هذه المرحلة.')
     elif act == 'auto_assign':
-        messages.success(request, f'تم إنشاء {workflow.auto_assign(subs)} إسناد للمحكّمين.')
+        messages.success(request, f'تم إنشاء {workflow.auto_assign(subs)} إسناد للمحكّمين (مع استبعاد تعارض المصالح).')
+    elif act == 'extra_judge':
+        messages.success(request, f'أُسند {workflow.auto_assign(subs, extra=1)} محكّم إضافي.')
     elif act == 'committee':
         com = JudgingCommittee.objects.filter(pk=request.POST.get('committee')).first()
         n = _assign_committee(com, subs) if com else 0
@@ -159,11 +193,19 @@ def _bulk(request, cycle):
             _staff_message(request, s, note, None)
         messages.success(request, f'أُرسلت الرسالة إلى {subs.count()} مدرسة.')
     elif act == 'export':
+        audit(request, 'تصدير Excel', f'{subs.count()} طلب')
+        from .export_xlsx import response
+        return response(cycle, subs, f'submissions-{timezone.localdate()}.xlsx')
+    elif act == 'export_csv':
         return _export(subs)
+    elif act in ('mark_test', 'unmark_test'):
+        n = subs.update(is_simulation=act == 'mark_test')
+        messages.success(request, f'{"عُلّم" if act == "mark_test" else "أُزيلت علامة التجربة عن"} {n} طلب' +
+                         (' — تُحذف مع «مسح بيانات التجربة».' if act == 'mark_test' else '.'))
     elif act == 'delete':
-        n = subs.count()
-        subs.delete()
-        messages.success(request, f'تم حذف {n} طلب.')
+        n, path = cleanup.delete_submissions(subs, 'manual-delete')
+        audit(request, 'حذف طلبات', f'{n} طلب', path)
+        messages.success(request, f'تم حذف {n} طلب. نسخة احتياطية مما حُذف: {path.split("backups")[-1] if path else "—"}')
     else:
         messages.warning(request, 'اختر إجراءً (والرسالة تحتاج نصاً).')
     return redirect(back)
@@ -217,6 +259,9 @@ def submission_detail(request, pk):
         note = request.POST.get('note', '').strip()
         if act == 'status':
             new = request.POST.get('status')
+            if new in NEEDS_REASON and not note and request.POST.get('notify', '1'):
+                messages.error(request, f'«{STATUS[new]}» يحتاج سبباً يصل للمدرسة — اختر من القوالب أو اكتب الملاحظة.')
+                return redirect(f'/manage/submissions/{sub.pk}/')
             if new in STATUS:
                 if request.POST.get('deadline'):
                     from django.utils.dateparse import parse_datetime
@@ -252,18 +297,60 @@ def submission_detail(request, pk):
             messages.info(request, 'أُعيد فتح التقييم للمحكّم.')
         elif act == 'winner':
             _make_winner(request, sub)
+        elif act == 'stage' and request.POST.get('stage') in dict(STAGE_CHOICES):
+            workflow.set_stage([sub], request.POST['stage'], by=request.user)
+            messages.success(request, f'مرحلة التحكيم: {sub.get_judging_stage_display()}')
+        elif act == 'extra_judge':
+            n = workflow.auto_assign([sub], extra=1)
+            messages.success(request, 'أُسند محكّم إضافي.' if n else 'لا يوجد محكّم متاح (بدون تعارض ومن نفس المجال).')
+        elif act == 'conflict':
+            j = User.objects.filter(pk=request.POST.get('judge'), profile__role='judge').first()
+            if j:
+                whole = request.POST.get('scope') == 'school'
+                _c, removed = workflow.declare_conflict(j, None if whole else sub, sub.school_name if whole else '',
+                                                        note or 'سجّلته الإدارة', by=request.user)
+                messages.success(request, f'سُجّل تعارض المصالح لـ {j.get_full_name() or j.email}' +
+                                 (f' وأُلغي {len(removed)} إسناد.' if removed else '.'))
+        elif act == 'del_conflict':
+            ConflictDeclaration.objects.filter(pk=request.POST.get('cid')).delete()
+            messages.info(request, 'حُذف إقرار التعارض.')
+        elif act == 'test':
+            sub.is_simulation = not sub.is_simulation
+            sub.save(update_fields=['is_simulation'])
+            messages.info(request, 'عُلّم الطلب «تجريبي».' if sub.is_simulation else 'أُزيلت علامة التجربة.')
+        elif act == 'appeal':
+            ap = get_object_or_404(Appeal, pk=request.POST.get('aid'), submission=sub)
+            if request.POST.get('status') in ('accepted', 'rejected') and note:
+                workflow.respond_appeal(ap, request.POST['status'], note, request.user)
+                audit(request, 'رد على اعتراض', sub.ref, ap.get_status_display())
+                messages.success(request, 'أُرسل رد اللجنة للمدرسة.')
+        elif act == 'delete_sub':
+            from . import cleanup
+            ref = sub.ref
+            n, path = cleanup.delete_submissions(Submission.objects.filter(pk=sub.pk), f'delete-{ref}')
+            audit(request, 'حذف طلب', ref, path)
+            messages.success(request, f'حُذف الطلب {ref} (نسخة احتياطية محفوظة).')
+            return redirect('/manage/submissions/')
         elif act == 'delete_file':
             SubmissionFile.objects.filter(pk=request.POST.get('fid'), submission=sub).delete()
             messages.info(request, 'حُذف الملف.')
-        return redirect(f'/manage/submissions/{sub.pk}/' + {'message': '#messages', 'assign': '#judging'}.get(act, ''))
+        return redirect(f'/manage/submissions/{sub.pk}/' + {'message': '#messages', 'assign': '#judging', 'extra_judge': '#judging',
+                                                            'conflict': '#judging', 'appeal': '#appeals'}.get(act, ''))
     sub.messages.filter(from_staff=False, is_read=False).update(is_read=True)
-    assigned = set(sub.assignments.values_list('judge_id', flat=True))
+    assigned = set(sub.assignments.filter(stage=sub.judging_stage).values_list('judge_id', flat=True))
+    cmap = workflow.conflict_map()
+    judges = list(User.objects.filter(profile__role='judge', is_active=True).exclude(pk__in=assigned)
+                  .select_related('profile').order_by('first_name'))
+    for j in judges:
+        j.conflict = workflow.has_conflict(j, sub, cmap)
     return render(request, 'award/manage/submission_detail.html', _ctx(
         request, 'subs', cycle=sub.cycle, sub=sub, prof=getattr(sub.owner, 'profile', None) if sub.owner_id else None,
         files=sub.files.all(), msgs=sub.messages.select_related('sender'), msg_form=StaffMsgForm(),
         logs=sub.logs.select_related('by'), actions=ACTIONS,
         assignments=sub.assignments.select_related('judge').prefetch_related('scores__criterion'),
-        judges=User.objects.filter(profile__role='judge', is_active=True).exclude(pk__in=assigned).order_by('first_name'),
+        judges=judges, tpl=_templates(), needs_reason=NEEDS_REASON, stages=STAGE_CHOICES,
+        conflicts=ConflictDeclaration.objects.filter(Q(submission=sub) | Q(school_name__iexact=sub.school_name)).select_related('judge'),
+        appeals=sub.appeals.select_related('by', 'responded_by'),
         committees=JudgingCommittee.objects.all(), categories=WinnerCategory.objects.filter(is_active=True),
         winner=getattr(sub, 'winner_entry', None),
         prev_next=_prev_next(sub),
@@ -281,13 +368,12 @@ def _make_winner(request, sub):
     except ValueError:
         rank = 1
     cat = WinnerCategory.objects.filter(pk=request.POST.get('category') or 0).first()
-    w, _ = Winner.objects.update_or_create(submission=sub, defaults=dict(
-        school_name=sub.school_name, project_title=sub.project_title, rank=rank, category=cat,
-        year=sub.cycle.year if sub.cycle else timezone.now().year, cycle=sub.cycle, is_active=True,
-        description=sub.abstract[:1000]))
-    workflow.change_status(sub, 'winner', by=request.user, note=request.POST.get('note', '').strip())
-    messages.success(request, f'اعتُمد الطلب فائزاً بالمركز {rank}. يظهر في صفحة الفائزين' +
-                     (' ويُبلَّغ عند نشر نتائج الدورة.' if sub.results_hidden else '.'))
+    was_approved = bool(sub.cycle and sub.cycle.is_approved)
+    workflow.make_winner(sub, rank=rank, category=cat, by=request.user, note=request.POST.get('note', '').strip())
+    audit(request, 'اعتماد فائز', sub.ref, f'المركز {rank}')
+    messages.success(request, f'اعتُمد {sub.ref} فائزاً بالمركز {rank}' +
+                     (' — يُبلَّغ عند نشر نتائج الدورة.' if sub.results_hidden else '.') +
+                     (' تنبيه: أُلغي اعتماد اللجنة بسبب التعديل — أعيدوا الاعتماد قبل النشر.' if was_approved and not sub.cycle.results_published else ''))
 
 
 # =====================================================
@@ -297,36 +383,56 @@ def _make_winner(request, sub):
 def results(request):
     cycle = _cycle(request)
     if request.method == 'POST' and cycle:
-        if request.POST.get('act') == 'publish':
-            n = workflow.publish_results(cycle, request.user)
-            messages.success(request, f'نُشرت النتائج وأُرسل {n} إشعار.')
-        elif request.POST.get('act') == 'winners':
+        act = request.POST.get('act')
+        if act == 'approve':
+            workflow.approve_results(cycle, request.user, request.POST.get('note', '').strip())
+            audit(request, 'اعتماد النتائج', str(cycle), request.POST.get('note', ''))
+            messages.success(request, 'سُجّل اعتماد اللجنة للنتائج. يمكنكم النشر الآن.')
+        elif act == 'unapprove':
+            workflow.reset_approval(cycle)
+            audit(request, 'إلغاء اعتماد النتائج', str(cycle))
+            messages.info(request, 'أُلغي الاعتماد.')
+        elif act == 'publish':
+            try:
+                n = workflow.publish_results(cycle, request.user)
+                audit(request, 'نشر النتائج', str(cycle), f'{n} إشعار')
+                messages.success(request, f'نُشرت النتائج وأُرسل {n} إشعار.')
+            except workflow.NotApproved:
+                messages.error(request, 'لا يمكن النشر قبل تسجيل اعتماد لجنة الجائزة.')
+        elif act == 'winners':
             ids = request.POST.getlist('ids')
-            for s in Submission.objects.filter(pk__in=ids, cycle=cycle):
+            for s in Submission.objects.filter(pk__in=ids, cycle=cycle).select_related('cycle'):
                 request.POST = request.POST.copy()
                 request.POST['rank'] = request.POST.get(f'rank_{s.pk}') or 1
                 request.POST['category'] = request.POST.get(f'cat_{s.pk}') or ''
                 _make_winner(request, s)
+        elif act == 'export':
+            audit(request, 'تصدير Excel للدورة', str(cycle))
+            from .export_xlsx import response
+            return response(cycle)
         return redirect('/manage/results/')
-    subs = Submission.objects.filter(status__in=('judging', 'accepted', 'winner')).select_related('track', 'field')
+    subs = Submission.objects.filter(status__in=('judging', 'accepted', 'winner')).select_related('track', 'field', 'cycle')
     if cycle:
         subs = subs.filter(cycle=cycle)
     subs = list(subs.prefetch_related('assignments__scores__criterion', 'assignments__judge'))
-    rows = []
-    for s in subs:
-        recs = [a.recommendation for a in s.assignments.all() if a.is_done and a.recommendation]
-        rows.append({'s': s, 'avg': s.avg_score, 'prog': s.judging_progress,
-                     'strong': recs.count('strong'), 'yes': recs.count('yes'), 'no': recs.count('no'),
-                     'winner': getattr(s, 'winner_entry', None)})
-    rows.sort(key=lambda r: (str(r['s'].track or ''), -(r['avg'] or -1)))
     groups = {}
-    for r in rows:
-        groups.setdefault(str(r['s'].track or 'بدون مسار'), []).append(r)
-    for g in groups.values():
-        for i, r in enumerate(g, 1):
-            r['suggest'] = i
+    for s in subs:
+        groups.setdefault(str(s.track or 'بدون مسار'), []).append(s)
+    out = {}
+    disc = 0
+    for track in sorted(groups):
+        rows = workflow.rank_rows(groups[track], cycle.tie_break if cycle else 'criterion')
+        for r in rows:
+            s = r['s']
+            recs = [a.recommendation for a in s.stage_done() if a.recommendation]
+            r.update(prog=s.judging_progress, strong=recs.count('strong'), yes=recs.count('yes'), no=recs.count('no'),
+                     winner=getattr(s, 'winner_entry', None), disc=s.has_discrepancy, spread=s.score_spread)
+            disc += r['disc']
+        out[track] = rows
+    pending = Assignment.objects.filter(submission__in=subs, completed_at__isnull=True).count()
     return render(request, 'award/manage/results.html', _ctx(
-        request, 'results', cycle=cycle, groups=groups, total=len(rows),
+        request, 'results', cycle=cycle, groups=out, total=len(subs), disc=disc, pending=pending,
+        n_winners=Winner.objects.filter(cycle=cycle).count() if cycle else 0,
         categories=WinnerCategory.objects.filter(is_active=True)))
 
 
@@ -351,21 +457,27 @@ class JudgeForm(forms.Form):
 @manager_required
 def judges(request):
     from .admin_portal import _send_invite
+    from . import reminders, cleanup
+    cycle = _cycle(request)
     form = JudgeForm(request.POST or None)
     if request.method == 'POST':
         act = request.POST.get('act')
+        uid = request.POST.get('uid')
+        if request.POST.get('row'):   # أزرار داخل الجدول: «invite:12»
+            act, _, uid = request.POST['row'].partition(':')
         if act == 'add' and form.is_valid():
             d = form.cleaned_data
             u = User.objects.create_user(username=d['email'], email=d['email'], first_name=d['name'][:150])
             u.set_unusable_password()
             u.save()
-            p = Profile.objects.create(user=u, role='judge', contact_person=d['name'], phone=d['phone'], specialty=d['specialty'])
+            p = Profile.objects.create(user=u, role='judge', contact_person=d['name'], phone=d['phone'], specialty=d['specialty'],
+                                       is_simulation=PortalSetting.get().test_mode)
             p.judge_fields.set(d['fields'])
             _send_invite(request, u)
             messages.success(request, f'أُضيف المحكّم وأُرسلت دعوة إلى {u.email}.')
             return redirect('/manage/judges/')
         if act in ('toggle', 'invite'):
-            u = get_object_or_404(User, pk=request.POST.get('uid'), profile__role='judge')
+            u = get_object_or_404(User, pk=uid, profile__role='judge')
             if act == 'toggle':
                 u.is_active = not u.is_active
                 u.save(update_fields=['is_active'])
@@ -373,11 +485,55 @@ def judges(request):
                 _send_invite(request, u)
                 messages.success(request, f'أُرسل رابط الدخول إلى {u.email}.')
             return redirect('/manage/judges/')
+        if act == 'deadline' and cycle:
+            from django.utils.dateparse import parse_datetime
+            raw = request.POST.get('judging_closes_at') or ''
+            dl = parse_datetime(raw) if raw else None
+            cycle.judging_closes_at = (timezone.make_aware(dl) if dl and timezone.is_naive(dl) else dl)
+            cycle.save(update_fields=['judging_closes_at'])
+            audit(request, 'موعد التحكيم', str(cycle), raw or 'بدون موعد')
+            messages.success(request, 'حُفظ موعد التحكيم.' if dl else 'أُلغي قفل التحكيم (بدون موعد).')
+            return redirect('/manage/judges/')
+        ids = [int(i) for i in request.POST.getlist('ids') if i.isdigit()]
+        sel = User.objects.filter(pk__in=ids, profile__role='judge')
+        if not ids:
+            messages.warning(request, 'حدّد محكّمين أولاً.')
+        elif act == 'remind':
+            n = reminders.judge_reminders(cycle, force=True, judges=sel, repeat=True)
+            messages.success(request, f'أُرسل تذكير إلى {n} محكّم لديه طلبات غير منتهية.' if n else 'لا توجد طلبات متبقية لدى المحددين.')
+        elif act == 'message':
+            body = request.POST.get('note', '').strip()
+            for u in sel:
+                notify(u, request.POST.get('title', '').strip() or 'رسالة من إدارة الجائزة', body, '/judge/')
+            messages.success(request, f'أُرسلت الرسالة إلى {sel.count()} محكّم.')
+        elif act in ('activate', 'deactivate'):
+            n = sel.update(is_active=act == 'activate')
+            messages.success(request, f'{"فُعّل" if act == "activate" else "عُطّل"} {n} حساب.')
+        elif act in ('mark_test', 'unmark_test'):
+            n = Profile.objects.filter(user__in=sel).update(is_simulation=act == 'mark_test')
+            messages.success(request, f'تم تحديث {n} حساب.')
+        elif act == 'delete':
+            n, _ns, path = cleanup.delete_users(sel, 'judges', with_submissions=False)
+            audit(request, 'حذف محكّمين', f'{n} حساب', path)
+            messages.success(request, f'حُذف {n} محكّم مع تقييماتهم (نسخة احتياطية محفوظة).')
+        return redirect('/manage/judges/')
+    now = timezone.now()
+    flt = Q(assignments__submission__cycle=cycle) if cycle else Q()
     js = (User.objects.filter(profile__role='judge').select_related('profile')
-          .annotate(n=Count('assignments', distinct=True),
-                    done=Count('assignments', filter=Q(assignments__completed_at__isnull=False), distinct=True))
+          .annotate(n=Count('assignments', filter=flt, distinct=True),
+                    done=Count('assignments', filter=flt & Q(assignments__completed_at__isnull=False), distinct=True),
+                    conflicts_n=Count('conflicts', distinct=True))
           .prefetch_related('profile__judge_fields', 'committees').order_by('-is_active', 'first_name'))
-    return render(request, 'award/manage/judges.html', _ctx(request, 'judges', judges=js, form=form))
+    js = list(js)
+    for j in js:
+        j.todo = j.n - j.done
+        j.pct = round(j.done / j.n * 100) if j.n else 0
+        j.last_reminded = Assignment.objects.filter(judge=j, reminded_at__isnull=False).order_by('-reminded_at').values_list('reminded_at', flat=True).first()
+    late = cycle and cycle.judging_closes_at and cycle.judging_closes_at < now
+    return render(request, 'award/manage/judges.html', _ctx(
+        request, 'judges', cycle=cycle, judges=js, form=form, late=late,
+        totals={'n': sum(j.n for j in js), 'done': sum(j.done for j in js), 'todo': sum(j.todo for j in js),
+                'active': sum(1 for j in js if j.is_active), 'with_todo': sum(1 for j in js if j.todo)}))
 
 
 class CommitteeForm(forms.ModelForm):
@@ -472,27 +628,55 @@ def announcements(request, pk=None):
 # =====================================================
 @manager_required
 def schools(request):
+    from . import cleanup
     if request.method == 'POST':
         ids = request.POST.getlist('ids')
+        act = request.POST.get('act') or 'message'
         body = request.POST.get('note', '').strip()
         title = request.POST.get('title', '').strip() or 'رسالة من إدارة الجائزة'
-        if ids and body:
-            for u in User.objects.filter(profile__pk__in=ids):
-                notify(u, title, body, '/portal/')
-            messages.success(request, f'أُرسلت الرسالة إلى {len(ids)} مدرسة.')
-        else:
-            messages.warning(request, 'حدّد مدارس واكتب الرسالة.')
+        profs = Profile.objects.filter(pk__in=[i for i in ids if i.isdigit()], role='school')
+        users = User.objects.filter(profile__in=profs)
+        if not ids:
+            messages.warning(request, 'حدّد مدارس أولاً.')
+        elif act == 'message':
+            if body:
+                for u in users:
+                    notify(u, title, body, '/portal/')
+                messages.success(request, f'أُرسلت الرسالة إلى {users.count()} مدرسة.')
+            else:
+                messages.warning(request, 'اكتب نص الرسالة.')
+        elif act in ('mark_test', 'unmark_test'):
+            on = act == 'mark_test'
+            n = profs.update(is_simulation=on)
+            Submission.objects.filter(owner__in=users).update(is_simulation=on)
+            messages.success(request, f'{"عُلّمت" if on else "أُزيلت علامة التجربة عن"} {n} مدرسة مع طلباتها.')
+        elif act == 'activate':
+            n = users.update(is_active=True)
+            messages.success(request, f'فُعّل {n} حساب.')
+        elif act in ('delete', 'delete_keep'):
+            n, ns, path = cleanup.delete_users(users, 'schools', with_submissions=act == 'delete')
+            audit(request, 'حذف مدارس', f'{n} حساب / {ns} طلب', path)
+            messages.success(request, f'حُذف {n} حساب مدرسة' + (f' و{ns} طلب' if ns else '') + ' (نسخة احتياطية محفوظة).')
         return redirect(request.get_full_path())
     qs = Profile.objects.filter(role='school').select_related('user', 'governorate', 'directorate').annotate(
-        n=Count('user__submissions', filter=~Q(user__submissions__status='draft')))
+        n=Count('user__submissions', filter=~Q(user__submissions__status='draft')),
+        n_all=Count('user__submissions'))
     base = qs
     f = request.GET
     if f.get('gov', '').isdigit():
         qs = qs.filter(governorate_id=f['gov'])
     if f.get('dir', '').isdigit():
         qs = qs.filter(directorate_id=f['dir'])
+    if f.get('show') == 'inactive':
+        qs = qs.filter(user__is_active=False)
+    elif f.get('show') == 'empty':
+        qs = qs.filter(n_all=0)
+    elif f.get('show') == 'test':
+        qs = qs.filter(is_simulation=True)
     gc = dict(base.order_by().values('governorate').annotate(c=Count('pk')).values_list('governorate', 'c'))
     return render(request, 'award/manage/schools.html', _ctx(
         request, 'schools', items=qs.order_by('-created_at'), total=base.count(), f=f,
+        n_inactive=base.filter(user__is_active=False).count(), n_empty=base.filter(n_all=0).count(),
+        n_test=base.filter(is_simulation=True).count(),
         govs=[(g, gc.get(g.pk, 0)) for g in Governorate.objects.all() if gc.get(g.pk)],
         dirs=_with_counts(Directorate.objects.all(), dict(base.order_by().values('directorate').annotate(c=Count('pk')).values_list('directorate', 'c')))))

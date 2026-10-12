@@ -57,7 +57,7 @@ def _cycle_filter(request, qs):
     from django.db.models import Count
     from .models import AwardCycle
     counts = dict(qs.order_by().values('cycle').annotate(n=Count('pk')).values_list('cycle', 'n'))
-    cycles = [{'c': c, 'n': counts.get(c.pk, 0)} for c in AwardCycle.objects.all() if counts.get(c.pk)]
+    cycles = [{'c': c, 'n': counts.get(c.pk, 0)} for c in AwardCycle.objects.filter(is_simulation=False) if counts.get(c.pk)]
     sel = request.GET.get('cycle', '')
     if sel.isdigit():
         qs = qs.filter(Q(cycle_id=int(sel)) | Q(cycle__isnull=True))
@@ -103,10 +103,16 @@ def success_stories_page(request):
     return render(request, 'award/success_stories.html', {'stories': stories, **cctx})
 
 
+def public_winners():
+    """الفائزون الظاهرون للزوار — بدون بيانات التجربة/المحاكاة"""
+    return Winner.objects.filter(is_active=True).exclude(cycle__is_simulation=True).exclude(submission__is_simulation=True)
+
+
 def winners_page(request):
     """صفحة الفائزون"""
-    categories = WinnerCategory.objects.filter(is_active=True).prefetch_related('winners')
-    winners, cctx = _cycle_filter(request, Winner.objects.filter(is_active=True).select_related('category'))
+    from django.db.models import Prefetch
+    categories = WinnerCategory.objects.filter(is_active=True).prefetch_related(Prefetch('winners', queryset=public_winners()))
+    winners, cctx = _cycle_filter(request, public_winners().select_related('category'))
     years = winners.values_list('year', flat=True).distinct().order_by('-year')
     return render(request, 'award/winners.html', {
         'categories': categories,
@@ -121,8 +127,8 @@ def cycles_archive(request):
     """الدورات السابقة: كل دورة مع أعداد الطلبات والفائزين والصور والفيديو"""
     from django.db.models import Count
     from .models import AwardCycle
-    cycles = AwardCycle.objects.annotate(
-        n_subs=Count('submissions', filter=~Q(submissions__status__in=('draft', 'withdrawn')), distinct=True),
+    cycles = AwardCycle.objects.filter(is_simulation=False).annotate(
+        n_subs=Count('submissions', filter=~Q(submissions__status__in=('draft', 'withdrawn')) & Q(submissions__is_simulation=False), distinct=True),
         n_winners=Count('winner', filter=Q(winner__is_active=True), distinct=True),
         n_photos=Count('photo', filter=Q(photo__is_active=True), distinct=True),
         n_videos=Count('video', filter=Q(video__is_active=True), distinct=True),
@@ -133,23 +139,23 @@ def cycles_archive(request):
 
 def cycle_detail(request, pk):
     from .models import AwardCycle
-    c = get_object_or_404(AwardCycle, pk=pk)
+    c = get_object_or_404(AwardCycle, pk=pk, is_simulation=False)
     return render(request, 'award/cycle_detail.html', {
         'cycle': c,
-        'winners': Winner.objects.filter(is_active=True, cycle=c).select_related('category').order_by('rank'),
+        'winners': public_winners().filter(cycle=c).select_related('category').order_by('rank'),
         'photos': Photo.objects.filter(is_active=True, cycle=c).order_by('-created_at')[:24],
         'videos': Video.objects.filter(is_active=True, cycle=c).order_by('order')[:12],
         'news': News.objects.filter(is_published=True, cycle=c).order_by('-date')[:6],
         'timeline': c.timelineevent_set.all() if hasattr(c, 'timelineevent_set') else [],
-        'n_subs': c.submissions.exclude(status__in=('draft', 'withdrawn')).count(),
+        'n_subs': c.submissions.exclude(status__in=('draft', 'withdrawn')).filter(is_simulation=False).count(),
     })
 
 
 def statistics_page(request):
     """صفحة الإحصائيات"""
     return render(request, 'award/statistics.html', {
-        'total_submissions': Submission.objects.exclude(status__in=('draft', 'withdrawn')).count(),
-        'accepted_submissions': Submission.objects.filter(status__in=('accepted', 'winner')).filter(
+        'total_submissions': Submission.objects.exclude(status__in=('draft', 'withdrawn')).filter(is_simulation=False).count(),
+        'accepted_submissions': Submission.objects.filter(status__in=('accepted', 'winner'), is_simulation=False).filter(
             Q(cycle__isnull=True) | Q(cycle__results_published=True)).count(),
     })
 

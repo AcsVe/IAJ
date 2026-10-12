@@ -1,0 +1,43 @@
+{% load static %}<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ cert.get_kind_display }} — {{ cert.recipient }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+@page{size:A4 landscape;margin:0}
+*{box-sizing:border-box}body{margin:0;background:#e9e6df;font-family:Tajawal,sans-serif;color:#0a1632}
+.sheet{width:297mm;height:210mm;margin:12px auto;background:#fffdf8;position:relative;padding:16mm 20mm;box-shadow:0 10px 40px rgba(0,0,0,.15)}
+.sheet:before{content:'';position:absolute;inset:8mm;border:3px double #c5a059;border-radius:6px;pointer-events:none}
+.sheet:after{content:'';position:absolute;inset:11mm;border:1px solid rgba(197,160,89,.5);pointer-events:none}
+.top{text-align:center;margin-top:4mm}.top img{height:26mm}
+.org{font-weight:900;font-size:15pt;color:#0a1632;margin-top:2mm}
+h1{font-family:Amiri,serif;font-size:40pt;color:#c5a059;text-align:center;margin:6mm 0 2mm}
+.lead{text-align:center;font-size:15pt;margin:0}
+.name{text-align:center;font-family:Amiri,serif;font-weight:700;font-size:30pt;margin:5mm 0 3mm;color:#0a1632}
+.what{text-align:center;font-size:14pt;line-height:1.9;max-width:210mm;margin:0 auto}
+.rank{display:inline-block;background:#c5a059;color:#fff;border-radius:30px;padding:2px 18px;font-weight:900}
+.foot{position:absolute;bottom:20mm;right:24mm;left:24mm;display:flex;justify-content:space-between;align-items:flex-end}
+.sig{text-align:center;min-width:60mm}.sig .l{border-top:1px solid #999;margin-top:14mm;padding-top:2mm;font-weight:700}
+.qr{text-align:center;font-size:8pt;color:#667}.qr svg{width:26mm;height:26mm}
+.bar{max-width:297mm;margin:10px auto;text-align:center}.bar button{background:#0a1632;color:#fff;border:0;border-radius:10px;padding:10px 22px;font:700 1rem Tajawal;cursor:pointer}
+@media print{body{background:#fff}.sheet{margin:0;box-shadow:none}.bar{display:none}}
+@media(max-width:1100px){.sheet{transform:scale(.33);transform-origin:top right;margin:0 0 -140mm}}
+</style></head><body>
+<div class="bar"><button onclick="window.print()">طباعة / حفظ PDF</button></div>
+<div class="sheet">
+  <div class="top">{% if site.site_logo %}<img src="{{ site.site_logo.url }}" alt="">{% endif %}<div class="org">جائزة انتصار عباس جردانة</div></div>
+  <h1>{{ cert.get_kind_display }}</h1>
+  {% if cert.kind == 'judge' %}<p class="lead">تتقدم إدارة الجائزة بالشكر والتقدير إلى</p>
+  {% else %}<p class="lead">تشهد إدارة الجائزة بأن</p>{% endif %}
+  <div class="name">{{ cert.recipient }}</div>
+  <div class="what">
+    {% if cert.kind == 'winner' %}قد فازت {% if cert.rank %}<span class="rank">بالمركز {{ cert.rank }}</span> {% endif %}عن مشروع «{{ cert.title }}»
+    {% elif cert.kind == 'participation' %}قد شاركت بمشروع «{{ cert.title }}»
+    {% else %}{{ cert.title }}{% endif %}<br>في {{ cert.cycle.card_title }}، متمنين لهم دوام التميز والإبداع.
+  </div>
+  <div class="foot">
+    <div class="sig"><div class="l">رئيس لجنة الجائزة</div></div>
+    <div class="qr">{{ qr|safe }}<div dir="ltr">{{ cert.code }}</div><div>للتحقق: امسح الرمز</div></div>
+    <div class="sig"><div>{{ cert.issued_at|date:"Y-m-d" }}</div><div class="l">تاريخ الإصدار</div></div>
+  </div>
+</div>
+</body></html>

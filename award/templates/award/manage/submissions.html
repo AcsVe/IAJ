@@ -1,11 +1,17 @@
 {% extends 'award/manage/_base.html' %}
 {% block mg %}
 <div class="mg-h"><h1>الطلبات <small class="text-muted" style="font-size:1rem">(<span id="shownCount">{{ total }}</span> من {{ base_total }})</small></h1>
-  <form method="get" class="d-flex gap-2"><input type="search" name="q" value="{{ f.q }}" class="form-control" placeholder="بحث: رقم الطلب، المدرسة، المشروع، الهاتف…" data-live="#subTable tbody tr" style="min-width:280px"></form></div>
+  <form method="get" class="d-flex gap-2 flex-wrap">
+    <input type="search" name="q" value="{{ f.q }}" class="form-control" placeholder="بحث: رقم الطلب، المدرسة، المشروع، الهاتف…" data-live="#subTable tbody tr" style="min-width:260px"></form></div>
 
 <div class="mg-chips">
-  <a href="?" class="{% if not f.status %}on{% endif %}">الكل <b>{{ base_total }}</b></a>
+  <a href="?" class="{% if not f.status and not f.flag and not f.stage and not f.test %}on{% endif %}">الكل <b>{{ base_total }}</b></a>
   {% for k, label, n in status_tabs %}<a href="?status={{ k }}" class="{% if f.status == k %}on{% endif %}">{{ label }} <b>{{ n }}</b></a>{% endfor %}
+</div>
+<div class="mg-chips">
+  {% for k, label in stages %}<a href="?status=judging&stage={{ k }}" class="{% if f.stage == k %}on{% endif %}"><i class="fas fa-layer-group"></i> {{ label }}</a>{% endfor %}
+  <a href="?status=judging&flag=disc" class="{% if f.flag == 'disc' %}on{% endif %}" title="فرق كبير بين درجات المحكّمين"><i class="fas fa-triangle-exclamation" style="color:#c62828"></i> تباين الدرجات</a>
+  {% if n_test %}<a href="?test=1" class="{% if f.test == '1' %}on{% endif %}"><i class="fas fa-flask"></i> تجريبي <b>{{ n_test }}</b></a><a href="?test=0" class="{% if f.test == '0' %}on{% endif %}">بدون التجريبي</a>{% endif %}
 </div>
 <form method="get" class="mg-chips">
   {% if f.status %}<input type="hidden" name="status" value="{{ f.status }}">{% endif %}
@@ -22,15 +28,26 @@
     <b>المحدد: <span id="selCount">0</span> / {{ total }}</b>
     <select name="bulk" class="form-select form-select-sm" id="bulkSel">
       <option value="">— إجراء على المحدد —</option>
-      <optgroup label="تغيير الحالة (مع إشعار)">{% for k, label, icon, c in actions %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</optgroup>
-      <optgroup label="التحكيم"><option value="auto_assign">توزيع تلقائي على المحكّمين</option><option value="committee">إسناد إلى لجنة…</option></optgroup>
-      <option value="message">إرسال رسالة للمدارس</option>
-      <option value="export">تصدير Excel (CSV)</option>
-      <option value="delete">حذف</option>
+      <optgroup label="القرار (مع إشعار المدرسة)">{% for k, label, icon, c in actions %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</optgroup>
+      <optgroup label="التحكيم">
+        <option value="auto_assign">توزيع تلقائي على المحكّمين (حسب المرحلة)</option>
+        <option value="extra_judge">إسناد محكّم إضافي (عند التباين)</option>
+        <option value="committee">إسناد إلى لجنة…</option>
+        {% for k, label in stages %}<option value="stage_{{ k }}">نقل إلى: {{ label }}</option>{% endfor %}
+      </optgroup>
+      <optgroup label="أخرى">
+        <option value="message">إرسال رسالة للمدارس</option>
+        <option value="export">تصدير Excel</option>
+        <option value="export_csv">تصدير CSV</option>
+        <option value="mark_test">تعليم «تجريبي»</option>
+        <option value="unmark_test">إزالة علامة «تجريبي»</option>
+        <option value="delete">حذف نهائي (مع نسخة احتياطية)</option>
+      </optgroup>
     </select>
     <select name="committee" class="form-select form-select-sm" id="bulkCom" hidden>{% for c in committees %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}</select>
-    <input type="text" name="note" class="form-control form-control-sm" placeholder="ملاحظة / نص الرسالة للمدرسة (اختياري)" style="flex:1">
-    <button class="btn-act gold" onclick="var v=document.getElementById('bulkSel').value; if(v==='delete') return confirm('حذف الطلبات المحددة نهائياً؟'); return true;">تنفيذ</button>
+    <select class="form-select form-select-sm" id="tplSel" hidden><option value="">— سبب جاهز —</option></select>
+    <input type="text" name="note" id="bulkNote" class="form-control form-control-sm" placeholder="السبب / الملاحظة / نص الرسالة للمدرسة" style="flex:1">
+    <button class="btn-act gold" id="bulkGo">تنفيذ</button>
   </div>
   <div class="pt-card" style="padding:0;overflow:auto;max-height:70vh">
   <table class="mg-table" id="subTable">
@@ -38,15 +55,43 @@
     <tbody>
     {% for s in subs %}<tr>
       <td><input type="checkbox" name="ids" value="{{ s.pk }}"></td>
-      <td><a class="t" href="/manage/submissions/{{ s.pk }}/">{{ s.project_title|truncatechars:60 }}</a><br><small class="text-muted">{{ s.ref }}</small></td>
+      <td><a class="t" href="/manage/submissions/{{ s.pk }}/">{{ s.project_title|truncatechars:60 }}</a><br><small class="text-muted">{{ s.ref }}</small>{% if s.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}</td>
       <td>{{ s.school_name }}<br><small class="text-muted">{{ s.owner.profile.directorate|default:"" }}</small></td>
       <td><small>{{ s.track.name_ar|default:"—" }}</small></td>
-      <td><span class="pt-status st-{{ s.status }}">{{ s.get_status_display }}</span>{% if s.results_hidden %} 🔒{% endif %}</td>
-      <td>{{ s.judging_progress }}</td><td><b>{{ s.avg_score|default_if_none:"—" }}</b></td>
+      <td><span class="pt-status st-{{ s.status }}">{{ s.get_status_display }}</span>{% if s.results_hidden %} 🔒{% endif %}{% if s.status == 'judging' and s.judging_stage != 'initial' %}<br><small class="text-muted">{{ s.stage_label }}</small>{% endif %}</td>
+      <td>{{ s.judging_progress }}</td>
+      <td><b>{{ s.avg_score|default_if_none:"—" }}</b>{% if s.has_discrepancy %}<br><span class="disc-tag" title="فرق الدرجات">± {{ s.score_spread }}</span>{% endif %}</td>
       <td><small>{{ s.sent_at|date:"Y-m-d"|default:"—" }}</small></td>
     </tr>{% empty %}<tr><td colspan="8" class="text-center text-muted py-4">لا توجد طلبات مطابقة.</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </form>
-<script>document.getElementById('bulkSel').addEventListener('change',function(){document.getElementById('bulkCom').hidden=this.value!=='committee'});</script>
+{{ tpl|json_script:"tplData" }}{{ needs_reason|json_script:"needReason" }}
+<script>
+(function () {
+  var sel = document.getElementById('bulkSel'), com = document.getElementById('bulkCom'), tplSel = document.getElementById('tplSel'),
+      note = document.getElementById('bulkNote'), tpl = JSON.parse(document.getElementById('tplData').textContent),
+      need = JSON.parse(document.getElementById('needReason').textContent);
+  sel.addEventListener('change', function () {
+    com.hidden = sel.value !== 'committee';
+    var list = tpl[sel.value] || [];
+    tplSel.innerHTML = '<option value="">— سبب جاهز (' + list.length + ') —</option>';
+    list.forEach(function (t) { var o = new Option(t.t, t.b); tplSel.add(o); });
+    tplSel.hidden = !list.length;
+    note.placeholder = need.indexOf(sel.value) > -1 ? 'السبب الذي يصل للمدرسة (مطلوب)' : 'السبب / الملاحظة / نص الرسالة للمدرسة';
+  });
+  tplSel.addEventListener('change', function () { if (tplSel.value) note.value = tplSel.value; });
+  document.getElementById('bulkForm').addEventListener('submit', function (e) {
+    var v = sel.value, n = document.querySelectorAll('#subTable input[name=ids]:checked').length,
+        label = sel.options[sel.selectedIndex].text;
+    if (!v) { e.preventDefault(); alert('اختر الإجراء أولاً'); return; }
+    if (!n) { e.preventDefault(); alert('حدّد طلباً واحداً على الأقل'); return; }
+    if (need.indexOf(v) > -1 && !note.value.trim()) { e.preventDefault(); alert('اكتب السبب الذي يصل للمدرسة أو اختر سبباً جاهزاً'); note.focus(); return; }
+    if (v === 'export' || v === 'export_csv') return;
+    var msg = v === 'delete' ? 'حذف ' + n + ' طلب نهائياً مع ملفاتها وتقييماتها؟\n(تُحفظ نسخة احتياطية JSON مما يُحذف)'
+            : '«' + label + '» على ' + n + ' طلب؟' + (['accepted','rejected','revision','on_hold','screening','judging'].indexOf(v) > -1 ? '\nسيصل إشعار للمدارس' + (['accepted','rejected'].indexOf(v) > -1 ? ' عند نشر النتائج.' : '.') : '');
+    if (!confirm(msg)) e.preventDefault();
+  });
+})();
+</script>
 {% endblock %}

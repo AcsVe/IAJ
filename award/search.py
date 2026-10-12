@@ -100,7 +100,7 @@ def site_search(q, limit=60):
         add('الجدول الزمني', 'fa-calendar-days', e.title, e.description, '/#timeline', e.date_text)
     for j in M.Judge.objects.all():
         add('لجنة التحكيم', 'fa-user-tie', j.name, j.description, '/#judges', j.title)
-    for w in M.Winner.objects.filter(is_active=True):
+    for w in M.Winner.objects.filter(is_active=True).exclude(cycle__is_simulation=True).exclude(submission__is_simulation=True):
         add('الفائزون', 'fa-medal', f'{w.school_name} — {w.project_title}', w.description or '', '/winners/', str(w.year))
     for s in M.SuccessStory.objects.filter(is_active=True):
         add('قصص النجاح', 'fa-star', s.title, s.content, '/success-stories/')

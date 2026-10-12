@@ -134,9 +134,15 @@ def login_view(request):
         password = request.POST.get('password') or ''
         user = authenticate(request, username=email, password=password)
         if user:
+            from .program_views import needs_2fa, start_2fa
+            if needs_2fa(user):
+                return start_2fa(request, user, _safe_next(request, _home_for(user)), request.POST.get('remember'))
             login(request, user)
             if not request.POST.get('remember'):
                 request.session.set_expiry(0)
+            if user.is_staff or is_manager(user):
+                from .audit import audit
+                audit(request, 'دخول', user.email)
             return redirect(_safe_next(request, _home_for(user)))
         cand = User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).first()
         if cand and not cand.is_active and cand.check_password(password):
@@ -235,6 +241,16 @@ def _save_submission(request, form, sub, creating):
     if action == 'submit' and not sub.document:
         form.add_error('document', 'ملف البحث (PDF) مطلوب قبل الإرسال.')
         return None
+    if form.declarations_ok():
+        if not sub.declared_at:
+            sub.declared_at = timezone.now()
+        sub.declared_truth = sub.declared_original = sub.declared_consent = True
+    elif action == 'submit' and not sub.declared_at:
+        form.add_error(None, 'يرجى الموافقة على جميع الإقرارات أسفل النموذج قبل الإرسال.')
+        return None
+    if creating:
+        from .models import PortalSetting
+        sub.is_simulation = PortalSetting.get().test_mode or getattr(prof, 'is_simulation', False)
     sub.save()
     form.save_m2m()
     _save_extra_files(request, sub, form.cleaned_data.get('extra_files') or [], '')
@@ -306,10 +322,11 @@ def submission_detail(request, pk):
     steps = _steps(sub)
     logs = [l for l in sub.logs.all() if not (sub.results_hidden and l.new_status in ('accepted', 'rejected', 'winner'))]
     sub.messages.filter(from_staff=True, is_read=False).update(is_read=True)
+    from .program_views import school_extras
     return render(request, 'award/portal/submission_detail.html', {
         'tab': 'home', 'sub': sub, 'steps': steps, 'logs': logs,
         'files': sub.files.all(), 'msgs': sub.messages.select_related('sender'),
-        'files_form': ExtraFilesForm(), 'msg_form': MessageForm()})
+        'files_form': ExtraFilesForm(), 'msg_form': MessageForm(), **school_extras(sub)})
 
 
 @login_required
@@ -324,7 +341,8 @@ def submission_add_files(request, pk):
         n = _save_extra_files(request, sub, form.cleaned_data['files'], form.cleaned_data.get('title', ''))
         messages.success(request, f'تم رفع {n} ملف.')
         if sub.status not in ('draft',):
-            notify_staff(f'ملفات جديدة على الطلب {sub.ref}', f"{sub.school_name} أضافت {n} ملف: {form.cleaned_data.get('title') or ''}",
+            if not sub.is_simulation:
+                notify_staff(f'ملفات جديدة على الطلب {sub.ref}', f"{sub.school_name} أضافت {n} ملف: {form.cleaned_data.get('title') or ''}",
                          f'/manage/submissions/{sub.pk}/', email=False)
     else:
         for e in form.errors.get('files', []) + form.non_field_errors():
@@ -341,8 +359,9 @@ def submission_message(request, pk):
     if form.is_valid():
         SubmissionMessage.objects.create(submission=sub, sender=request.user, from_staff=False,
                                          body=form.cleaned_data['body'], attachment=form.cleaned_data.get('attachment') or '')
-        notify_staff(f'رسالة من {sub.school_name} — {sub.ref}', form.cleaned_data['body'][:300],
-                     f'/manage/submissions/{sub.pk}/#messages')
+        if not sub.is_simulation:
+            notify_staff(f'رسالة من {sub.school_name} — {sub.ref}', form.cleaned_data['body'][:300],
+                         f'/manage/submissions/{sub.pk}/#messages')
         messages.success(request, 'تم إرسال رسالتكم لإدارة الجائزة.')
     else:
         messages.error(request, 'تعذّر إرسال الرسالة — تأكد من النص والمرفق.')
@@ -452,8 +471,21 @@ def judge_review(request, pk):
     sub = a.submission
     criteria = list(Criterion.for_submission(sub))
     existing = {s.criterion_id: s for s in a.scores.all()}
-    locked = sub.status != 'judging' and a.is_done
+    deadline_passed = bool(sub.cycle and sub.cycle.judging_locked)
+    locked = (sub.status != 'judging' and a.is_done) or deadline_passed
     errors = []
+    if request.method == 'POST' and request.POST.get('action') in ('coi_ok', 'coi_conflict') and not a.is_done:
+        if request.POST['action'] == 'coi_ok':
+            a.coi_confirmed_at = timezone.now()
+            a.save(update_fields=['coi_confirmed_at'])
+            return redirect('judge_review', pk=a.pk)
+        reason = (request.POST.get('reason') or '').strip()[:500]
+        whole = request.POST.get('scope') == 'school'
+        workflow.declare_conflict(request.user, None if whole else sub, sub.school_name if whole else '', reason)
+        messages.info(request, 'شكراً لك — سُجّل تعارض المصالح وأُلغي إسناد الطلب إليك، وسيُسند لمحكّم آخر.')
+        return redirect('judge_home')
+    if request.method == 'POST' and not a.coi_confirmed_at and not a.is_done:
+        return redirect('judge_review', pk=a.pk)
     if request.method == 'POST' and not locked:
         finish = request.POST.get('action') == 'finish'
         values = {}
@@ -489,8 +521,10 @@ def judge_review(request, pk):
                 a.completed_at = timezone.now()
             a.save()
             if finish and not was_done:
-                left = sub.assignments.filter(completed_at__isnull=True).count()
-                if left == 0:
+                left = sub.assignments.filter(completed_at__isnull=True, stage=a.stage).count()
+                if left == 0 and workflow.check_discrepancy(sub):
+                    pass   # تباين كبير: أُسند تلقائياً لمحكّم إضافي
+                elif left == 0 and not sub.is_simulation:
                     notify_staff(f'اكتمل تحكيم الطلب {sub.ref}',
                                  f"«{sub.project_title}» — المتوسط: {sub.avg_score}",
                                  f'/admin/award/submission/{sub.pk}/change/', email=False)
@@ -506,6 +540,7 @@ def judge_review(request, pk):
     blind = sub.cycle.blind_judging if sub.cycle else True
     return render(request, 'award/portal/judge_review.html', {
         'tab': 'home', 'a': a, 'sub': sub, 'rows': rows, 'errors': errors, 'locked': locked, 'blind': blind,
+        'deadline_passed': deadline_passed, 'need_coi': not a.coi_confirmed_at and not a.is_done,
         'rec_choices': RECOMMEND_CHOICES[1:]})
 
 
@@ -531,6 +566,10 @@ def can_view_private_file(user, path):
     if not sub:
         m = SubmissionMessage.objects.filter(attachment=path).select_related('submission').first()
         sub = m.submission if m else None
+    if not sub:
+        from .models import ImpactReport
+        r = ImpactReport.objects.filter(attachment=path).select_related('submission').first()
+        sub = r.submission if r else None
     if not sub:
         return False
     if sub.owner_id == user.pk:

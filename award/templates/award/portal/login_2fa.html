@@ -1,0 +1,13 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block title %}رمز التحقق{% endblock %}
+{% block card %}
+<h1><i class="fas fa-shield-halved ms-2" style="color:var(--gold)"></i> التحقق بخطوتين</h1>
+<p class="pt-sub">أرسلنا رمزاً من 6 أرقام إلى بريدك الإلكتروني. صالح لمدة 10 دقائق.</p>
+{% if error %}<div class="pt-alert pt-alert-error">{{ error }}</div>{% endif %}
+<form method="post" novalidate>{% csrf_token %}
+  <div class="mb-3"><label class="form-label">رمز التحقق</label>
+    <input type="text" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="form-control text-center" dir="ltr" style="font-size:1.6rem;letter-spacing:8px" autocomplete="one-time-code" required autofocus></div>
+  <button class="pt-btn pt-btn-gold pt-btn-block" type="submit">تأكيد <i class="fas fa-arrow-left"></i></button>
+</form>
+<div class="pt-links"><a href="/accounts/login/">لم يصل الرمز؟ سجّل الدخول من جديد</a></div>
+{% endblock %}

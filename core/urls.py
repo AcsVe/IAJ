@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from award import admin_tools
 from django.urls import path
-from award import views, portal_views as pv, manage_views as mv
+from award import views, portal_views as pv, manage_views as mv, manage_tools as mt, program_views as prg
 from award.portal_forms import SafePasswordResetForm
 
 _reset = dict(
@@ -16,6 +16,7 @@ urlpatterns = [
     path('admin/status/', admin_tools.site_status, name='admin_site_status'),
     path('admin/guide/', admin_tools.roles_guide, name='admin_roles_guide'),
     path('admin/preview/<str:app_label>/<str:model_name>/', admin_tools.preview, name='admin_preview'),
+    path('admin/login/', prg.admin_login),
     path('admin/', admin.site.urls),
     path('search/', views.search, name='search'),
     path('tracks/<int:pk>/', views.track_detail, name='track_detail'),
@@ -26,6 +27,7 @@ urlpatterns = [
     # ---------- الحسابات ----------
     path('accounts/signup/', pv.signup, name='signup'),
     path('accounts/login/', pv.login_view, name='login'),
+    path('accounts/2fa/', prg.login_2fa, name='login_2fa'),
     path('accounts/logout/', pv.logout_view, name='logout'),
     path('accounts/activate/<uidb64>/<token>/', pv.activate, name='activate'),
     path('accounts/activate/resend/', pv.resend_activation, name='resend_activation'),
@@ -53,6 +55,13 @@ urlpatterns = [
     path('portal/submissions/<int:pk>/withdraw/', pv.submission_withdraw, name='submission_withdraw'),
     path('portal/submissions/<int:pk>/files/', pv.submission_add_files, name='submission_add_files'),
     path('portal/submissions/<int:pk>/message/', pv.submission_message, name='submission_message'),
+    path('portal/submissions/<int:pk>/receipt/', prg.receipt, name='submission_receipt'),
+    path('portal/submissions/<int:pk>/appeal/', prg.appeal, name='submission_appeal'),
+    path('portal/submissions/<int:pk>/impact/', prg.impact, name='submission_impact'),
+    path('certificate/<str:code>/', prg.certificate, name='certificate'),
+    path('verify/', prg.verify, name='verify'),
+    path('verify/<str:code>/', prg.verify, name='verify_code'),
+    path('rsvp/<str:code>/', prg.rsvp, name='rsvp'),
     path('portal/notifications/', pv.notifications, name='notifications'),
     path('portal/notifications/<int:pk>/', pv.notification_go, name='notification_go'),
 
@@ -67,6 +76,10 @@ urlpatterns = [
     path('manage/announcements/', mv.announcements, name='mg_announcements'),
     path('manage/announcements/<int:pk>/', mv.announcements, name='mg_announcement'),
     path('manage/schools/', mv.schools, name='mg_schools'),
+    path('manage/appeals/', mt.appeals, name='mg_appeals'),
+    path('manage/post/', mt.post_results, name='mg_post'),
+    path('manage/tools/', mt.tools, name='mg_tools'),
+    path('manage/audit/', mt.audit_log, name='mg_audit'),
 
     # ---------- المحكّمون ----------
     path('judge/', pv.judge_home, name='judge_home'),

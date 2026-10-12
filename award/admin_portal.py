@@ -67,7 +67,9 @@ class AwardCycleAdmin(admin.ModelAdmin):
         ('بطاقة الدورة في الهيدر', {'fields': ('show_card', 'card_note'),
                                     'description': 'تظهر عند المرور بالماوس على اسم الجائزة أو زر «سجل الآن»: الاسم + السنة الهجرية/الميلادية + مواعيد التسجيل.'}),
         ('قواعد التسجيل', {'fields': ('tracks', 'max_per_school', 'revision_days')}),
-        ('التحكيم والنتائج', {'fields': ('judges_per_submission', 'blind_judging', 'results_date', 'results_published')}),
+        ('التحكيم', {'fields': ('judges_per_submission', 'blind_judging', 'judging_closes_at', 'discrepancy_points', 'tie_break')}),
+        ('النتائج', {'fields': ('results_date', 'require_approval', 'results_published', 'appeal_days', 'share_feedback', 'share_judge_comments')}),
+        ('الحفل ومتابعة الأثر', {'fields': (('ceremony_date', 'ceremony_place'), 'impact_after_days')}),
     )
 
     def get_queryset(self, request):
@@ -94,8 +96,11 @@ class AwardCycleAdmin(admin.ModelAdmin):
             obj.results_published = False
         super().save_model(request, obj, form, change)
         if publish_now:
-            n = workflow.publish_results(obj, request.user)
-            self.message_user(request, f'تم نشر النتائج وإرسال {n} إشعار للمدارس.', messages.SUCCESS)
+            try:
+                n = workflow.publish_results(obj, request.user)
+                self.message_user(request, f'تم نشر النتائج وإرسال {n} إشعار للمدارس.', messages.SUCCESS)
+            except workflow.NotApproved:
+                self.message_user(request, 'لم تُنشر النتائج: اعتماد اللجنة مطلوب أولاً (من صفحة «النتائج والفائزون» في /manage/).', messages.ERROR)
 
     @admin.action(description='اجعلها الدورة الحالية')
     def make_current(self, request, queryset):
@@ -135,10 +140,15 @@ class AwardCycleAdmin(admin.ModelAdmin):
 
     @admin.action(description='نشر النتائج وإبلاغ المدارس')
     def publish_results_action(self, request, queryset):
-        total = 0
+        total, skipped = 0, []
         for c in queryset:
-            total += workflow.publish_results(c, request.user)
+            try:
+                total += workflow.publish_results(c, request.user)
+            except workflow.NotApproved:
+                skipped.append(str(c))
         self.message_user(request, f'تم النشر — أُرسل {total} إشعار.', messages.SUCCESS)
+        if skipped:
+            self.message_user(request, 'لم تُنشر (تحتاج اعتماد اللجنة أولاً): ' + '، '.join(skipped), messages.ERROR)
 
 
 # =====================================================

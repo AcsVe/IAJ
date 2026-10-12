@@ -31,6 +31,11 @@
 .btn-act{border:0;border-radius:10px;padding:9px 14px;font-weight:800;color:#fff;display:inline-flex;gap:6px;align-items:center}
 .btn-act.info{background:#7b61ff}.btn-act.warning{background:#e8710a}.btn-act.secondary{background:#5f6368}.btn-act.purple{background:#9c27b0}
 .btn-act.success{background:#188038}.btn-act.danger{background:#d93025}.btn-act.gold{background:var(--gold)}
+.sim-tag{background:#f3e8fd;color:#7b1fa2;border-radius:20px;padding:1px 8px;font-size:.72rem;font-weight:800;white-space:nowrap}
+.disc-tag{background:#fde7e7;color:#c62828;border-radius:20px;padding:1px 8px;font-size:.72rem;font-weight:800;white-space:nowrap}
+.mg-sec{border-top:1px dashed #e3e5ea;margin-top:14px;padding-top:12px}
+.mg-kpi{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.mg-kpi span{background:#fff;border:1px solid #e6e8ee;border-radius:12px;padding:6px 12px;font-weight:800;font-size:.88rem}.mg-kpi b{color:var(--primary);font-size:1.05rem;margin-left:4px}
+.mg-report{background:#0f1729;color:#e8eaf0;border-radius:12px;padding:14px;font:13px/1.8 ui-monospace,Consolas,monospace;white-space:pre-wrap;max-height:520px;overflow:auto;direction:rtl;text-align:right}
 .mg-checks label{display:inline-flex;gap:6px;align-items:center;margin:0 12px 6px 0;font-weight:600}
 @media(max-width:991px){.mg{grid-template-columns:1fr}.mg-side{position:static;display:flex;flex-wrap:wrap;gap:4px}.mg-side h6{width:100%}.mg-side a{padding:8px 10px;font-size:.88rem}}
 </style>{% endblock %}
@@ -41,11 +46,15 @@
       <h6><i class="fas fa-award"></i> إدارة الجائزة</h6>
       <a href="/manage/" class="{% if nav == 'dash' %}on{% endif %}"><i class="fas fa-gauge"></i> لوحة المتابعة</a>
       <a href="/manage/submissions/" class="{% if nav == 'subs' %}on{% endif %}"><i class="fas fa-folder-open"></i> الطلبات {% if mg_unread %}<span class="badge" title="رسائل غير مقروءة">{{ mg_unread }}</span>{% endif %}</a>
-      <a href="/manage/results/" class="{% if nav == 'results' %}on{% endif %}"><i class="fas fa-trophy"></i> النتائج والفائزون</a>
+      <a href="/manage/results/" class="{% if nav == 'results' %}on{% endif %}"><i class="fas fa-trophy"></i> النتائج والاعتماد</a>
+      <a href="/manage/appeals/" class="{% if nav == 'appeals' %}on{% endif %}"><i class="fas fa-gavel"></i> الاعتراضات {% if mg_appeals %}<span class="badge">{{ mg_appeals }}</span>{% endif %}</a>
+      <a href="/manage/post/" class="{% if nav == 'post' %}on{% endif %}"><i class="fas fa-certificate"></i> الشهادات والحفل والأثر</a>
       <a href="/manage/committees/" class="{% if nav == 'committees' %}on{% endif %}"><i class="fas fa-people-group"></i> لجان التحكيم</a>
       <a href="/manage/judges/" class="{% if nav == 'judges' %}on{% endif %}"><i class="fas fa-user-tie"></i> المحكّمون</a>
       <a href="/manage/schools/" class="{% if nav == 'schools' %}on{% endif %}"><i class="fas fa-school"></i> المدارس</a>
       <a href="/manage/announcements/" class="{% if nav == 'ann' %}on{% endif %}"><i class="fas fa-bullhorn"></i> الإعلانات</a>
+      <a href="/manage/tools/" class="{% if nav == 'tools' %}on{% endif %}"><i class="fas fa-screwdriver-wrench"></i> المحاكاة والتنظيف</a>
+      <a href="/manage/audit/" class="{% if nav == 'audit' %}on{% endif %}"><i class="fas fa-clipboard-list"></i> سجل العمليات</a>
       <form method="get" class="w-100"><select name="cycle" class="form-select form-select-sm" onchange="this.form.submit()">
         <option value="all"{% if not cur_cycle %} selected{% endif %}>كل الدورات</option>
         {% for c in cycles %}<option value="{{ c.pk }}"{% if cur_cycle and cur_cycle.pk == c.pk %} selected{% endif %}>{{ c.short_name|default:c.name }}{% if c.is_current %} (الحالية){% endif %}</option>{% endfor %}
@@ -54,6 +63,8 @@
       <a href="{% url 'notifications' %}"><i class="fas fa-bell"></i> إشعاراتي {% if unread_notes %}<span class="badge">{{ unread_notes }}</span>{% endif %}</a>
     </aside>
     <main>
+      {% if mg_test_mode %}<div class="pt-note warn" style="margin-bottom:12px"><i class="fas fa-flask"></i> <b>وضع التجربة مفعّل</b> — كل حساب أو طلب جديد يُعلَّم «تجريبي» ويُحذف مع «مسح بيانات التجربة». <a href="/manage/tools/">إيقافه</a></div>{% endif %}
+      {% if cur_cycle.is_simulation %}<div class="pt-note" style="margin-bottom:12px;background:#f3e8fd"><i class="fas fa-flask"></i> تعرض الآن <b>دورة محاكاة</b> — بياناتها وهمية ولا تظهر للزوار.</div>{% endif %}
       {% include 'award/portal/_messages.html' %}
       {% block mg %}{% endblock %}
     </main>
@@ -66,6 +77,13 @@ document.querySelectorAll('[data-checkall]').forEach(function (all) {
   function upd() { var n = scope.querySelectorAll('input[name=ids]:checked').length; if (out) out.textContent = n; }
   all.addEventListener('change', function () { scope.querySelectorAll('tr:not([hidden]) input[name=ids]').forEach(function (c) { c.checked = all.checked; }); upd(); });
   scope.addEventListener('change', upd);
+});
+document.querySelectorAll('form[data-confirm-bulk]').forEach(function (f) {
+  f.addEventListener('submit', function (e) {
+    var b = e.submitter, sel = f.querySelector('[name=bulk],[name=act]:checked') , n = f.querySelectorAll('input[name=ids]:checked').length;
+    var msg = b && b.dataset.confirm; if (!msg) return;
+    if (!confirm(msg.replace('{n}', n))) e.preventDefault();
+  });
 });
 document.querySelectorAll('[data-live]').forEach(function (inp) {
   var rows = document.querySelectorAll(inp.dataset.live), out = document.querySelector(inp.dataset.shown || '#shownCount');

@@ -1,0 +1,13 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block title %}التحقق من شهادة{% endblock %}
+{% block card %}
+<h1><i class="fas fa-certificate ms-2" style="color:var(--gold)"></i> التحقق من شهادة</h1>
+<form method="get" action="/verify/" class="d-flex gap-2 mb-3"><input type="text" name="code" value="{{ code }}" class="form-control" dir="ltr" placeholder="رمز الشهادة"><button class="pt-btn pt-btn-gold">تحقق</button></form>
+{% if code %}{% if cert and not cert.revoked %}
+  <div class="pt-alert" style="background:#e6f4ea;color:#137333"><i class="fas fa-circle-check"></i> شهادة صحيحة صادرة عن جائزة انتصار عباس جردانة</div>
+  <dl class="pt-kv"><dt>النوع</dt><dd>{{ cert.get_kind_display }}{% if cert.rank %} — المركز {{ cert.rank }}{% endif %}</dd>
+    <dt>باسم</dt><dd><b>{{ cert.recipient }}</b></dd>{% if cert.title %}<dt>عن</dt><dd>{{ cert.title }}</dd>{% endif %}
+    <dt>الدورة</dt><dd>{{ cert.cycle.card_title }}</dd><dt>تاريخ الإصدار</dt><dd>{{ cert.issued_at|date:"Y-m-d" }}</dd><dt>الرمز</dt><dd dir="ltr">{{ cert.code }}</dd></dl>
+{% elif cert and cert.revoked %}<div class="pt-alert pt-alert-error">هذه الشهادة ملغاة.</div>
+{% else %}<div class="pt-alert pt-alert-error">لا توجد شهادة بهذا الرمز.</div>{% endif %}{% endif %}
+{% endblock %}

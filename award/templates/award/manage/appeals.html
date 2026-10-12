@@ -1,0 +1,22 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>الاعتراضات على النتائج (<span id="shownCount">{{ items|length }}</span>)</h1><input type="search" class="form-control" style="max-width:260px" placeholder="بحث فوري…" data-live=".ap-item"></div>
+<div class="mg-chips">
+  <a href="?show=open" class="{% if show == 'open' %}on{% endif %}">قيد الدراسة <b>{{ counts.open|default:0 }}</b></a>
+  <a href="?show=accepted" class="{% if show == 'accepted' %}on{% endif %}">مقبولة <b>{{ counts.accepted|default:0 }}</b></a>
+  <a href="?show=rejected" class="{% if show == 'rejected' %}on{% endif %}">مرفوضة <b>{{ counts.rejected|default:0 }}</b></a>
+  <a href="?show=all" class="{% if show == 'all' %}on{% endif %}">الكل <b>{{ total }}</b></a>
+</div>
+<p class="text-muted">تقدّم المدرسة اعتراضاً واحداً خلال مهلة الاعتراض (من إعدادات الدورة) بعد نشر النتائج. الرد يصل للمدرسة بإشعار وبريد. قبول الاعتراض لا يغيّر النتيجة تلقائياً — عدّلوا القرار من صفحة الطلب حسب قرار اللجنة.</p>
+{% for ap in items %}<div class="pt-card ap-item">
+  <div class="d-flex justify-content-between flex-wrap gap-2"><div><a class="t" href="/manage/submissions/{{ ap.submission.pk }}/#appeals"><b>{{ ap.submission.project_title }}</b></a><br>
+    <small class="text-muted">{{ ap.submission.ref }} · {{ ap.submission.school_name }} · {{ ap.submission.get_status_display }} · {{ ap.created_at|date:"Y-m-d H:i" }}</small>{% if ap.submission.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}</div>
+    <span class="pt-status st-{% if ap.status == 'open' %}revision{% elif ap.status == 'accepted' %}accepted{% else %}rejected{% endif %}">{{ ap.get_status_display }}</span></div>
+  <div class="mt-2" style="white-space:pre-line">{{ ap.body }}</div>
+  {% if ap.response %}<div class="pt-note mt-2"><b>رد اللجنة:</b> {{ ap.response }}<br><small>{% if ap.responded_by %}{{ ap.responded_by.get_full_name|default:ap.responded_by.email }}{% endif %} — {{ ap.responded_at|date:"Y-m-d H:i" }}</small></div>
+  {% else %}<form method="post" class="mt-2">{% csrf_token %}<input type="hidden" name="aid" value="{{ ap.pk }}">
+    <textarea name="response" class="form-control" rows="2" required placeholder="رد اللجنة الذي يصل للمدرسة"></textarea>
+    <div class="d-flex gap-2 mt-2"><button name="status" value="accepted" class="btn-act success" onclick="return confirm('قبول الاعتراض وإبلاغ المدرسة؟')">قبول الاعتراض</button>
+      <button name="status" value="rejected" class="btn-act danger" onclick="return confirm('رفض الاعتراض وإبلاغ المدرسة؟')">رفض — النتيجة ثابتة</button></div></form>{% endif %}
+</div>{% empty %}<div class="pt-card text-center text-muted">لا توجد اعتراضات هنا.</div>{% endfor %}
+{% endblock %}

@@ -1,23 +1,47 @@
 {% extends 'award/manage/_base.html' %}
 {% block mg %}
 <div class="mg-h"><h1>المدارس المسجّلة (<span id="shownCount">{{ items|length }}</span> من {{ total }})</h1><input type="search" class="form-control" style="max-width:260px" placeholder="بحث فوري…" data-live="#sTable tbody tr"></div>
+<div class="mg-chips">
+  <a href="?" class="{% if not f.show %}on{% endif %}">الكل <b>{{ total }}</b></a>
+  <a href="?show=inactive" class="{% if f.show == 'inactive' %}on{% endif %}">غير مفعّلة <b>{{ n_inactive }}</b></a>
+  <a href="?show=empty" class="{% if f.show == 'empty' %}on{% endif %}">بلا طلبات <b>{{ n_empty }}</b></a>
+  {% if n_test %}<a href="?show=test" class="{% if f.show == 'test' %}on{% endif %}"><i class="fas fa-flask"></i> تجريبية <b>{{ n_test }}</b></a>{% endif %}
+</div>
 <form method="get" class="mg-chips">
+  {% if f.show %}<input type="hidden" name="show" value="{{ f.show }}">{% endif %}
   <select name="gov" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المحافظات ({{ total }})</option>{% for g, n in govs %}<option value="{{ g.pk }}"{% if f.gov == g.pk|stringformat:'s' %} selected{% endif %}>{{ g }} ({{ n }})</option>{% endfor %}</select>
   <select name="dir" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()"><option value="">كل المديريات</option>{% for d, n in dirs %}<option value="{{ d.pk }}"{% if f.dir == d.pk|stringformat:'s' %} selected{% endif %}>{{ d }} ({{ n }})</option>{% endfor %}</select>
 </form>
-<form method="post">{% csrf_token %}
+<form method="post" id="sForm">{% csrf_token %}
   <div class="mg-bulk"><b>المحدد: <span id="selCount">0</span> / {{ items|length }}</b>
-    <input type="text" name="title" class="form-control form-control-sm" placeholder="عنوان الرسالة" style="max-width:220px">
-    <input type="text" name="note" class="form-control form-control-sm" placeholder="نص الرسالة / الإشعار" style="flex:1">
-    <button class="btn-act gold"><i class="fas fa-paper-plane"></i> إرسال للمحدد</button></div>
+    <input type="text" name="title" class="form-control form-control-sm" placeholder="عنوان الرسالة" style="max-width:200px">
+    <input type="text" name="note" class="form-control form-control-sm" placeholder="نص الرسالة / الإشعار" style="flex:1;min-width:160px">
+    <button name="act" value="message" class="btn-act gold" data-c="إرسال الرسالة للمحدد؟"><i class="fas fa-paper-plane"></i> إرسال</button>
+    <select class="form-select form-select-sm" style="max-width:220px" onchange="if(this.value){var b=document.getElementById('sMore');b.value=this.value;b.dataset.c=this.options[this.selectedIndex].dataset.c;b.click();this.value=''}">
+      <option value="">— إجراءات أخرى —</option>
+      <option value="activate" data-c="تفعيل الحسابات المحددة يدوياً؟">تفعيل الحساب</option>
+      <option value="mark_test" data-c="تعليم المدارس المحددة وطلباتها «تجريبي»؟ (تُحذف مع مسح التجربة)">تعليم «تجريبي» مع طلباتها</option>
+      <option value="unmark_test" data-c="إزالة علامة التجربة؟">إزالة «تجريبي»</option>
+      <option value="delete_keep" data-c="حذف الحسابات فقط (تبقى طلباتها بدون حساب)؟">حذف الحساب فقط</option>
+      <option value="delete" data-c="حذف الحسابات المحددة مع كل طلباتها وملفاتها نهائياً؟ (تُحفظ نسخة احتياطية JSON)">حذف الحساب مع طلباته</option>
+    </select>
+    <button name="act" id="sMore" hidden></button>
+  </div>
   <div class="pt-card" style="padding:0;overflow:auto"><table class="mg-table" id="sTable">
-    <thead><tr><th><input type="checkbox" data-checkall="#sTable tbody"></th><th>المدرسة</th><th>ضابط الارتباط</th><th>الهاتف</th><th>المحافظة / المديرية</th><th>الطلبات</th><th>التسجيل</th></tr></thead>
+    <thead><tr><th><input type="checkbox" data-checkall="#sTable tbody" title="تحديد الكل"></th><th>المدرسة</th><th>ضابط الارتباط</th><th>الهاتف</th><th>المحافظة / المديرية</th><th>الطلبات</th><th>التسجيل</th></tr></thead>
     <tbody>{% for p in items %}<tr><td><input type="checkbox" name="ids" value="{{ p.pk }}"></td>
-      <td><b>{{ p.school_name|default:"—" }}</b><br><small class="text-muted" dir="ltr">{{ p.user.email }}</small></td>
+      <td><b>{{ p.school_name|default:"—" }}</b>{% if p.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}{% if not p.user.is_active %} <span class="pt-status st-withdrawn" style="font-size:.7rem">غير مفعّل</span>{% endif %}<br><small class="text-muted" dir="ltr">{{ p.user.email }}</small></td>
       <td>{{ p.contact_person }}</td><td dir="ltr">{{ p.phone }}</td>
       <td><small>{{ p.governorate|default:"—" }}<br>{{ p.directorate|default:"" }}</small></td>
-      <td>{% if p.n %}<a href="/manage/submissions/?q={{ p.user.email|urlencode }}">{{ p.n }}</a>{% else %}0{% endif %}</td>
+      <td>{% if p.n %}<a href="/manage/submissions/?q={{ p.user.email|urlencode }}">{{ p.n }}</a>{% else %}0{% endif %}{% if p.n_all > p.n %} <small class="text-muted">+ مسودات</small>{% endif %}</td>
       <td><small>{{ p.created_at|date:"Y-m-d" }}</small></td></tr>
     {% empty %}<tr><td colspan="7" class="text-center text-muted py-4">لا توجد مدارس.</td></tr>{% endfor %}</tbody></table></div>
 </form>
+<script>
+document.getElementById('sForm').addEventListener('submit', function (e) {
+  var b = e.submitter, n = this.querySelectorAll('input[name=ids]:checked').length;
+  if (!n) { e.preventDefault(); alert('حدّد مدرسة واحدة على الأقل'); return; }
+  if (b && b.dataset.c && !confirm(b.dataset.c + '\n(' + n + ' مدرسة)')) e.preventDefault();
+});
+</script>
 {% endblock %}

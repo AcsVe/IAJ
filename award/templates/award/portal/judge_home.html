@@ -12,7 +12,7 @@
   {% if items %}<ul class="pt-list">
   {% for a in items %}<li class="pt-item">
     <div><a class="t" href="{% url 'judge_review' a.pk %}">{{ a.submission.project_title }}</a>
-      <div class="m">{{ a.submission.ref }} · {{ a.submission.track|default:"—" }} · أُسند {{ a.assigned_at|date:"Y-m-d" }}</div></div>
+      <div class="m">{{ a.submission.ref }} · {{ a.submission.track|default:"—" }} · {{ a.get_stage_display }} · أُسند {{ a.assigned_at|date:"Y-m-d" }}{% if a.submission.cycle.judging_closes_at and not a.is_done %} · <b style="color:#c62828">آخر موعد {{ a.submission.cycle.judging_closes_at|date:"Y-m-d" }}</b>{% endif %}</div></div>
     <div class="d-flex align-items-center gap-2">
       {% if a.is_done %}<span class="pt-status st-accepted">منتهٍ — {{ a.total }}/100</span>{% else %}<span class="pt-status st-revision">بانتظار التقييم</span>{% endif %}
       <a class="pt-btn pt-btn-light" style="padding:7px 14px" href="{% url 'judge_review' a.pk %}">{% if a.is_done %}عرض{% else %}تقييم{% endif %}</a>

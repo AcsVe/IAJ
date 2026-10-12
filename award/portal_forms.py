@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth import password_validation
 from django.contrib.auth.models import User
 
-from .models import Area, Directorate, Field, Governorate, Profile, Submission
+from .models import PortalSetting, Area, Directorate, Field, Governorate, Profile, Submission
 
 INPUT = {'class': 'form-control'}
 
@@ -92,7 +92,8 @@ class SchoolSignupForm(LocationMixin, forms.Form):
         Profile.objects.create(user=user, role='school', school_name=d['school_name'],
                                contact_person=d['contact_person'], phone=d['phone'],
                                governorate=d.get('governorate'), area=d.get('area'), directorate=d.get('directorate'),
-                               city=d['area'].name if d.get('area') else '')
+                               city=d['area'].name if d.get('area') else '',
+                               is_simulation=PortalSetting.get().test_mode)
         return user
 
 
@@ -183,6 +184,13 @@ class MessageForm(forms.Form):
         return _check_file(self.cleaned_data.get('attachment'), ATTACH_EXTS, 'المرفق')
 
 
+DECLARATIONS = (
+    ('declare_truth', 'نقرّ بأن جميع المعلومات والبيانات المقدّمة صحيحة ودقيقة.'),
+    ('declare_original', 'نقرّ بأن المشروع من عمل الطلبة المشاركين وأصيل، وأن حقوقه تعود للمدرسة والطلبة، مع الإشارة لأي مصادر مستخدمة.'),
+    ('declare_consent', 'حصلنا على موافقة أولياء أمور الطلبة على مشاركتهم، وعلى نشر أسمائهم وصورهم في أنشطة الجائزة وإعلامها.'),
+)
+
+
 class PortalSubmissionForm(forms.ModelForm):
     class Meta:
         model = Submission
@@ -213,6 +221,14 @@ class PortalSubmissionForm(forms.ModelForm):
         self.fields['attachment'].help_text = f'اختياري — أي صيغة: صور، فيديو، صوت، مستندات، ملف مضغوط (حتى {settings.SUBMISSION_MAX_MB} ميغابايت). ويمكن إضافة ملفات أكثر لاحقاً من صفحة الطلب.'
         self.fields['extra_files'] = MultipleFileField(label='ملفات ووسائط إضافية (اختياري)', required=False,
                                                        help_text='اختر عدة ملفات معاً: صور، فيديو، عروض، ملفات مضغوطة…')
+        inst = self.instance if self.instance and self.instance.pk else None
+        for name, label in DECLARATIONS:
+            self.fields[name] = forms.BooleanField(label=label, required=False,
+                                                   initial=bool(inst and getattr(inst, name.replace('declare_', 'declared_'))),
+                                                   widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+
+    def declarations_ok(self):
+        return all(self.cleaned_data.get(n) for n, _ in DECLARATIONS)
 
     def clean_document(self):
         return _check_file(self.cleaned_data.get('document'), DOC_EXTS, 'ملف البحث')

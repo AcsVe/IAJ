@@ -1,11 +1,46 @@
 {% extends 'award/manage/_base.html' %}
 {% block mg %}
-<div class="mg-h"><h1>النتائج والفائزون {% if cur_cycle %}— {{ cur_cycle.short_name|default:cur_cycle.name }}{% endif %}</h1>
-  {% if cur_cycle %}<form method="post">{% csrf_token %}<input type="hidden" name="act" value="publish">
-    {% if cur_cycle.results_published %}<span class="pt-status st-accepted" style="font-size:1rem">النتائج منشورة</span>
-    {% else %}<button class="btn-act success" onclick="return confirm('نشر نتائج الدورة وإبلاغ كل المدارس؟')"><i class="fas fa-bullhorn"></i> نشر النتائج وإبلاغ المدارس</button>{% endif %}</form>{% endif %}</div>
-<p class="text-muted">الطلبات في مرحلة التحكيم أو المقبولة، مرتبة حسب متوسط درجات المحكّمين داخل كل مسار. «المقترح» = الترتيب حسب الدرجة. حدّد الفائزين وعدّل المركز ثم «اعتماد».</p>
-{% if not groups %}<div class="pt-card text-center text-muted">لا توجد طلبات محكّمة بعد ({{ total }}).</div>{% endif %}
+<div class="mg-h"><h1>النتائج والاعتماد {% if cur_cycle %}— {{ cur_cycle.short_name|default:cur_cycle.name }}{% endif %}</h1>
+  {% if cur_cycle %}<form method="post">{% csrf_token %}<button name="act" value="export" class="btn-act secondary"><i class="fas fa-file-excel"></i> Excel الدورة كاملة</button></form>{% endif %}</div>
+
+{% if not cur_cycle %}<div class="pt-card text-muted">اختر دورة من القائمة الجانبية.</div>{% else %}
+<div class="mg-kpi">
+  <span><b>{{ total }}</b> طلب في التحكيم/مقبول/فائز</span>
+  <span><b style="color:{% if pending %}#e8710a{% else %}#188038{% endif %}">{{ pending }}</b> تقييم غير منتهٍ</span>
+  <span><b style="color:{% if disc %}#c62828{% else %}#188038{% endif %}">{{ disc }}</b> تباين درجات</span>
+  <span><b>{{ n_winners }}</b> فائز معتمد</span>
+  <span>كسر التعادل: <b style="font-size:.9rem">{{ cur_cycle.get_tie_break_display }}</b></span>
+</div>
+
+<div class="pt-card" style="border-top-color:var(--gold)">
+  <h2><i class="fas fa-stamp ms-1" style="color:var(--gold)"></i> خطوات إعلان النتائج</h2>
+  <ol style="line-height:2.1;margin:0 0 10px">
+    <li>اكتمال التحكيم {% if pending %}<span class="disc-tag">{{ pending }} متبقٍ</span>{% else %}<span style="color:#188038">✓</span>{% endif %}
+      {% if disc %} · <a href="/manage/submissions/?status=judging&flag=disc">معالجة التباين ({{ disc }})</a>{% endif %}</li>
+    <li>تحديد الفائزين بالجدول أدناه {% if n_winners %}<span style="color:#188038">✓ {{ n_winners }}</span>{% endif %} — والباقي «قبول/رفض» من صفحة الطلبات</li>
+    <li>اعتماد لجنة الجائزة
+      {% if cur_cycle.results_approved_at %}<span style="color:#188038">✓ {{ cur_cycle.results_approved_at|date:"Y-m-d H:i" }} {% if cur_cycle.results_approved_by %}— {{ cur_cycle.results_approved_by.get_full_name|default:cur_cycle.results_approved_by.email }}{% endif %}</span>
+        {% if cur_cycle.results_approval_note %}<div class="pt-help">{{ cur_cycle.results_approval_note }}</div>{% endif %}
+      {% elif not cur_cycle.require_approval %}<small class="text-muted">(غير مطلوب في إعدادات هذه الدورة)</small>{% endif %}</li>
+    <li>النشر وإبلاغ المدارس {% if cur_cycle.results_published %}<span style="color:#188038">✓ {{ cur_cycle.results_published_at|date:"Y-m-d H:i" }}</span>{% endif %}
+      {% if cur_cycle.appeal_until %} · الاعتراض متاح حتى {{ cur_cycle.appeal_until|date:"Y-m-d" }}{% endif %}</li>
+  </ol>
+  {% if not cur_cycle.results_published %}
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end">{% csrf_token %}
+    {% if cur_cycle.results_approved_at %}
+      <button name="act" value="publish" class="btn-act success" onclick="return confirm('نشر نتائج الدورة وإبلاغ كل المدارس الآن؟ لا يمكن التراجع عن الإشعارات.')"><i class="fas fa-bullhorn"></i> نشر النتائج وإبلاغ المدارس</button>
+      <button name="act" value="unapprove" class="btn btn-light">إلغاء الاعتماد</button>
+    {% else %}
+      <input type="text" name="note" class="form-control" style="max-width:420px" placeholder="محضر/ملاحظة الاعتماد (مثال: اجتماع اللجنة بتاريخ…)">
+      <button name="act" value="approve" class="btn-act gold" onclick="return confirm('تسجيل اعتماد لجنة الجائزة للنتائج الحالية؟ أي تعديل لاحق على الفائزين يلغي الاعتماد.')"><i class="fas fa-stamp"></i> اعتماد اللجنة</button>
+      {% if not cur_cycle.require_approval %}<button name="act" value="publish" class="btn-act success" onclick="return confirm('نشر النتائج وإبلاغ كل المدارس؟')"><i class="fas fa-bullhorn"></i> نشر بدون اعتماد</button>{% endif %}
+    {% endif %}
+  </form>
+  {% else %}<a href="/manage/post/" class="btn-act gold" style="text-decoration:none"><i class="fas fa-certificate"></i> الشهادات ودعوات الحفل</a>{% endif %}
+</div>
+
+<p class="text-muted">مرتبة حسب متوسط درجات المرحلة الحالية داخل كل مسار، ثم قاعدة كسر التعادل. «⚖» = تعادل في المتوسط حُسم بالقاعدة. حدّد الفائزين وعدّل المركز ثم «اعتماد المحدد فائزين».</p>
+{% if not groups %}<div class="pt-card text-center text-muted">لا توجد طلبات محكّمة بعد.</div>{% endif %}
 <form method="post">{% csrf_token %}<input type="hidden" name="act" value="winners">
 {% for track, rows in groups.items %}
   <div class="pt-card" style="padding:16px 16px 6px"><h2>{{ track }} ({{ rows|length }})</h2>
@@ -13,16 +48,17 @@
     <thead><tr><th></th><th>المقترح</th><th>الطلب</th><th>المتوسط</th><th>التحكيم</th><th>التوصيات</th><th>المركز</th><th>الفئة</th><th>الحالة</th></tr></thead>
     <tbody>{% for r in rows %}<tr>
       <td><input type="checkbox" name="ids" value="{{ r.s.pk }}"{% if r.winner %} checked{% endif %}></td>
-      <td><b>{{ r.suggest }}</b></td>
-      <td><a class="t" href="/manage/submissions/{{ r.s.pk }}/">{{ r.s.project_title|truncatechars:50 }}</a><br><small class="text-muted">{{ r.s.ref }} · {{ r.s.school_name }}</small></td>
-      <td><b style="font-size:1.1rem">{{ r.avg|default_if_none:"—" }}</b></td><td>{{ r.prog }}</td>
+      <td><b>{{ r.suggest }}</b>{% if r.tie %} <span title="تعادل حُسم بقاعدة كسر التعادل">⚖</span>{% endif %}</td>
+      <td><a class="t" href="/manage/submissions/{{ r.s.pk }}/">{{ r.s.project_title|truncatechars:50 }}</a><br><small class="text-muted">{{ r.s.ref }} · {{ r.s.school_name }} · {{ r.s.stage_label }}</small>{% if r.s.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}</td>
+      <td><b style="font-size:1.1rem">{{ r.avg|default_if_none:"—" }}</b>{% if r.disc %}<br><span class="disc-tag">± {{ r.spread }}</span>{% endif %}</td><td>{{ r.prog }}</td>
       <td><small>بشدة {{ r.strong }} · أوصي {{ r.yes }} · لا {{ r.no }}</small></td>
       <td><input type="number" name="rank_{{ r.s.pk }}" value="{% if r.winner %}{{ r.winner.rank }}{% else %}{{ r.suggest }}{% endif %}" min="1" class="form-control form-control-sm" style="width:70px"></td>
       <td><select name="cat_{{ r.s.pk }}" class="form-select form-select-sm" style="min-width:120px"><option value="">—</option>{% for c in categories %}<option value="{{ c.pk }}"{% if r.winner.category_id == c.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></td>
       <td><span class="pt-status st-{{ r.s.status }}">{{ r.s.get_status_display }}</span></td>
     </tr>{% endfor %}</tbody></table></div></div>
 {% endfor %}
-{% if groups %}<button class="btn-act gold"><i class="fas fa-trophy"></i> اعتماد المحدد فائزين</button>
+{% if groups %}<button class="btn-act gold" onclick="return confirm('اعتماد الطلبات المحددة فائزين؟{% if cur_cycle.results_approved_at and not cur_cycle.results_published %} سيُلغى اعتماد اللجنة الحالي.{% endif %}')"><i class="fas fa-trophy"></i> اعتماد المحدد فائزين</button>
 <p class="pt-help mt-2">الاعتماد يضيفهم إلى صفحة «الفائزون» مربوطين بالدورة، ولا تصل النتيجة للمدارس إلا بعد «نشر النتائج».</p>{% endif %}
 </form>
+{% endif %}
 {% endblock %}

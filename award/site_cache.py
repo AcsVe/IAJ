@@ -150,8 +150,8 @@ def _hero_stats():
     try:
         cyc = AwardCycle.current()
         items = [
-            (Profile.objects.filter(role='school').count(), 'مدرسة مسجّلة', 'fa-school'),
-            (Submission.objects.exclude(status__in=('draft', 'withdrawn')).count(), 'مشروع مقدَّم', 'fa-diagram-project'),
+            (Profile.objects.filter(role='school', is_simulation=False).count(), 'مدرسة مسجّلة', 'fa-school'),
+            (Submission.objects.exclude(status__in=('draft', 'withdrawn')).filter(is_simulation=False).count(), 'مشروع مقدَّم', 'fa-diagram-project'),
             (Field.objects.count(), 'مجالات', 'fa-layer-group'),
             (Track.objects.filter(is_active=True).count(), 'مسارات', 'fa-route'),
         ]
@@ -188,8 +188,8 @@ def get_home_bundle():
         'latest_news': list(News.objects.filter(is_published=True)[:3]),
         'announcements': _home_announcements(),
         'hero_stats': _hero_stats(),
-        'total_submissions': Submission.objects.count(),
-        'accepted_submissions': Submission.objects.filter(status='accepted').count(),
+        'total_submissions': Submission.objects.filter(is_simulation=False).count(),
+        'accepted_submissions': Submission.objects.filter(status='accepted', is_simulation=False).count(),
     }
     cache.set(HOME_KEY, data, TTL)
     return data

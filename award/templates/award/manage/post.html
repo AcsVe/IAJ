@@ -1,0 +1,44 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>الشهادات والحفل والأثر {% if cur_cycle %}— {{ cur_cycle.short_name|default:cur_cycle.name }}{% endif %}</h1></div>
+{% if not cur_cycle %}<div class="pt-card text-muted">اختر دورة من القائمة الجانبية.</div>{% else %}
+{% if not cur_cycle.results_published %}<div class="pt-note warn">نتائج هذه الدورة لم تُنشر بعد — يمكنكم التجهيز، لكن المدارس ترى الشهادات والدعوات بعد النشر.</div>{% endif %}
+
+<div class="pt-card" id="certs"><h2><i class="fas fa-certificate ms-1" style="color:var(--gold)"></i> الشهادات ({{ certs|length }})</h2>
+  <div class="mg-kpi"><span><b>{{ cert_counts.winner|default:0 }}</b> فوز</span><span><b>{{ cert_counts.participation|default:0 }}</b> مشاركة</span><span><b>{{ cert_counts.judge|default:0 }}</b> شكر محكّمين</span></div>
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-center">{% csrf_token %}<input type="hidden" name="act" value="certs">
+    <label class="form-check m-0"><input type="checkbox" name="judges" value="1" checked class="form-check-input"> مع شهادات شكر للمحكّمين</label>
+    <button class="btn-act gold"><i class="fas fa-wand-magic-sparkles"></i> إصدار الشهادات (للطلبات ذات النتيجة النهائية)</button></form>
+  <p class="pt-help mt-2">كل شهادة لها رمز تحقق و QR يفتح صفحة <a href="/verify/" target="_blank">/verify/</a>. الإصدار مرة ثانية يضيف الجديد فقط. المدرسة تجد شهادتها في صفحة طلبها بعد النشر.</p>
+  {% if certs %}<input type="search" class="form-control form-control-sm mb-2" style="max-width:260px" placeholder="بحث في الشهادات…" data-live="#cTable tbody tr" data-shown="#cShown">
+  <div style="overflow:auto;max-height:420px"><table class="mg-table" id="cTable"><thead><tr><th>النوع</th><th>باسم</th><th>عن</th><th>الرمز</th><th></th></tr></thead><tbody>
+  {% for c in certs %}<tr{% if c.revoked %} style="opacity:.45"{% endif %}><td>{{ c.get_kind_display }}{% if c.rank %} ({{ c.rank }}){% endif %}</td><td><b>{{ c.recipient }}</b></td><td><small>{{ c.title|truncatechars:50 }}</small></td><td dir="ltr"><small>{{ c.code }}</small></td>
+    <td style="white-space:nowrap"><a href="{{ c.get_absolute_url }}" target="_blank" class="btn btn-sm btn-light">عرض/طباعة</a>
+      {% if not c.revoked %}<form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="act" value="revoke"><input type="hidden" name="cid" value="{{ c.pk }}"><button class="btn btn-sm btn-link text-danger" onclick="return confirm('إلغاء هذه الشهادة؟')">إلغاء</button></form>{% else %}<small>ملغاة</small>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div><small class="text-muted">المعروض: <span id="cShown">{{ certs|length }}</span></small>{% endif %}
+</div>
+
+<div class="pt-card" id="ceremony"><h2><i class="fas fa-envelope-open-text ms-1" style="color:var(--gold)"></i> حفل التكريم والدعوات ({{ invs|length }})</h2>
+  <form method="post" class="row g-2 align-items-end mb-2">{% csrf_token %}<input type="hidden" name="act" value="ceremony">
+    <div class="col-md-4"><label class="form-label">موعد الحفل</label><input type="datetime-local" name="ceremony_date" class="form-control" value="{{ cur_cycle.ceremony_date|date:'Y-m-d\TH:i' }}"></div>
+    <div class="col-md-5"><label class="form-label">المكان</label><input type="text" name="ceremony_place" class="form-control" value="{{ cur_cycle.ceremony_place }}"></div>
+    <div class="col-md-3"><button class="btn btn-light w-100">حفظ</button></div></form>
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-center">{% csrf_token %}<input type="hidden" name="act" value="invite">
+    <span>إرسال دعوات إلى:</span>{% for k, l in statuses %}<label class="form-check m-0"><input type="checkbox" name="statuses" value="{{ k }}" class="form-check-input"{% if k == 'winner' %} checked{% endif %}> {{ l }}</label>{% endfor %}
+    <button class="btn-act gold" onclick="return confirm('إرسال الدعوات (الجديدة فقط) بإشعار وبريد؟')"><i class="fas fa-paper-plane"></i> إرسال الدعوات</button></form>
+  <div class="mg-kpi mt-2"><span><b style="color:#188038">{{ rsvp.yes|default:0 }}</b> سيحضر</span><span><b>{{ guests }}</b> شخص متوقع</span><span><b style="color:#c62828">{{ rsvp.no|default:0 }}</b> يعتذر</span><span><b style="color:#e8710a">{{ rsvp.pending|default:0 }}</b> بلا رد</span></div>
+  {% if invs %}<form method="post">{% csrf_token %}<input type="hidden" name="act" value="del_invites">
+  <div style="overflow:auto;max-height:380px"><table class="mg-table" id="iTable"><thead><tr><th><input type="checkbox" data-checkall="#iTable tbody" data-counter="#iSel"></th><th>المدعو</th><th>الرد</th><th>العدد</th><th>ملاحظة</th><th>رابط الرد</th></tr></thead><tbody>
+  {% for i in invs %}<tr><td><input type="checkbox" name="ids" value="{{ i.pk }}"></td><td><b>{{ i.name }}</b><br><small class="text-muted" dir="ltr">{{ i.email }}</small></td>
+    <td><span class="pt-status st-{% if i.rsvp == 'yes' %}accepted{% elif i.rsvp == 'no' %}rejected{% else %}revision{% endif %}">{{ i.get_rsvp_display }}</span></td><td>{{ i.guests }}</td><td><small>{{ i.note }}</small></td>
+    <td><a href="/rsvp/{{ i.code }}/" target="_blank"><small dir="ltr">/rsvp/{{ i.code }}/</small></a></td></tr>{% endfor %}
+  </tbody></table></div><button class="btn btn-sm btn-outline-danger mt-2" onclick="return confirm('حذف الدعوات المحددة؟')">حذف المحدد (<span id="iSel">0</span>)</button></form>{% endif %}
+</div>
+
+<div class="pt-card" id="impact"><h2><i class="fas fa-seedling ms-1" style="color:var(--gold)"></i> متابعة أثر الفائزين ({{ impact|length }} تقرير)</h2>
+  <p class="text-muted">بعد {{ cur_cycle.impact_after_days }} يوماً من النشر يُطلب تلقائياً من كل مدرسة فائزة تقرير متابعة. {{ winners_n }} فائز — {{ winners_no_report }} لم يرسلوا تقريراً بعد.</p>
+  {% for r in impact %}<div class="pt-crit"><b>{{ r.submission.school_name }}</b> — <a href="/manage/submissions/{{ r.submission.pk }}/">{{ r.submission.ref }}</a> <small class="text-muted">{{ r.created_at|date:"Y-m-d" }}{% if r.beneficiaries %} · المستفيدون {{ r.beneficiaries }}{% endif %}</small>
+    <div style="white-space:pre-line">{{ r.body }}</div>{% if r.attachment %}<a href="{{ r.attachment.url }}" target="_blank"><i class="fas fa-paperclip"></i> المرفق</a>{% endif %}</div>{% empty %}<div class="text-muted">لا توجد تقارير بعد.</div>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

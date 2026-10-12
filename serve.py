@@ -25,6 +25,29 @@ logging.basicConfig(level=logging.INFO, handlers=[handler, logging.StreamHandler
 log = logging.getLogger('iaj')
 
 
+def _start_reminders():
+    """التذكيرات (المسودات، المحكّمون المتأخرون، تقارير الأثر) كل 6 ساعات — كل تذكير يُرسل مرة واحدة فقط"""
+    import threading
+    import time
+
+    def loop():
+        time.sleep(120)
+        while True:
+            try:
+                from award import reminders
+                from django.db import close_old_connections
+                close_old_connections()
+                r = reminders.run_all()
+                if any(r.values()):
+                    log.info('Reminders sent: %s', r)
+            except Exception as e:   # noqa: BLE001
+                log.warning('Reminders failed: %s', e)
+            time.sleep(6 * 3600)
+
+    if os.environ.get('REMINDERS', '1') != '0':
+        threading.Thread(target=loop, daemon=True, name='reminders').start()
+
+
 def main():
     import django
     django.setup()
@@ -34,6 +57,8 @@ def main():
     call_command('migrate', interactive=False, verbosity=0)
     log.info('Collecting static files...')
     call_command('collectstatic', interactive=False, verbosity=0)
+
+    _start_reminders()
 
     from django.conf import settings
     from django.core.wsgi import get_wsgi_application

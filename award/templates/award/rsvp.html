@@ -1,0 +1,22 @@
+{% extends 'award/portal/_auth_base.html' %}
+{% block title %}دعوة حفل التكريم{% endblock %}
+{% block card %}
+<h1><i class="fas fa-envelope-open-text ms-2" style="color:var(--gold)"></i> دعوة حفل التكريم</h1>
+<p class="pt-sub">{{ inv.cycle.short_name|default:inv.cycle.name }} — جائزة انتصار عباس جردانة</p>
+<dl class="pt-kv">
+  <dt>المدعو</dt><dd><b>{{ inv.name }}</b></dd>
+  {% if inv.cycle.ceremony_date %}<dt>الموعد</dt><dd>{{ inv.cycle.ceremony_date|date:"l j F Y — H:i" }}</dd>{% endif %}
+  {% if inv.cycle.ceremony_place %}<dt>المكان</dt><dd>{{ inv.cycle.ceremony_place }}</dd>{% endif %}
+  <dt>ردّكم</dt><dd><span class="pt-status st-{% if inv.rsvp == 'yes' %}accepted{% elif inv.rsvp == 'no' %}rejected{% else %}revision{% endif %}">{{ inv.get_rsvp_display }}</span></dd>
+</dl>
+<form method="post" class="mt-3">{% csrf_token %}
+  <div class="row g-2">
+    <div class="col-6"><label class="form-label">عدد الحضور</label><input type="number" name="guests" min="1" max="20" value="{{ inv.guests }}" class="form-control"></div>
+    <div class="col-12"><label class="form-label">ملاحظة (اختياري)</label><input type="text" name="note" value="{{ inv.note }}" class="form-control" placeholder="أسماء الحضور، احتياجات خاصة…"></div>
+  </div>
+  <div class="d-flex gap-2 mt-3">
+    <button name="rsvp" value="yes" class="pt-btn pt-btn-gold" style="flex:1"><i class="fas fa-check"></i> سنحضر</button>
+    <button name="rsvp" value="no" class="pt-btn pt-btn-light" style="flex:1"><i class="fas fa-xmark"></i> نعتذر</button>
+  </div>
+</form>
+{% endblock %}

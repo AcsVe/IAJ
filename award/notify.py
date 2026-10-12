@@ -21,6 +21,21 @@ def absolute(url):
 
 
 _logo_cache = {'key': None, 'data': None}
+_quiet = threading.local()
+
+
+def quiet():
+    """أثناء تشغيل المحاكاة الآلية: لا بريد ولا تنبيهات للإدارة"""
+    return getattr(_quiet, 'on', False)
+
+
+class Quiet:
+    def __enter__(self):
+        self._old = quiet()
+        _quiet.on = True
+
+    def __exit__(self, *exc):
+        _quiet.on = self._old
 
 
 def _logo_png():
@@ -90,8 +105,9 @@ def send_email(to, subject, body, url='', button='', wait=False):
     from .preview_state import active as _preview
     if _preview():   # «معاينة قبل الحفظ»: لا رسائل ولا إشعارات
         return None
-    to = [t for t in ([to] if isinstance(to, str) else to) if t]
-    if not to:
+    from .models import SIM_DOMAIN
+    to = [t for t in ([to] if isinstance(to, str) else to) if t and not t.lower().endswith('@' + SIM_DOMAIN)]
+    if not to or quiet():   # حسابات/تشغيل المحاكاة الآلية: لا بريد
         return
     logo = _logo_png()
     ctx = {'subject': subject, 'body': body, 'url': absolute(url), 'button': button or 'فتح في الموقع',
@@ -128,7 +144,7 @@ def notify(user, title, body='', url='', level='info', email=True, button=''):
 def notify_staff(title, body='', url='', email=True):
     """تنبيه الإدارة (كل المديرين) + بريد ADMIN_NOTIFY_EMAILS"""
     from .preview_state import active as _preview
-    if _preview():   # «معاينة قبل الحفظ»: لا رسائل ولا إشعارات
+    if _preview() or quiet():   # «معاينة قبل الحفظ»: لا رسائل ولا إشعارات
         return None
     from django.contrib.auth.models import User
     from .models import Notification

@@ -1,25 +1,63 @@
 {% extends 'award/manage/_base.html' %}
 {% block mg %}
-<div class="mg-h"><h1>المحكّمون ({{ judges|length }})</h1><input type="search" class="form-control" style="max-width:260px" placeholder="بحث فوري…" data-live="#jTable tbody tr"></div>
-<div class="pt-card"><h2>إضافة محكّم (تصله دعوة بالبريد ليختار كلمة المرور)</h2>
-  <form method="post" class="row g-2">{% csrf_token %}<input type="hidden" name="act" value="add">
+<div class="mg-h"><h1>المحكّمون (<span id="shownCount">{{ judges|length }}</span>)</h1><input type="search" class="form-control" style="max-width:260px" placeholder="بحث فوري…" data-live="#jTable tbody tr"></div>
+
+<div class="mg-kpi">
+  <span><b>{{ totals.active }}</b> محكّم فعّال</span>
+  <span><b>{{ totals.n }}</b> تقييم مسند{% if cur_cycle %} في {{ cur_cycle.short_name|default:cur_cycle.name }}{% endif %}</span>
+  <span><b style="color:#188038">{{ totals.done }}</b> منتهٍ</span>
+  <span><b style="color:#e8710a">{{ totals.todo }}</b> متبقٍ لدى {{ totals.with_todo }} محكّم</span>
+</div>
+
+{% if cur_cycle %}<div class="pt-card"><h2><i class="fas fa-hourglass-half ms-1" style="color:var(--gold)"></i> موعد التحكيم وقفل الدرجات</h2>
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="deadline">
+    <div><label class="form-label">آخر موعد للتحكيم</label><input type="datetime-local" name="judging_closes_at" class="form-control" value="{{ cur_cycle.judging_closes_at|date:'Y-m-d\TH:i' }}"></div>
+    <button class="btn-act gold">حفظ / تمديد</button>
+    {% if late %}<span class="disc-tag" style="font-size:.85rem">انتهى الموعد — الدرجات مقفلة</span>{% endif %}
+  </form>
+  <p class="pt-help mt-2">قبل الموعد بـ 3 أيام ثم بيوم يصل المحكّمين المتأخرين تذكير تلقائي. بعد الموعد لا يستطيع المحكّم تعديل الدرجات (مدّدوا الموعد عند الحاجة). فارغ = بدون قفل.</p></div>{% endif %}
+
+<details class="pt-card"><summary style="cursor:pointer;font-weight:900;color:var(--primary)"><i class="fas fa-user-plus ms-1" style="color:var(--gold)"></i> إضافة محكّم (تصله دعوة بالبريد ليختار كلمة المرور)</summary>
+  <form method="post" class="row g-2 mt-2">{% csrf_token %}<input type="hidden" name="act" value="add">
     <div class="col-md-4">{% with f=form.name %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
     <div class="col-md-4">{% with f=form.email %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
     <div class="col-md-4">{% with f=form.phone %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
     <div class="col-md-6">{% with f=form.specialty %}{% include 'award/portal/_field.html' %}{% endwith %}</div>
     <div class="col-md-6"><label class="form-label">مجالات التحكيم</label><div class="mg-checks">{% for c in form.fields %}{{ c }}{% endfor %}</div></div>
-    <div class="col-12"><button class="btn-act gold"><i class="fas fa-user-plus"></i> إضافة وإرسال الدعوة</button></div></form></div>
-<div class="pt-card" style="padding:0;overflow:auto"><table class="mg-table" id="jTable">
-  <thead><tr><th>المحكّم</th><th>التخصص</th><th>المجالات</th><th>اللجان</th><th>التقييمات</th><th>الحالة</th><th></th></tr></thead>
-  <tbody>{% for j in judges %}<tr>
-    <td><b>{{ j.get_full_name|default:j.email }}</b><br><small class="text-muted" dir="ltr">{{ j.email }}</small></td>
-    <td><small>{{ j.profile.specialty|default:"—" }}</small></td>
-    <td><small>{% for f in j.profile.judge_fields.all %}{{ f }}{% if not forloop.last %}، {% endif %}{% empty %}الكل{% endfor %}</small></td>
-    <td><small>{% for c in j.committees.all %}{{ c }}{% if not forloop.last %}، {% endif %}{% empty %}—{% endfor %}</small></td>
-    <td>{{ j.done }}/{{ j.n }}</td>
-    <td>{% if j.is_active %}<span class="pt-status st-accepted">فعّال</span>{% else %}<span class="pt-status st-withdrawn">موقوف</span>{% endif %}{% if not j.last_login %} <small class="text-muted">لم يدخل بعد</small>{% endif %}</td>
-    <td><form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="uid" value="{{ j.pk }}">
-      <button name="act" value="invite" class="btn btn-sm btn-light" title="إرسال رابط الدخول"><i class="fas fa-envelope"></i></button>
-      <button name="act" value="toggle" class="btn btn-sm btn-light">{% if j.is_active %}إيقاف{% else %}تفعيل{% endif %}</button></form></td>
-  </tr>{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">لا يوجد محكّمون.</td></tr>{% endfor %}</tbody></table></div>
+    <div class="col-12"><button class="btn-act gold"><i class="fas fa-user-plus"></i> إضافة وإرسال الدعوة</button></div></form></details>
+
+<form method="post" id="jForm">{% csrf_token %}
+  <div class="mg-bulk"><b>المحدد: <span id="selCount">0</span> / {{ judges|length }}</b>
+    <button name="act" value="remind" class="btn-act warning" data-c="إرسال تذكير للمحددين بطلباتهم غير المنتهية؟"><i class="fas fa-bell"></i> تذكير بالمتبقي</button>
+    <input type="text" name="title" class="form-control form-control-sm" placeholder="عنوان الرسالة" style="max-width:170px">
+    <input type="text" name="note" class="form-control form-control-sm" placeholder="نص رسالة للمحددين" style="flex:1;min-width:160px">
+    <button name="act" value="message" class="btn-act gold" data-c="إرسال الرسالة للمحددين؟"><i class="fas fa-paper-plane"></i> رسالة</button>
+    <select class="form-select form-select-sm" style="max-width:170px" onchange="if(this.value){var b=document.getElementById('jMore');b.value=this.value;b.dataset.c=this.options[this.selectedIndex].dataset.c;b.click();this.value=''}">
+      <option value="">— المزيد —</option><option value="activate" data-c="تفعيل المحددين؟">تفعيل</option><option value="deactivate" data-c="إيقاف المحددين؟">إيقاف</option>
+      <option value="mark_test" data-c="تعليم المحددين «تجريبي»؟">تعليم «تجريبي»</option><option value="unmark_test" data-c="إزالة علامة التجربة؟">إزالة «تجريبي»</option>
+      <option value="delete" data-c="حذف المحكّمين المحددين نهائياً مع تقييماتهم؟ (تُحفظ نسخة احتياطية)">حذف نهائي</option></select>
+    <button name="act" id="jMore" hidden></button>
+  </div>
+  <div class="pt-card" style="padding:0;overflow:auto"><table class="mg-table" id="jTable">
+    <thead><tr><th><input type="checkbox" data-checkall="#jTable tbody" title="تحديد الكل"></th><th>المحكّم</th><th>المجالات / اللجان</th><th>الإنجاز</th><th>آخر تذكير</th><th>الحالة</th><th></th></tr></thead>
+    <tbody>{% for j in judges %}<tr>
+      <td><input type="checkbox" name="ids" value="{{ j.pk }}"></td>
+      <td><b>{{ j.get_full_name|default:j.email }}</b>{% if j.profile.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}<br><small class="text-muted" dir="ltr">{{ j.email }}</small><br><small class="text-muted">{{ j.profile.specialty|default:"" }}</small></td>
+      <td><small>{% for f in j.profile.judge_fields.all %}{{ f }}{% if not forloop.last %}، {% endif %}{% empty %}كل المجالات{% endfor %}<br>{% for c in j.committees.all %}{{ c }}{% if not forloop.last %}، {% endif %}{% endfor %}</small>{% if j.conflicts_n %}<br><small style="color:#c62828">تعارض مصالح: {{ j.conflicts_n }}</small>{% endif %}</td>
+      <td style="min-width:130px"><b>{{ j.done }}/{{ j.n }}</b>{% if j.todo %} <small style="color:#e8710a">({{ j.todo }} متبقٍ)</small>{% endif %}
+        <div style="background:#eef0f4;border-radius:6px;height:7px;margin-top:4px"><div style="width:{{ j.pct }}%;height:100%;border-radius:6px;background:{% if j.pct == 100 %}#188038{% else %}#c5a059{% endif %}"></div></div></td>
+      <td><small>{{ j.last_reminded|date:"Y-m-d H:i"|default:"—" }}</small></td>
+      <td>{% if j.is_active %}<span class="pt-status st-accepted">فعّال</span>{% else %}<span class="pt-status st-withdrawn">موقوف</span>{% endif %}{% if not j.last_login %}<br><small class="text-muted">لم يدخل بعد</small>{% endif %}</td>
+      <td style="white-space:nowrap"><button name="row" value="invite:{{ j.pk }}" class="btn btn-sm btn-light" title="إرسال رابط الدخول"><i class="fas fa-envelope"></i></button>
+        <button name="row" value="toggle:{{ j.pk }}" class="btn btn-sm btn-light">{% if j.is_active %}إيقاف{% else %}تفعيل{% endif %}</button></td>
+    </tr>{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">لا يوجد محكّمون.</td></tr>{% endfor %}</tbody></table></div>
+</form>
+<script>
+document.getElementById('jForm').addEventListener('submit', function (e) {
+  var b = e.submitter; if (!b || b.name === 'row') return;
+  var n = this.querySelectorAll('input[name=ids]:checked').length;
+  if (!n) { e.preventDefault(); alert('حدّد محكّماً واحداً على الأقل'); return; }
+  if (b.dataset.c && !confirm(b.dataset.c + '\n(' + n + ' محكّم)')) e.preventDefault();
+});
+</script>
 {% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>المحاكاة والتنظيف والإعدادات</h1></div>
+<div class="mg-chips"><a href="#sim">المحاكاة</a><a href="#test">وضع التجربة</a><a href="#clean">التنظيف</a><a href="#tpl">قوالب الأسباب</a><a href="#sec">الأمان والتذكيرات</a></div>
+
+<div class="pt-card" id="sim" style="border-top-color:#9c27b0">
+  <h2><i class="fas fa-flask ms-1" style="color:#9c27b0"></i> محاكاة دورة كاملة (بروفة آلية)</h2>
+  <p>تُنشئ <b>دورة محاكاة منفصلة</b> بمدارس ومحكّمين وطلبات وهمية، وتمرّ بكل المراحل: التقديم والإقرارات والإيصال، التذكيرات، التدقيق (استكمال/تعليق/رفض/سحب)،
+  تعارض المصالح والتوزيع، التقييم وكشف التباين والمحكّم الإضافي، قفل الدرجات، القائمة القصيرة والتحكيم النهائي، كسر التعادل، اعتماد اللجنة والنشر،
+  التغذية الراجعة، الاعتراض، الشهادات وQR، دعوات الحفل، متابعة الأثر، وتصدير Excel — وتفحص كل خطوة. <b>لا يُرسل أي بريد</b> ولا تظهر للزوار ولا تمس الدورة الحالية.</p>
+  <div class="mg-kpi"><span>بيانات التجربة الآن:</span><span><b>{{ sim.submissions }}</b> طلب</span><span><b>{{ sim.schools }}</b> مدرسة</span><span><b>{{ sim.judges }}</b> محكّم</span><span><b>{{ sim.cycles }}</b> دورة محاكاة</span><span><b>{{ sim.runs }}</b> تقرير</span></div>
+  <div class="d-flex flex-wrap gap-3 align-items-end">
+    <form method="post" class="d-flex gap-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="simulate">
+      <div><label class="form-label">عدد المدارس</label><input type="number" name="schools" value="10" min="8" max="40" class="form-control" style="width:100px"></div>
+      <button class="btn-act purple" onclick="this.disabled=true;this.innerHTML='… جارٍ التشغيل (نصف دقيقة تقريباً)';this.form.submit()"><i class="fas fa-play"></i> تشغيل المحاكاة</button></form>
+    <form method="post" class="d-flex gap-2 align-items-end flex-wrap">{% csrf_token %}<input type="hidden" name="act" value="clear_sim">
+      <div><label class="form-label">للتأكيد اكتب: مسح</label><input type="text" name="confirm" class="form-control" style="width:120px"></div>
+      <label class="form-check mb-2"><input type="checkbox" name="keep" value="1" class="form-check-input"> إبقاء التقارير</label>
+      <button class="btn-act danger"><i class="fas fa-eraser"></i> مسح بيانات التجربة</button></form>
+  </div>
+  <p class="pt-help mt-2">«مسح بيانات التجربة» يحذف: دورات المحاكاة، وكل طلب أو حساب معلّم «تجريبي» (من المحاكاة الآلية أو من وضع التجربة أو ما علّمتموه يدوياً) مع الملفات والتقييمات والشهادات والدعوات. تُحفظ قبلها نسخة JSON في <code>backups/deleted</code>.</p>
+  {% if run %}<div class="mg-sec">
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-2"><b>تقرير {{ run.created_at|date:"Y-m-d H:i" }}:</b>
+      <span class="pt-status st-accepted">{{ run.passed }} نجح</span>{% if run.failed %}<span class="pt-status st-rejected">{{ run.failed }} فشل</span>{% endif %}
+      {% if run.cycle %}<a href="/manage/submissions/?cycle={{ run.cycle.pk }}">فتح طلبات دورة المحاكاة</a> · <a href="/manage/results/?cycle={{ run.cycle.pk }}">نتائجها</a>{% endif %}
+      {% if runs|length > 1 %}<select class="form-select form-select-sm" style="width:auto" onchange="location='?run='+this.value+'#sim'">{% for r in runs %}<option value="{{ r.pk }}"{% if r.pk == run.pk %} selected{% endif %}>{{ r.created_at|date:"Y-m-d H:i" }} — {{ r.passed }}/{{ r.passed|add:r.failed }}</option>{% endfor %}</select>{% endif %}</div>
+    {% if run.password %}<div class="pt-note">للدخول بحسابات المحاكاة (لتروا ما تراه المدرسة والمحكّم): البريد يظهر في التقرير، وكلمة المرور: <b dir="ltr">{{ run.password }}</b> — استخدموا نافذة خاصة (Incognito) حتى لا يُغلق حسابكم.</div>{% endif %}
+    <div class="mg-report">{{ run.report }}</div></div>{% endif %}
+</div>
+
+<div class="pt-card" id="test">
+  <h2><i class="fas fa-vial ms-1" style="color:var(--gold)"></i> وضع التجربة (محاكاة يدوية على الموقع الحقيقي)</h2>
+  <p>عند التفعيل: كل حساب مدرسة أو محكّم أو طلب <b>جديد</b> يُعلَّم «تجريبي» — جرّبوا التسجيل والتقديم والتحكيم بأنفسكم كما يفعل المستخدمون، ثم أوقفوا الوضع واضغطوا «مسح بيانات التجربة».
+  البريد يُرسل كالمعتاد (لتتأكدوا من وصوله)، وبيانات التجربة لا تدخل في إحصاءات الموقع العامة.</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="act" value="test_mode">
+    {% if ps.test_mode %}<button class="btn-act secondary"><i class="fas fa-stop"></i> إيقاف وضع التجربة</button> <span class="sim-tag">مفعّل الآن</span>
+    {% else %}<button class="btn-act gold" onclick="return confirm('تفعيل وضع التجربة؟ تذكّروا إيقافه قبل فتح التسجيل الحقيقي.')"><i class="fas fa-play"></i> تفعيل وضع التجربة</button>{% endif %}</form>
+  <p class="pt-help mt-2">ويمكن تعليم أي طلب أو مدرسة أو محكّم «تجريبي» يدوياً من صفحاتهم (التحديد ثم «تعليم تجريبي»).</p>
+</div>
+
+<div class="pt-card" id="clean">
+  <h2><i class="fas fa-broom ms-1" style="color:var(--gold)"></i> تنظيف المشاركين والطلبات</h2>
+  <p class="text-muted">كل حذف هنا يحفظ قبله نسخة JSON مما سيُحذف (للاسترجاع عند الخطأ: <code dir="ltr">python manage.py loaddata backups/deleted/FILE.json</code>) ويُسجَّل في سجل العمليات. حذف مدارس أو محكّمين محددين: من صفحتي «المدارس» و«المحكّمون» (التحديد ثم الحذف).</p>
+  <h3 style="font-size:1.02rem;font-weight:900">تنظيف دورة</h3>
+  <form method="post" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="cycle_clean">
+    <div class="col-md-4"><label class="form-label">الدورة</label><select name="cycle" class="form-select">{% for c in all_cycles %}<option value="{{ c.pk }}"{% if cur_cycle and cur_cycle.pk == c.pk %} selected{% endif %}>{{ c.short_name|default:c.name }} — {{ c.n }} طلب ({{ c.n_draft }} مسودة، {{ c.n_wd }} مسحوب){% if c.is_simulation %} [محاكاة]{% endif %}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><label class="form-label">احذف</label><select name="what" class="form-select"><option value="drafts">المسودات غير المرسلة</option><option value="withdrawn">الطلبات المسحوبة</option><option value="all">كل طلبات الدورة</option></select></div>
+    <div class="col-md-2"><label class="form-label">للحذف الكامل اكتب: حذف</label><input type="text" name="confirm" class="form-control"></div>
+    <div class="col-md-3"><label class="form-check"><input type="checkbox" name="reset" value="1" class="form-check-input"> إعادة ضبط النتائج (إلغاء النشر والاعتماد والشهادات والدعوات)</label></div>
+    <div class="col-12"><button class="btn-act danger" onclick="return confirm('تنفيذ التنظيف على الدورة المحددة؟')"><i class="fas fa-broom"></i> تنفيذ</button></div></form>
+  <h3 class="mt-4" style="font-size:1.02rem;font-weight:900">حسابات المدارس الخاملة</h3>
+  <form method="post" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="stale">
+    <div class="col-md-4"><label class="form-label">النوع</label><select name="kind" class="form-select"><option value="inactive"{% if stale == 'inactive' %} selected{% endif %}>لم تُفعّل بريدها</option><option value="empty"{% if stale == 'empty' %} selected{% endif %}>بلا أي طلب</option></select></div>
+    <div class="col-md-3"><label class="form-label">أقدم من (يوم)</label><input type="number" name="days" value="{{ stale_days }}" min="1" class="form-control"></div>
+    <div class="col-md-5 d-flex gap-2"><button class="btn btn-light">عدّ الحسابات</button>
+      {% if stale_n is not None %}<button name="do" value="1" class="btn-act danger" onclick="return confirm('حذف {{ stale_n }} حساب نهائياً؟')">حذف {{ stale_n }} حساب</button>{% endif %}</div></form>
+  {% if backups %}<div class="mg-sec"><b>آخر النسخ الاحتياطية للمحذوفات:</b><ul class="mb-0">{% for f, kb in backups %}<li><small dir="ltr">{{ f }} ({{ kb }} KB)</small></li>{% endfor %}</ul></div>{% endif %}
+</div>
+
+<div class="pt-card" id="tpl">
+  <h2><i class="fas fa-list-check ms-1" style="color:var(--gold)"></i> قوالب أسباب القرارات ({{ templates|length }})</h2>
+  <p class="text-muted">تظهر في صفحة الطلب وفي الإجراء الجماعي لاختيار سبب جاهز يصل للمدرسة عند القبول أو التعليق أو الرفض أو طلب الاستكمال.</p>
+  <div style="overflow:auto"><table class="mg-table"><thead><tr><th>الحالة</th><th>العنوان</th><th>النص</th><th></th></tr></thead><tbody>
+  {% for t in templates %}<tr><td><span class="pt-status st-{{ t.status }}">{{ t.get_status_display }}</span></td><td><b>{{ t.title }}</b></td><td><small>{{ t.body }}</small></td>
+    <td><form method="post">{% csrf_token %}<input type="hidden" name="act" value="tpl_del"><input type="hidden" name="tid" value="{{ t.pk }}"><button class="btn btn-sm btn-link text-danger" onclick="return confirm('حذف القالب؟')">حذف</button></form></td></tr>{% endfor %}
+  </tbody></table></div>
+  <form method="post" class="row g-2 mt-2">{% csrf_token %}<input type="hidden" name="act" value="tpl_add">
+    <div class="col-md-3"><select name="status" class="form-select">{% for k, l in statuses %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><input name="title" class="form-control" placeholder="عنوان مختصر" required></div>
+    <div class="col-md-4"><input name="body" class="form-control" placeholder="النص الذي يصل للمدرسة" required></div>
+    <div class="col-md-2"><button class="btn-act gold w-100">إضافة</button></div></form>
+</div>
+
+<div class="pt-card" id="sec">
+  <h2><i class="fas fa-shield-halved ms-1" style="color:var(--gold)"></i> الأمان والتذكيرات</h2>
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="two_factor">
+    <div><label class="form-label">التحقق بخطوتين (رمز من 6 أرقام بالبريد بعد كلمة المرور)</label>
+      <select name="mode" class="form-select">
+        <option value="off"{% if ps.two_factor == 'off' %} selected{% endif %}>إيقاف</option>
+        <option value="staff"{% if ps.two_factor == 'staff' %} selected{% endif %}>الإدارة فقط</option>
+        <option value="all"{% if ps.two_factor == 'all' %} selected{% endif %}>الإدارة والمحكّمون</option></select></div>
+    <button class="btn-act gold" onclick="return confirm('تأكد أن بريد الموقع يعمل قبل التفعيل (زر test_email). متابعة؟')">حفظ</button></form>
+  <p class="pt-help mt-2">يعمل فقط إذا كان إرسال البريد مفعّلاً (وإلا يُتجاوز حتى لا يُقفل أحد خارج حسابه). عند التفعيل يمر دخول لوحة Django أيضاً عبر صفحة دخول الموقع.</p>
+  <form method="post" class="mt-3">{% csrf_token %}<input type="hidden" name="act" value="reminders">
+    <button class="btn btn-light"><i class="fas fa-bell"></i> تشغيل التذكيرات المستحقة الآن</button>
+    <small class="text-muted">(تعمل تلقائياً كل 6 ساعات: مسودات قبل الإغلاق، مهلة الاستكمال، المحكّمون المتأخرون، تقارير الأثر — كل تذكير مرة واحدة)</small></form>
+</div>
+{% endblock %}

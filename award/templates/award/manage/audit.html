@@ -1,0 +1,11 @@
+{% extends 'award/manage/_base.html' %}
+{% block mg %}
+<div class="mg-h"><h1>سجل العمليات الحساسة ({{ total }})</h1>
+  <form method="get" class="d-flex gap-2"><input type="search" name="q" value="{{ q }}" class="form-control" placeholder="بحث: إجراء، مستخدم، طلب…" data-live="#aTable tbody tr" style="min-width:260px"></form></div>
+<p class="text-muted">يُسجَّل تلقائياً: دخول الإدارة، الحذف، القرارات الجماعية، اعتماد ونشر النتائج، الفائزون، التصدير، الشهادات، الدعوات، التنظيف، المحاكاة، الإعدادات. (آخر 500)</p>
+<div class="pt-card" style="padding:0;overflow:auto;max-height:75vh"><table class="mg-table" id="aTable">
+  <thead><tr><th>الوقت</th><th>المستخدم</th><th>الإجراء</th><th>على</th><th>التفاصيل</th><th>IP</th></tr></thead>
+  <tbody>{% for a in items %}<tr><td><small>{{ a.created_at|date:"Y-m-d H:i" }}</small></td><td><small>{% if a.user %}{{ a.user.get_full_name|default:a.user.email }}{% else %}النظام / سطر الأوامر{% endif %}</small></td>
+    <td><b>{{ a.action }}</b></td><td><small>{{ a.target }}</small></td><td><small style="word-break:break-all">{{ a.detail|truncatechars:160 }}</small></td><td><small dir="ltr">{{ a.ip }}</small></td></tr>
+  {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">لا توجد عمليات مسجّلة بعد.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}
