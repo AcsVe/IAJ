@@ -47,6 +47,7 @@ guard() {   # الأزرار الحساسة لا تعمل وهي مقفلة (ح�
 }
 neon_on() { grep -qE '^(NEON_BACKUP_URL|CLOUD_DATABASE_URL)=.' "$SITE/.env" 2>/dev/null; }
 ensure_pg8000() { python -c "import pg8000" 2>/dev/null || pip install -q pg8000 >/dev/null 2>&1 || true; }
+ensure_extras() { python -c "import segno, openpyxl" 2>/dev/null || pip install -q segno openpyxl >/dev/null 2>&1 || true; }
 say() { printf '\n\033[1;33m» %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m✖ %s\033[0m\n' "$*"; exit 1; }
 
@@ -102,7 +103,7 @@ case "$1" in
     pkg update -y
     pkg install -y python python-pillow rclone cloudflared unzip
     pip install "Django==5.2.15" "whitenoise==6.12.0" "waitress==3.0.2" "dj-database-url==3.1.2" "pg8000==1.31.5" \
-                requests django-quill-editor tzdata sqlparse asgiref
+                requests django-quill-editor tzdata sqlparse asgiref segno openpyxl
     termux-setup-storage || true
     say "$(T "تم. الخطوة التالية: اربط Google Drive بالأمر:  rclone config   (اسم الاتصال: gdrive)" "Done. Next: connect Google Drive with:  rclone config   (remote name: gdrive)")"
     ;;
@@ -142,6 +143,7 @@ case "$1" in
       python "$SITE/standby/neon_store.py" pull "$LOCAL_BK/db" || say "$(T "تعذّر Neon — أكمل بنسخة Drive" "Neon failed - continuing with the Drive copy")"
     fi
     cd "$SITE"
+    ensure_extras
     python manage.py restore_site --latest "$LOCAL_BK" --yes
     ;;
 
