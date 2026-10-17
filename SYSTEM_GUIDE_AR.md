@@ -82,6 +82,30 @@
 
 ---
 
+## 8) إعادة بناء هاتف الطوارئ (بعد إعادة ضبط المصنع أو هاتف جديد)
+
+الإجراء واحد في الحالتين، وبأمر واحد عبر `standby/restore.sh` الذي يُعيد بناء **الأنظمة الأربعة** معاً.
+
+**أولاً — ثبّت من F-Droid (مرة واحدة):** `Termux` · `Termux:Widget` · `Termux:API` · `Termux:Boot`.
+
+**ثانياً — في Termux، نفّذ:**
+```
+pkg install -y git && git clone https://github.com/AcsVe/IAJ ~/iaj 2>/dev/null; bash ~/iaj/standby/restore.sh
+```
+
+السكربت يقوم تلقائياً بـ:
+1. طلب **رمز GitHub** مرة واحدة وحفظه (`~/.iaj_github_token`).
+2. تثبيت الأدوات: `git · python · rclone · cloudflared · termux-api`.
+3. تنزيل الأكواد الأربعة إلى `~/iaj` و`~/attendance` و`~/rastkt` و`~/venues` (دون إبقاء الرمز داخل إعدادات git).
+4. تشغيل `setup` ثم `configure` لكل نظام (IAJ أولاً لأنه مصدر الرموز المشتركة) — فيُنشئ أزرار الشاشة في `~/.shortcuts` ويجلب رموز الأنفاق من Cloudflare.
+5. ربط **Google Drive** عبر `rclone config` (الاسم: `gdrive`) — الخطوة الوحيدة التي تتطلب تسجيل دخول.
+
+**ثالثاً:** حدّث أداة Termux:Widget على الشاشة الرئيسية لتظهر الأزرار (IAJ / ATT / …)، وتحقّق بـ `bash ~/iaj/standby/phone.sh status`.
+
+> الرموز التي ستحتاجها جاهزة بين يديك: **رمز GitHub** (Contents: Read)، و**رمز Cloudflare API** (يطلبه `configure`)، وحساب **Google** المربوط بـ Drive. والشرط المسبق أن تكون الأنفاق منشأة على Cloudflare (يُنشئها `1_setup.bat` على الكمبيوتر).
+
+---
+
 ## 7) النسخ الاحتياطي والاسترجاع
 
 - يدوي: **`backup_now.bat`** → النسخ في `backups\db` (القاعدة) و`backups\media` (الملفات).
