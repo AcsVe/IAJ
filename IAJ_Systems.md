@@ -46,8 +46,9 @@
 - `protection_on.bat` / `protection_off.bat` (في الأنظمة القديمة) يشغّلان/يوقفان حاجز Cloudflare أمام الموقع.
 
 ### ج) الهاتف الاحتياطي (Termux)
-- كل نظام في مجلد على الهاتف (`~/iaj`، `~/rastkt`، `~/venues`، `~/attendance`، `~/timetable`، `~/bell`، `~/clearance`).
+- كل نظام في مجلد على الهاتف (`~/iaj`، `~/rastkt`، `~/venues`، `~/attendance`، `~/timetable`، `~/bell`، `~/clearance`، `~/sas`).
 - `standby/phone.sh`: `setup` ← `configure` ← `update-code` ← **`takeover`** (أحدث نسخة من Drive + تشغيل + تحويل العنوان للهاتف) ← `server` (إعادته للكمبيوتر).
+- **نقل Termux إلى هاتف جديد** (كل الأنظمة دفعة واحدة): على القديم `curl -fsSL https://raw.githubusercontent.com/AcsVe/IAJ/main/standby/phone_move_out.sh | bash` — ملف مشفّر بكلمة مرور في التنزيلات (الكود، البيانات، الأزرار، Termux:Boot، الرموز، rclone، ‎.ssh، قائمة pkg/pip/npm والخدمات، نسخة SQL من PostgreSQL؛ ويُزيل أي رمز مكتوب في عناوين git). على الجديد بعد تثبيت Termux وإضافاته من المصدر نفسه: `… /standby/phone_move_in.sh | bash`.
 
 ### د) النسخ الاحتياطي
 - كل ساعة إلى **Google Drive** (مجلد `BACKUP_DIR` لكل نظام، مثل `G:\My Drive\RAS-Bell\db`)، مضغوطة مع نسخة من الكود؛ ونسخة اختيارية في **Neon** (`neon_link.bat`) للأنظمة القديمة.
