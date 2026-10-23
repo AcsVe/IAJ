@@ -18,6 +18,7 @@
 | 5 | جرس الحصص (BELL) | `AcsVe/Bell` | `https://5.iajaward.org` | `8005` | `C:\Bell` | Flask + Waitress + تطبيقات + BellPlayer.exe + ESP32 | SQLite `data\bell.db` | `0df3d11` |
 | 6 | براءة الذمة والعهد (CLEARANCE) | `AcsVe/Clearance` | `https://6.iajaward.org` | `8006` | `C:\Clearance` | Flask + Alembic + Waitress | SQLite `data\clearance.db` | `2fac878` |
 | — | مراقبة الأجهزة (PULSE) | `AcsVe/Pulse` | Render أو `Pulse-Server.exe` | `5000` | مجلد مستقل | Flask + تطبيقا Android + عميل ويندوز | Postgres (Render) أو SQLite محلياً | `1e43023` |
+| — | طباعة الشيكات (ChequePrinter) | `AcsVe/Cheque` | برنامج ويندوز (`ChequePrinterSetup.exe`) | — | `%ProgramData%\ChequePrinter` | Python + PySide6 + PyInstaller + Inno Setup | SQLite `cheques.db` | `93dc994` |
 | — | المكتبة (LIBRARY) | `baqjo/Library` | **`7.iajaward.org` (مقترح)** | **`8007` (مقترح)** | `C:\Library` (مقترح) | Flask | SQLite (مقترح) | `00b40e4` |
 | — | برنامج التحليل المكتبي `home.py` | (ملف، ليس في مستودع) | — | — | بجانب `att2000.mdb` | tkinter | يقرأ `att.mdb` / `att2000.mdb` | — |
 
@@ -75,6 +76,7 @@
 | Attendance | تطبيقا Android (الموظف + لوحة الإدارة) |
 | Bell | تطبيقات Android / Desktop، و`BellPlayer.exe`، وبرنامج ESP32 (في `static/firmware`) — الإصدارات في `releases/tag/apps` |
 | Pulse | `Pulse-Server.exe`، عميل ويندوز، تطبيقا Android |
+| Cheque | `ChequePrinterSetup.exe` (PyInstaller + Inno Setup) — الإصدار `latest` |
 
 ---
 
@@ -95,6 +97,8 @@
 **6. براءة الذمة (CLEARANCE)** — بديل سكربت Google: نماذج براءة الذمة بروابط توقيع للأقسام، بوابة الأقسام والمحاسبة، الطباعة، العهد العينية، سجل الموظفين، استيراد Google Sheet، عدة منظمات. **الحالة:** مثبَّت على `C:\Clearance` ويعمل (2026-10-22)؛ بقي `3_autostart.bat` والاستيراد والإعداد. الدليل: `docs/Clearance.md`.
 
 **PULSE** — نظام مراقبة أجهزة **مُعلَن** (أيقونة ظاهرة، إشعار دائم، موافقة على الجهاز): خادم لوحة تقارير + تطبيق Android للجهاز المراقَب + تطبيق للمشاهِد + عميل ويندوز. يعمل على Render أو `Pulse-Server.exe` (المنفذ 5000)، **وليس ضمن نفق iajaward** حالياً. إن نُقل إلى كمبيوتر المدرسة يأخذ `8008` / `8.iajaward.org` بالقالب المشترك. الدليل: `README.md`.
+
+**ChequePrinter** — برنامج سطح مكتب لإصدار الشيكات وطباعة معلوماتها على ورقة الشيك الأصلية (المعاينة محاكاة للشيك): المبلغ كتابةً بالعربية الفصحى، ختم التسطير، قالب قابل للمعايرة لكل بنك، سجل الشيكات والمستفيدين والحسابات، يعمل محلياً، ترخيص لكل جهاز بالمولّد نفسه المستخدم للجرس (بصمة مختلفة). يُبنى المثبّت آلياً في GitHub Actions. الدليل: `docs/ChequePrinter.md`، `docs/Requirements.md`.
 
 **LIBRARY** — مكتبة على نمط Follett Destiny (المراحل 1–6 مكتملة، استيراد فهرس Destiny). المرحلة 7 (التشغيل بالقالب المشترك) بانتظار: تأكيد `8007` / `7.iajaward.org`، المجلد، و**تقرير نسخ Destiny**. الدليل: `Library.md`.
 
@@ -124,6 +128,7 @@
 | Timetable | `TEST_DATABASE_URL=postgresql://… pytest -q` (يحتاج PostgreSQL 15+) |
 | IAJ | `python manage.py test` |
 | Pulse | `cd server && python -m pytest -q` |
+| Cheque | `QT_QPA_PLATFORM=offscreen python -m pytest -q tests` |
 | venues / RASTKT / Attendance | لا توجد اختبارات آلية: شغّل التطبيق على SQLite مؤقتة وجرّب الصفحات المعدّلة |
 - أي تعديل في الواجهة يُفحص في **متصفح حقيقي** (Playwright/Chromium): لا أخطاء JavaScript، والعربية RTL سليمة، وعرض الهاتف.
 
