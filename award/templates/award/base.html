@@ -59,7 +59,7 @@
                          linear-gradient(120deg, {{ brand.nav_light|default:"#1d2a48" }} 0%, var(--nav-dark) 50%, {{ brand.nav_dark|default:"#06101f" }} 100%);
         }
         body.has-ticker { --ticker-h: 40px; --header-h: 118px; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }   /* Chrome على أندرويد لا يكبّر النصوص من تلقاء نفسه */
         body { overflow-x: hidden; }
         @supports (overflow: clip) { html, body { overflow-x: clip; } }
         body { font-family: 'Cairo', sans-serif; background-color: var(--bg-light); color: var(--text-dark); }
@@ -147,7 +147,9 @@
         .navbar-royal .btn-gold { white-space: nowrap; flex-shrink: 0; }
         @media (min-width: 992px) and (max-width: 1399.98px) { .navbar-royal .btn-gold { padding: 10px 20px; } }
         @media (min-width: 992px) and (max-width: 1199.98px) { .nav-award-title-desktop { font-size: 1.15rem; margin: 0 8px; } .navbar-royal .nav-link { margin: 0 4px; font-size: .88rem; } }
-        .nav-award-title-mobile { flex: 1 1 0; min-width: 0; text-align: center; font-size: clamp(.8rem, 3.9vw, 1.05rem); margin: 0 6px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: clip; display: block; }
+        .nav-award-title-mobile { flex: 1 1 0; min-width: 0; text-align: center; font-size: clamp(.8rem, 3.9vw, 1.05rem); margin: 0 6px; padding: 2px 3px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: clip; display: block; }
+        /* لا يتسع في سطر واحد حتى بخط صغير (هاتف ضيق أو خط الهاتف مكبَّر): سطران بدل قص الكلمة الأخيرة */
+        .nav-award-title-mobile.two-lines { white-space: normal; line-height: 1.15; overflow: visible; text-wrap: balance; }
 
         /* ===== نظام الزجاج الملوّن (Glassmorphism) ===== */
         :root {
@@ -1101,13 +1103,23 @@
     function fitMobileTitle() {
         var t = document.querySelector('.nav-award-title-mobile');
         if (!t || !t.offsetParent) return;
+        t.classList.remove('two-lines');
         t.style.fontSize = '';
-        var fs = parseFloat(getComputedStyle(t).fontSize), n = 0;
-        while (t.scrollWidth > t.clientWidth + 1 && fs > 10 && n++ < 30) { fs -= 0.5; t.style.fontSize = fs + 'px'; }
+        var fs = parseFloat(getComputedStyle(t).fontSize), start = fs, n = 0;
+        while (t.scrollWidth > t.clientWidth + 1 && fs > 11 && n++ < 30) { fs -= 0.5; t.style.fontSize = fs + 'px'; }
+        if (t.scrollWidth > t.clientWidth + 1) {          // لا يتسع بخط مقروء: سطران كاملان بدل قص «جردانة»
+            t.classList.add('two-lines');
+            t.style.fontSize = Math.max(12, Math.min(start, 15)) + 'px';
+        }
     }
     fitMobileTitle();
     window.addEventListener('resize', fitMobileTitle);
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitMobileTitle);
+    window.addEventListener('load', fitMobileTitle);
+    // الخط العربي يصل بعد رسم الصفحة (وأحياناً بعد ready في Chrome): إعادة القياس عند وصول أي خط
+    if (document.fonts) {
+        if (document.fonts.ready) document.fonts.ready.then(fitMobileTitle);
+        if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', fitMobileTitle);
+    }
 
     /* ---------- أسهم التنقل لا تغطي أزرار التحكم ولا النصوص ---------- */
     var sNav = document.querySelector('.scroll-nav');

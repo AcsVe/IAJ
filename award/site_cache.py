@@ -78,7 +78,7 @@ CACHED_MODELS = ('SiteSetting', 'ThemeSetting', 'HomeContent', 'FooterContent',
 
 HOME_KEY = 'iaj:home-bundle:v1'
 HOME_MODELS = ('Profile', 'Field', 'Track', 'TimelineEvent', 'Judge', 'Sponsor', 'News', 'Submission', 'Principle',
-               'HeroSlide', 'SiteSetting', 'TrackDetail', 'AwardCycle', 'Announcement', 'AnnouncementMedia')
+               'HeroSlide', 'SiteSetting', 'TrackDetail', 'AwardCycle', 'Announcement', 'AnnouncementMedia', 'HeroStat')
 
 
 def hero_slides():
@@ -144,20 +144,42 @@ def _home_announcements():
 
 
 def _hero_stats():
-    """أرقام الجائزة تحت نص الشارة — الرقم صفر لا يُعرض"""
-    from .models import Profile, Submission, Track, Field, AwardCycle
+    """أرقام الجائزة تحت نص الشارة، كما تُضبط في «أرقام الجائزة (الصفحة الرئيسية)»: النص، الترتيب، الإظهار
+    على الكمبيوتر والهاتف. الرقم صفر لا يُعرض (إلا إن أُلغي ذلك للبطاقة)."""
+    from .models import Profile, Submission, Track, Field, AwardCycle, HeroStat
     out = []
     try:
-        cyc = AwardCycle.current()
-        items = [
-            (Profile.objects.filter(role='school', is_simulation=False).count(), 'مدرسة مسجّلة', 'fa-school'),
-            (Submission.objects.exclude(status__in=('draft', 'withdrawn')).filter(is_simulation=False).count(), 'مشروع مقدَّم', 'fa-diagram-project'),
-            (Field.objects.count(), 'مجالات', 'fa-layer-group'),
-            (Track.objects.filter(is_active=True).count(), 'مسارات', 'fa-route'),
-        ]
-        out = [{'num': n, 'label': l, 'icon': i} for n, l, i in items if n]
-        if cyc:
-            out.append({'num': '', 'text': cyc.short_name or cyc.name, 'label': f'{cyc.hijri_year}هـ / {cyc.year}م' if cyc.hijri_year else f'{cyc.year}م', 'icon': 'fa-award'})
+        rows = list(HeroStat.objects.filter(is_visible=True))
+        counts = {
+            'schools': lambda: Profile.objects.filter(role='school', is_simulation=False).count(),
+            'submissions': lambda: Submission.objects.exclude(status__in=('draft', 'withdrawn')).filter(is_simulation=False).count(),
+            'fields': lambda: Field.objects.count(),
+            'tracks': lambda: Track.objects.filter(is_active=True).count(),
+        }
+        cyc = None
+        for r in rows:
+            label_def, icon_def = HeroStat.DEFAULTS.get(r.kind, ('', 'fa-star'))
+            icon = (r.icon or icon_def).strip()
+            if icon and not icon.startswith('fa-') and ' ' not in icon:
+                icon = 'fa-' + icon
+            item = {'icon': icon, 'mobile': r.show_on_mobile}
+            if r.kind == 'cycle':
+                cyc = cyc or AwardCycle.current()
+                if not cyc:
+                    continue
+                item.update(num='', text=r.value or cyc.short_name or cyc.name,
+                            label=r.label or (f'{cyc.hijri_year}هـ / {cyc.year}م' if cyc.hijri_year else f'{cyc.year}م'))
+            elif r.kind == 'custom':
+                if not r.value:
+                    continue
+                v = r.value.strip()
+                item.update(num=v if v.isdigit() else '', text='' if v.isdigit() else v, label=r.label)
+            else:
+                n = counts[r.kind]() if r.kind in counts else 0
+                if not n and r.hide_zero:
+                    continue
+                item.update(num=n, label=r.label or label_def)
+            out.append(item)
     except Exception:
         pass
     return out

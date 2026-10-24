@@ -84,7 +84,7 @@ section#{{ sid }} .timeline-date {
         <!-- أرقام الجائزة: تحت نص الشارة، بمحاذاة صندوق النصوص تحت الفيديو (الكمبيوتر فقط) -->
         <div class="hero-stats" id="heroStats" aria-label="أرقام الجائزة">
             {% for st in hero_stats %}
-            <div class="hst{% if st.num == '' %} hst-cycle{% endif %}">
+            <div class="hst{% if st.num == '' %} hst-cycle{% endif %}{% if not st.mobile %} hst-desk{% endif %}">
                 <i class="fas {{ st.icon }}" aria-hidden="true"></i>
                 <b{% if st.num != '' %} data-count="{{ st.num }}"{% endif %}>{% if st.num != '' %}{{ st.num }}{% else %}{{ st.text }}{% endif %}</b>
                 <span>{{ st.label }}</span>
@@ -308,7 +308,7 @@ section#{{ sid }} .timeline-date {
 }
 .side-credits-scroll { width: 100%; animation: creditsRise 40s linear 4s infinite; }   /* يبدأ بعد 4 ثوانٍ */
 .side-credits:hover .side-credits-scroll { animation-play-state: paused; }
-.sc-heading { font-size: calc(24px * var(--k, 1)); font-weight: 900; color: #fff; text-align: right; line-height: 1.8; text-shadow: 0 3px 15px rgba(0,0,0,0.55); padding: 8px 0; margin: 0; }
+.sc-heading { font-size: calc(24px * var(--k, 1)); font-weight: 900; color: #fff; text-align: right; line-height: 1.8; overflow-wrap: anywhere; text-shadow: 0 3px 15px rgba(0,0,0,0.55); padding: 8px 0; margin: 0; }
 .sc-block .sc-text { padding: 4px 0 14px; }
 .sc-block .sc-heading { padding-top: 14px; }
 .sc-block { padding-bottom: 40px; }
@@ -339,7 +339,7 @@ section#{{ sid }} .timeline-date {
     .has-side .hero-stats .hst-cycle span { white-space: normal; }
 }
 @media (max-width: 767.98px) {
-    .has-side .hero-stats .hst-cycle { display: none; }   /* الهاتف: أربعة أرقام فقط حتى تتسع الأسماء */
+    .has-side .hero-stats .hst-desk { display: none; }   /* بطاقات «لا تظهر على الهاتف» من لوحة التحكم */
     /* نص الشارة يرتفع فوق صف الأرقام */
     .hero-split.has-side:has(.hero-stats) .side-credits { bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
 }
@@ -444,7 +444,11 @@ section#{{ sid }} .timeline-date {
     .hero-transparent-card { padding: 12px 16px; font-size: .9rem !important; max-height: 38svh; overflow: auto; }
     .hero-transparent-card h3 { font-size: 1.05rem; margin-bottom: 6px; }
     .hero-transparent-card p { line-height: 1.7; }
-    .has-side .side-credits { top: auto; bottom: 64px; height: clamp(100px, 20svh, 170px); }
+    .has-side .side-credits { top: auto; bottom: 64px; height: clamp(130px, 26svh, 220px); }
+    /* الهاتف: تلاشٍ أقصر عند الحافتين حتى يظهر العنوان كاملاً قبل أن يصعد */
+    .side-credits { -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 10%, #000 90%, transparent 100%);
+                            mask-image: linear-gradient(to bottom, transparent 0%, #000 10%, #000 90%, transparent 100%); }
+    .side-credits-scroll { padding-top: 14px; }
     .hero-transparent-card:hover { transform: none; box-shadow: none; }
 }
 @media (prefers-reduced-motion: reduce) { .side-credits-scroll { animation-duration: 120s; } }

@@ -1369,6 +1369,36 @@ SOCIAL_ICONS = {
 }
 
 
+class HeroStat(models.Model):
+    """بطاقات «أرقام الجائزة» أعلى الصفحة الرئيسية (تحت نص الشارة): النص والأيقونة والترتيب والإظهار."""
+    KINDS = (('schools', 'عدد المدارس المسجّلة'), ('submissions', 'عدد المشاريع المقدَّمة'),
+             ('fields', 'عدد المجالات'), ('tracks', 'عدد المسارات'),
+             ('cycle', 'الدورة الحالية (الاسم والسنة)'), ('custom', 'رقم تكتبه بنفسك'))
+    DEFAULTS = {'schools': ('مدرسة مسجّلة', 'fa-school'), 'submissions': ('مشروع مقدَّم', 'fa-diagram-project'),
+                'fields': ('مجالات', 'fa-layer-group'), 'tracks': ('مسارات', 'fa-route'),
+                'cycle': ('', 'fa-award'), 'custom': ('', 'fa-star')}
+    kind = models.CharField(max_length=12, choices=KINDS, verbose_name="ماذا تعرض البطاقة")
+    label = models.CharField(max_length=60, blank=True, default='', verbose_name="النص تحت الرقم",
+                             help_text="فارغ = النص الافتراضي (مثل «مدرسة مسجّلة»). للدورة: فارغ = «1448هـ / 2026م».")
+    value = models.CharField(max_length=40, blank=True, default='', verbose_name="الرقم أو النص الكبير (للبطاقة اليدوية أو بدل اسم الدورة)",
+                             help_text="للنوع «رقم تكتبه بنفسك»، أو لتغيير اسم الدورة الظاهر. فارغ = تلقائي.")
+    icon = models.CharField(max_length=40, blank=True, default='', verbose_name="الأيقونة (اختياري)",
+                            help_text="اسم أيقونة Font Awesome مثل fa-school — فارغ = الافتراضية.")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب")
+    is_visible = models.BooleanField(default=True, verbose_name="ظاهرة؟")
+    show_on_mobile = models.BooleanField(default=True, verbose_name="تظهر على الهاتف؟",
+                                         help_text="الهاتف يتسع لأربع بطاقات تقريباً في صف واحد.")
+    hide_zero = models.BooleanField(default=True, verbose_name="إخفاء إن كان الرقم صفراً")
+
+    class Meta:
+        verbose_name = "بطاقة من أرقام الجائزة"
+        verbose_name_plural = "أرقام الجائزة (الصفحة الرئيسية)"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.label or self.DEFAULTS.get(self.kind, ('', ''))[0] or self.get_kind_display()
+
+
 class SocialLink(models.Model):
     platform = models.CharField(max_length=20, choices=SOCIAL_PLATFORMS, verbose_name="المنصة")
     url = models.CharField(max_length=500, blank=True, default='', verbose_name="الرابط",
@@ -1439,8 +1469,8 @@ class PortalSetting(models.Model):
     wm_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=0.95, verbose_name="شفافية الشعار (0–1)")
     captions_enabled = models.BooleanField(default=True, verbose_name="إظهار نص الشرح بجانب الشعار (الصور والفيديو)")
     show_cycle_filter = models.BooleanField(default=True, verbose_name="تصفية الصور والفيديو والأخبار حسب الدورة في الموقع")
-    show_hero_stats = models.BooleanField(default=True, verbose_name="إظهار أرقام الجائزة أعلى الصفحة الرئيسية (الكمبيوتر)",
-                                          help_text="المدارس المسجّلة، المشاريع، المجالات، المسارات — الرقم صفر لا يظهر.")
+    show_hero_stats = models.BooleanField(default=True, verbose_name="إظهار أرقام الجائزة أعلى الصفحة الرئيسية",
+                                          help_text="البطاقات نفسها (النص والترتيب والإظهار) من «أرقام الجائزة (الصفحة الرئيسية)».")
     test_mode = models.BooleanField(default=False, verbose_name="وضع التجربة (المحاكاة اليدوية)",
                                     help_text="أثناء التفعيل: كل حساب أو طلب جديد يُعلَّم «تجريبي» — ثم تحذفونه كله بزر «مسح بيانات التجربة».")
     two_factor = models.CharField(max_length=10, default='off', choices=(

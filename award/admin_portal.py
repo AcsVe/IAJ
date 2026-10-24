@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlsafe_base64_encode
 
-from .models import (AwardCycle, Area, PortalSetting, SocialLink, SubmissionFile, SubmissionMessage, JudgingCommittee, Announcement, AnnouncementMedia, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
+from .models import (AwardCycle, Area, HeroStat, PortalSetting, SocialLink, SubmissionFile, SubmissionMessage, JudgingCommittee, Announcement, AnnouncementMedia, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
                      StatusLog, Submission, SuccessPageContent, STATUS_CHOICES, ROLE_CHOICES)
 from .notify import notify, send_email
 from . import workflow
@@ -737,6 +737,47 @@ class SocialLinkAdmin(admin.ModelAdmin):
         cache.delete('iaj_social')
 
 
+@admin.register(HeroStat)
+class HeroStatAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'kind', 'label', 'value', 'order', 'is_visible', 'show_on_mobile', 'hide_zero')
+    list_display_links = ('__str__',)
+    list_editable = ('label', 'value', 'order', 'is_visible', 'show_on_mobile', 'hide_zero')
+    list_filter = ('is_visible', 'show_on_mobile', 'kind')
+    show_facets = FACETS
+    search_fields = ('label', 'value')
+    actions = ['show_items', 'hide_items', 'mobile_on', 'mobile_off']
+    fields = ('kind', 'label', 'value', 'icon', 'order', 'is_visible', 'show_on_mobile', 'hide_zero')
+
+    @admin.action(description='إظهار البطاقات المحددة')
+    def show_items(self, request, queryset):
+        self.message_user(request, f'ظهرت {queryset.update(is_visible=True)} بطاقة.')
+        _clear_home()
+
+    @admin.action(description='إخفاء البطاقات المحددة')
+    def hide_items(self, request, queryset):
+        self.message_user(request, f'أُخفيت {queryset.update(is_visible=False)} بطاقة.')
+        _clear_home()
+
+    @admin.action(description='إظهار المحددة على الهاتف')
+    def mobile_on(self, request, queryset):
+        self.message_user(request, f'تظهر الآن {queryset.update(show_on_mobile=True)} بطاقة على الهاتف.')
+        _clear_home()
+
+    @admin.action(description='إخفاء المحددة على الهاتف (الكمبيوتر فقط)')
+    def mobile_off(self, request, queryset):
+        self.message_user(request, f'أُخفيت {queryset.update(show_on_mobile=False)} بطاقة على الهاتف.')
+        _clear_home()
+
+    def delete_queryset(self, request, queryset):
+        super().delete_queryset(request, queryset)
+        _clear_home()
+
+
+def _clear_home():
+    from .site_cache import clear_home_bundle
+    clear_home_bundle()
+
+
 @admin.register(PortalSetting)
 class PortalSettingAdmin(admin.ModelAdmin):
     fieldsets = (
@@ -749,7 +790,9 @@ class PortalSettingAdmin(admin.ModelAdmin):
                                             'description': 'يظهر الشعار أعلى كل صورة وفيديو في الموقع (المعرض، الفيديو، الأخبار، شرائح الصفحة الرئيسية). '
                                                            'نص الشرح يُكتب لكل صورة/فيديو في حقل «نص الشرح» ويمكن إخفاؤه لكل عنصر.'}),
         ('الدورات في الموقع', {'fields': ('show_cycle_filter',)}),
-        ('أرقام الجائزة في الصفحة الرئيسية', {'fields': ('show_hero_stats',)}),
+        ('أرقام الجائزة في الصفحة الرئيسية', {'fields': ('show_hero_stats',),
+                                              'description': 'نص كل بطاقة وترتيبها وإظهارها (على الكمبيوتر والهاتف): '
+                                                             '<a href="/admin/award/herostat/">أرقام الجائزة (الصفحة الرئيسية)</a>.'}),
     )
 
     def has_add_permission(self, request):
