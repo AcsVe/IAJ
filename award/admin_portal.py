@@ -17,7 +17,7 @@ from django.utils.encoding import force_bytes
 from django.utils.html import format_html, format_html_join
 from django.utils.http import urlsafe_base64_encode
 
-from .models import (AwardCycle, Area, HeroStat, PortalSetting, SocialLink, SubmissionFile, SubmissionMessage, JudgingCommittee, Announcement, AnnouncementMedia, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
+from .models import (AwardCycle, Area, HeroStat, PartVisibility, PortalSetting, SocialLink, SubmissionFile, SubmissionMessage, JudgingCommittee, Announcement, AnnouncementMedia, Assignment, Criterion, Directorate, EmailLog, Governorate, Notification, Profile, Score,
                      StatusLog, Submission, SuccessPageContent, STATUS_CHOICES, ROLE_CHOICES)
 from .notify import notify, send_email
 from . import workflow
@@ -735,6 +735,64 @@ class SocialLinkAdmin(admin.ModelAdmin):
         from django.core.cache import cache
         super().delete_queryset(request, queryset)
         cache.delete('iaj_social')
+
+
+@admin.register(PartVisibility)
+class PartVisibilityAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'where', 'on_phone', 'on_desktop')
+    list_display_links = None
+    list_editable = ('on_phone', 'on_desktop')
+    list_filter = ('on_phone', 'on_desktop')
+    show_facets = FACETS
+    search_fields = ('key',)
+    list_per_page = 100
+    actions = ['phone_on', 'phone_off', 'desk_on', 'desk_off', 'both_on']
+
+    @admin.display(description='المكان')
+    def where(self, obj):
+        return obj.where
+
+    def changelist_view(self, request, extra_context=None):
+        PartVisibility.ensure_all()          # الأجزاء الجديدة تظهر في القائمة تلقائياً (ظاهرة)
+        extra_context = dict(extra_context or {}, title='إظهار الأقسام على الهاتف والكمبيوتر — '
+                             'أزل العلامة لإخفاء الجزء ثم «حفظ». الهاتف = شاشة أضيق من 768 بكسل.')
+        return super().changelist_view(request, extra_context)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def _set(self, request, queryset, msg, **kw):
+        n = queryset.update(**kw)
+        _clear_site()
+        self.message_user(request, msg.format(n=n))
+
+    @admin.action(description='إظهار المحددة على الهاتف')
+    def phone_on(self, request, queryset):
+        self._set(request, queryset, 'تظهر الآن {n} على الهاتف.', on_phone=True)
+
+    @admin.action(description='إخفاء المحددة على الهاتف')
+    def phone_off(self, request, queryset):
+        self._set(request, queryset, 'أُخفي {n} على الهاتف.', on_phone=False)
+
+    @admin.action(description='إظهار المحددة على الكمبيوتر')
+    def desk_on(self, request, queryset):
+        self._set(request, queryset, 'تظهر الآن {n} على الكمبيوتر.', on_desktop=True)
+
+    @admin.action(description='إخفاء المحددة على الكمبيوتر')
+    def desk_off(self, request, queryset):
+        self._set(request, queryset, 'أُخفي {n} على الكمبيوتر.', on_desktop=False)
+
+    @admin.action(description='إظهار المحددة في الاثنين (الوضع الأصلي)')
+    def both_on(self, request, queryset):
+        self._set(request, queryset, 'يظهر الآن {n} على الهاتف والكمبيوتر.', on_phone=True, on_desktop=True)
+
+
+def _clear_site():
+    from .site_cache import clear_site_bundle
+    clear_site_bundle()
 
 
 @admin.register(HeroStat)

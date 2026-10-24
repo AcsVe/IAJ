@@ -49,6 +49,11 @@ def get_site_bundle():
                             for t in HeroTextSlide.objects.filter(is_active=True) if t.heading or t.body_text]
     except Exception:
         pass
+    try:
+        from .models import PartVisibility
+        vis = {p.key: p.css for p in PartVisibility.objects.all() if p.css}
+    except Exception:
+        vis = {}
     from .fonts import theme_fonts, theme_colors
     theme = _first(ThemeSetting)
     data = {
@@ -63,6 +68,7 @@ def get_site_bundle():
         'global_ticker_items': ticker_items,
         'global_ticker_settings': _first(TickerSetting),
         'credits_blocks': credits_blocks,
+        'vis': vis,     # {جزء: 'vis-no-phone' | 'vis-no-desk' | 'vis-none'} — الظاهر في الاثنين لا يُذكر
     }
     cache.set(KEY, data, TTL)
     return data
@@ -73,7 +79,8 @@ def clear_site_bundle(*args, **kwargs):
 
 
 CACHED_MODELS = ('SiteSetting', 'ThemeSetting', 'HomeContent', 'FooterContent',
-                 'SectionBackground', 'TickerItem', 'TickerSetting', 'HeroCard', 'HeroTextSlide', 'CreditsBlock')
+                 'SectionBackground', 'TickerItem', 'TickerSetting', 'HeroCard', 'HeroTextSlide', 'CreditsBlock',
+                 'PartVisibility')
 
 
 HOME_KEY = 'iaj:home-bundle:v1'

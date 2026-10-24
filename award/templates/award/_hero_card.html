@@ -1,5 +1,5 @@
 {# البطاقة الشفافة — نص واحد أو عدة نصوص تتبدّل تلقائياً (المدة حسب طول النص) #}
-<div class="hero-transparent-card{% if hero_text_items|length > 1 %} hc-multi{% endif %}"
+<div class="hero-transparent-card {{ vis.hero_card }}{% if hero_text_items|length > 1 %} hc-multi{% endif %}"
      style="background-color:rgba({{ hero_card.bg_rgb }},{{ hero_card.card_opacity|stringformat:'s' }});border-radius:{{ hero_card.border_radius }};font-size:{{ hero_card.font_size }};color:{{ hero_card.font_color }};font-weight:{{ hero_card.font_weight }};"
      data-speed="{{ hero_card.reading_speed|default:14 }}" data-min="{{ hero_card.min_seconds|default:4 }}" data-roll="{{ hero_card.roll_speed|default:22 }}" data-pause="{{ hero_card.roll_pause|default:2.5|stringformat:'s' }}">
     <div class="hc-slides" aria-live="polite">

@@ -1369,6 +1369,68 @@ SOCIAL_ICONS = {
 }
 
 
+class PartVisibility(models.Model):
+    """«إظهار الأقسام على الهاتف والكمبيوتر»: لكل جزء من الموقع مربعان. الهاتف = شاشة أضيق من 768 بكسل."""
+    PARTS = (
+        # (key, label, where)
+        ('ticker', 'شريط الأخبار المتحرك أعلى الصفحة', 'الهيدر'),
+        ('award_title', 'اسم الجائزة في الهيدر', 'الهيدر'),
+        ('search', 'زر البحث', 'الهيدر'),
+        ('social_menu', 'أزرار التواصل الاجتماعي في القائمة', 'الهيدر'),
+        ('countdown', 'العدّاد («التسجيل مفتوح»)', 'الهيدر'),
+        ('login', 'زر «دخول» / حسابي والإشعارات', 'الهيدر'),
+        ('register', 'زر «سجل الآن»', 'الهيدر'),
+        ('hero_media', 'بطاقة الفيديو والصور', 'أعلى الصفحة الرئيسية'),
+        ('hero_card', 'بطاقة النصوص (تحت الفيديو أو فوق الصورة)', 'أعلى الصفحة الرئيسية'),
+        ('credits', 'شارة الأفلام (النص المتحرك)', 'أعلى الصفحة الرئيسية'),
+        ('hero_stats', 'أرقام الجائزة', 'أعلى الصفحة الرئيسية'),
+        ('news', 'آخر الأخبار', 'أقسام الصفحة الرئيسية'),
+        ('announcements', 'الإعلانات', 'أقسام الصفحة الرئيسية'),
+        ('about', 'عن الجائزة', 'أقسام الصفحة الرئيسية'),
+        ('fields', 'المجالات', 'أقسام الصفحة الرئيسية'),
+        ('timeline', 'الجدول الزمني', 'أقسام الصفحة الرئيسية'),
+        ('apply', 'طلب التقديم', 'أقسام الصفحة الرئيسية'),
+        ('prizes', 'الجوائز', 'أقسام الصفحة الرئيسية'),
+        ('judges', 'لجنة التحكيم', 'أقسام الصفحة الرئيسية'),
+        ('sponsors', 'الرعاة وشركاء النجاح', 'أقسام الصفحة الرئيسية'),
+        ('scroll_nav', 'أسهم التنقل بين الأقسام', 'كل الصفحات'),
+        ('footer_cols', 'أعمدة الفوتر (عن الجائزة، روابط سريعة، تواصل معنا)', 'الفوتر'),
+        ('footer_social', 'التواصل الاجتماعي في الفوتر', 'الفوتر'),
+        ('footer_copy', 'سطر حقوق النشر', 'الفوتر'),
+    )
+    key = models.CharField(max_length=30, unique=True, choices=[(k, l) for k, l, _w in PARTS], verbose_name="الجزء")
+    on_phone = models.BooleanField(default=True, verbose_name="الهاتف")
+    on_desktop = models.BooleanField(default=True, verbose_name="الكمبيوتر")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="الترتيب في القائمة")
+
+    class Meta:
+        verbose_name = "جزء من الموقع"
+        verbose_name_plural = "إظهار الأقسام على الهاتف والكمبيوتر"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return dict((k, l) for k, l, _w in self.PARTS).get(self.key, self.key)
+
+    @property
+    def where(self):
+        return dict((k, w) for k, _l, w in self.PARTS).get(self.key, '')
+
+    @property
+    def css(self):
+        if self.on_phone and self.on_desktop:
+            return ''
+        if not self.on_phone and not self.on_desktop:
+            return 'vis-none'
+        return 'vis-no-phone' if not self.on_phone else 'vis-no-desk'
+
+    @classmethod
+    def ensure_all(cls):
+        have = set(cls.objects.values_list('key', flat=True))
+        for i, (k, _l, _w) in enumerate(cls.PARTS):
+            if k not in have:
+                cls.objects.create(key=k, order=(i + 1) * 10)
+
+
 class HeroStat(models.Model):
     """بطاقات «أرقام الجائزة» أعلى الصفحة الرئيسية (تحت نص الشارة): النص والأيقونة والترتيب والإظهار."""
     KINDS = (('schools', 'عدد المدارس المسجّلة'), ('submissions', 'عدد المشاريع المقدَّمة'),

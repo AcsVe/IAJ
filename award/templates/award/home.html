@@ -60,7 +60,7 @@ section#{{ sid }} .timeline-date {
         {% endif %}
 
         <!-- شارة الأفلام المتحركة فوق الصورة الرئيسية -->
-        <div class="side-credits">
+        <div class="side-credits {{ vis.credits }}">
             <div class="side-credits-scroll" data-speed="{{ content.credits_speed|default:14 }}">
                 <div class="sc-block">
                     <h3 class="sc-heading">{{ content.hero_title }}</h3>
@@ -82,7 +82,7 @@ section#{{ sid }} .timeline-date {
         </div>
         {% if has_side and hero_stats and portal.show_hero_stats %}
         <!-- أرقام الجائزة: تحت نص الشارة، بمحاذاة صندوق النصوص تحت الفيديو (الكمبيوتر فقط) -->
-        <div class="hero-stats" id="heroStats" aria-label="أرقام الجائزة">
+        <div class="hero-stats {{ vis.hero_stats }}" id="heroStats" aria-label="أرقام الجائزة">
             {% for st in hero_stats %}
             <div class="hst{% if st.num == '' %} hst-cycle{% endif %}{% if not st.mobile %} hst-desk{% endif %}">
                 <i class="fas {{ st.icon }}" aria-hidden="true"></i>
@@ -99,7 +99,7 @@ section#{{ sid }} .timeline-date {
     {% if has_side %}
     <div class="hero-side yt-side">
         <div class="yt-stack">
-            <div class="yt-card hs{% if hero_slides|length > 1 %} multi{% endif %}" id="heroShow"
+            <div class="yt-card hs {{ vis.hero_media }}{% if hero_slides|length > 1 %} multi{% endif %}" id="heroShow"
                  data-interval="{{ settings.slide_seconds|default:6 }}" aria-roledescription="carousel" aria-label="صور وفيديوهات">
                 {% for sl in hero_slides %}
                 <div class="hs-slide{% if forloop.first %} active{% endif %}" data-kind="{{ sl.kind }}"
@@ -163,7 +163,7 @@ section#{{ sid }} .timeline-date {
     {% else %}
     <!-- بدون عمود جانبي: البطاقة الشفافة فوق الصورة -->
     {% if show_card and hero_text_items %}
-    <div class="hero-card-slot">{% include 'award/_hero_card.html' %}</div>
+    <div class="hero-card-slot {{ vis.hero_card }}">{% include 'award/_hero_card.html' %}</div>
     {% endif %}
     {% endif %}
     {% endwith %}
@@ -950,7 +950,7 @@ section#{{ sid }} .timeline-date {
     .news-card-item { border-left: none; border-bottom: 1px solid #eee; }
 }
 </style>
-<section class="news-section-wrapper" data-aos="fade-up">
+<section class="news-section-wrapper {{ vis.news }}" data-aos="fade-up">
     <div class="news-sidebar">
         <h3>آخر الأخبار</h3>
         <div class="sidebar-line"></div>
@@ -973,7 +973,7 @@ section#{{ sid }} .timeline-date {
 
 <!-- إعلانات الجائزة (بطاقات نصية ووسائط) -->
 {% if announcements %}
-<section id="announcements" class="py-5 sec-gray">
+<section id="announcements" class="{{ vis.announcements }} py-5 sec-gray">
   <div class="container">
     <div class="section-header" data-aos="fade-down"><h2>إعلانات الجائزة</h2><div class="gold-line"></div></div>
     <div class="an-grid">{% for a in announcements %}{% include 'award/_ann_card.html' %}{% endfor %}</div>
@@ -985,14 +985,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 3. عن الجائزة والمبادئ -->
 {% if section_bgs.about and section_bgs.about.bg_image %}
-<section id="about" data-no-fit class="py-5" style="background-image: url('{{ section_bgs.about.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.about.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="about" data-no-fit class="{{ vis.about }} py-5" style="background-image: url('{{ section_bgs.about.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.about.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.about.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.about.overlay_css }}opacity:{{ section_bgs.about.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.about and section_bgs.about.bg_color %}
-<section id="about" data-no-fit class="py-5" style="{{ section_bgs.about.bg_css }}">
+<section id="about" data-no-fit class="{{ vis.about }} py-5" style="{{ section_bgs.about.bg_css }}">
     <div class="container">
 {% else %}
-<section id="about" data-no-fit class="py-5 sec-light">
+<section id="about" data-no-fit class="{{ vis.about }} py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_about }}</h2><div class="gold-line"></div></div>
@@ -1027,14 +1027,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 4. مجالات العمل التطوعي — Flip Cards -->
 {% if section_bgs.fields and section_bgs.fields.bg_image %}
-<section id="fields" class="py-5" style="background-image: url('{{ section_bgs.fields.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.fields.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="fields" class="{{ vis.fields }} py-5" style="background-image: url('{{ section_bgs.fields.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.fields.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.fields.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.fields.overlay_css }}opacity:{{ section_bgs.fields.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.fields and section_bgs.fields.bg_color %}
-<section id="fields" class="py-5" style="{{ section_bgs.fields.bg_css }}">
+<section id="fields" class="{{ vis.fields }} py-5" style="{{ section_bgs.fields.bg_css }}">
     <div class="container">
 {% else %}
-<section id="fields" class="py-5 sec-dark">
+<section id="fields" class="{{ vis.fields }} py-5 sec-dark">
     <div class="container">
 {% endif %}
         <div class="section-header section-header-white" data-aos="fade-down"><h2>{{ content.title_fields }}</h2><div class="gold-line"></div></div>
@@ -1079,14 +1079,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 5. الإطار الزمني -->
 {% if section_bgs.timeline and section_bgs.timeline.bg_image %}
-<section id="timeline" data-no-fit class="py-5" style="background-image: url('{{ section_bgs.timeline.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.timeline.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="timeline" data-no-fit class="{{ vis.timeline }} py-5" style="background-image: url('{{ section_bgs.timeline.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.timeline.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.timeline.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.timeline.overlay_css }}opacity:{{ section_bgs.timeline.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.timeline and section_bgs.timeline.bg_color %}
-<section id="timeline" data-no-fit class="py-5" style="{{ section_bgs.timeline.bg_css }}">
+<section id="timeline" data-no-fit class="{{ vis.timeline }} py-5" style="{{ section_bgs.timeline.bg_css }}">
     <div class="container">
 {% else %}
-<section id="timeline" data-no-fit class="py-5 sec-light">
+<section id="timeline" data-no-fit class="{{ vis.timeline }} py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_timeline }}</h2><div class="gold-line"></div></div>
@@ -1148,14 +1148,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 6. طلب التقديم -->
 {% if section_bgs.apply and section_bgs.apply.bg_image %}
-<section id="apply" class="py-5" style="background-image: url('{{ section_bgs.apply.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.apply.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="apply" class="{{ vis.apply }} py-5" style="background-image: url('{{ section_bgs.apply.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.apply.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.apply.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.apply.overlay_css }}opacity:{{ section_bgs.apply.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.apply and section_bgs.apply.bg_color %}
-<section id="apply" class="py-5" style="{{ section_bgs.apply.bg_css }}">
+<section id="apply" class="{{ vis.apply }} py-5" style="{{ section_bgs.apply.bg_css }}">
     <div class="container">
 {% else %}
-<section id="apply" class="py-5 sec-gray">
+<section id="apply" class="{{ vis.apply }} py-5 sec-gray">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_apply }}</h2><div class="gold-line"></div></div>
@@ -1190,14 +1190,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 7. الجوائز -->
 {% if section_bgs.prizes and section_bgs.prizes.bg_image %}
-<section id="prizes" class="py-5 sec-img" style="background-image: url('{{ section_bgs.prizes.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.prizes.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="prizes" class="{{ vis.prizes }} py-5 sec-img" style="background-image: url('{{ section_bgs.prizes.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.prizes.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.prizes.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.prizes.overlay_css }}opacity:{{ section_bgs.prizes.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.prizes and section_bgs.prizes.bg_color %}
-<section id="prizes" class="py-5" style="{{ section_bgs.prizes.bg_css }}">
+<section id="prizes" class="{{ vis.prizes }} py-5" style="{{ section_bgs.prizes.bg_css }}">
     <div class="container">
 {% else %}
-<section id="prizes" class="py-5 sec-light">
+<section id="prizes" class="{{ vis.prizes }} py-5 sec-light">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_prizes }}</h2><div class="gold-line"></div></div>
@@ -1211,14 +1211,14 @@ section#{{ sid }} .timeline-date {
 
 <!-- 8. لجنة التحكيم -->
 {% if section_bgs.judges and section_bgs.judges.bg_image %}
-<section id="judges" class="py-5" style="background-image: url('{{ section_bgs.judges.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.judges.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
+<section id="judges" class="{{ vis.judges }} py-5" style="background-image: url('{{ section_bgs.judges.bg_image.url }}'); background-size: cover; background-attachment: {% if section_bgs.judges.is_parallax %}fixed{% else %}scroll{% endif %}; position: relative;">
     {% if section_bgs.judges.enable_overlay %}<div style="position:absolute;top:0;left:0;width:100%;height:100%;{{ section_bgs.judges.overlay_css }}opacity:{{ section_bgs.judges.overlay_opacity }};z-index:0;"></div>{% endif %}
     <div class="container" style="position:relative;z-index:1;">
 {% elif section_bgs.judges and section_bgs.judges.bg_color %}
-<section id="judges" class="py-5" style="{{ section_bgs.judges.bg_css }}">
+<section id="judges" class="{{ vis.judges }} py-5" style="{{ section_bgs.judges.bg_css }}">
     <div class="container">
 {% else %}
-<section id="judges" class="py-5 sec-gray">
+<section id="judges" class="{{ vis.judges }} py-5 sec-gray">
     <div class="container">
 {% endif %}
         <div class="section-header" data-aos="fade-down"><h2>{{ content.title_judges }}</h2><div class="gold-line"></div></div>
@@ -1405,7 +1405,7 @@ section#timeline .timeline-h-node i { color: var(--gold); }
 .tl-sheet-more[hidden] { display: none; }
 </style>
 
-<section class="sponsor-marquee-section" id="sponsors"{% if section_bgs.sponsors and section_bgs.sponsors.bg_color %} style="{{ section_bgs.sponsors.bg_css }}"{% endif %}>
+<section class="sponsor-marquee-section {{ vis.sponsors }}" id="sponsors"{% if section_bgs.sponsors and section_bgs.sponsors.bg_color %} style="{{ section_bgs.sponsors.bg_css }}"{% endif %}>
     <div class="container">
         <div class="section-header sponsor-header" data-aos="fade-down"><h2>{{ content.title_sponsors|default:"رعاة وشركاء النجاح" }}</h2><div class="gold-line"></div></div>
         {% if sponsors %}
@@ -1745,6 +1745,11 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
+// الأجزاء المخفية على هذه الشاشة («إظهار الأقسام على الهاتف والكمبيوتر»): لا يُحمَّل الفيديو فيها ولا يعمل
+document.querySelectorAll('.vis-no-phone, .vis-no-desk, .vis-none').forEach(function (el) {
+    if (el.offsetParent !== null) return;
+    el.querySelectorAll('video').forEach(function (v) { try { v.pause(); v.preload = 'none'; v.removeAttribute('src'); v.load(); } catch (e) {} });
+});
 // أرقام الجائزة: بمحاذاة صندوق النصوص تحت الفيديو، ونص الشارة بمحاذاة الفيديو نفسه
 (function () {
     var stats = document.getElementById('heroStats');
@@ -1754,7 +1759,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function align() {
         if (window.innerWidth < 992) { stats.style.cssText = ''; if (credits) credits.style.cssText = ''; return; }
         var h = hero.getBoundingClientRect(), video = hero.querySelector('.yt-card'), card = hero.querySelector('.yt-stack .hero-transparent-card');
-        if (!video) return;
+        if (card && !card.offsetParent) card = null;          // مخفية من «إظهار الأقسام»
+        if (!video || !video.offsetParent) return;
         var v = video.getBoundingClientRect();
         if (card) {
             var c = card.getBoundingClientRect();

@@ -12,7 +12,7 @@ def ticker_context(request):
 def site_context(request):
     """بيانات مشتركة لكل الصفحات — من الذاكرة المؤقتة (انظر site_cache.py)"""
     b = get_site_bundle()
-    return {k: b[k] for k in ('settings', 'theme', 'content', 'footer', 'section_bgs', 'site_fonts')}
+    return {k: b.get(k, {}) for k in ('settings', 'theme', 'content', 'footer', 'section_bgs', 'site_fonts', 'vis')}
 
 
 def portal_context(request):

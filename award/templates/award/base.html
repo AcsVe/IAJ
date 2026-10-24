@@ -59,6 +59,10 @@
                          linear-gradient(120deg, {{ brand.nav_light|default:"#1d2a48" }} 0%, var(--nav-dark) 50%, {{ brand.nav_dark|default:"#06101f" }} 100%);
         }
         body.has-ticker { --ticker-h: 40px; --header-h: 118px; }
+        /* «إظهار الأقسام على الهاتف والكمبيوتر» (لوحة الإدارة) — الهاتف أضيق من 768 بكسل */
+        @media (max-width: 767.98px) { .vis-no-phone { display: none !important; } }
+        @media (min-width: 768px) { .vis-no-desk { display: none !important; } }
+        .vis-none { display: none !important; }
         html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }   /* Chrome على أندرويد لا يكبّر النصوص من تلقاء نفسه */
         body { overflow-x: hidden; }
         @supports (overflow: clip) { html, body { overflow-x: clip; } }
@@ -648,7 +652,7 @@
 <body class="{% block body_class %}not-home{% endblock %} style-{{ theme.site_style|default:'classic' }}{% if ticker_on and global_ticker_items %} has-ticker{% endif %}">
 
 {% if ticker_on and global_ticker_items %}
-<div class="ticker-wrapper{% if global_ticker_settings.sep_pulse %} fx-pulse{% endif %}{% if global_ticker_settings.sep_fade %} fx-fade{% endif %}{% if global_ticker_settings.effects_on_logos %} fx-logos{% endif %}" id="tickerWrapper" role="marquee" aria-label="شريط الأخبار"
+<div class="ticker-wrapper {{ vis.ticker }}{% if global_ticker_settings.sep_pulse %} fx-pulse{% endif %}{% if global_ticker_settings.sep_fade %} fx-fade{% endif %}{% if global_ticker_settings.effects_on_logos %} fx-logos{% endif %}" id="tickerWrapper" role="marquee" aria-label="شريط الأخبار"
      style="--ticker-color: {{ global_ticker_settings.font_color|default:'#c5a059' }}; --tk-font: {{ global_ticker_settings.font_size|default:'0.95rem' }}; --tk-h: {{ global_ticker_settings.bar_height|default:38 }}px; --tk-logo: {{ global_ticker_settings.logo_size|default:24 }}px; --tk-pulse: {{ global_ticker_settings.sep_pulse_seconds|default:'1.6'|stringformat:'s' }}s; --tk-fade: {{ global_ticker_settings.sep_fade_seconds|default:'2.4'|stringformat:'s' }}s;"
      data-speed="{{ global_ticker_settings.scroll_speed|default:60 }}"
      data-bg="{{ global_ticker_settings.bg_color|default:'#0a1632' }}"
@@ -676,8 +680,8 @@
     <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
         {% if settings and settings.site_logo %}<img class="site-logo" src="{{ settings.site_logo.url }}" alt="Logo" width="{{ settings.logo_size|default:50 }}" height="{{ settings.logo_size|default:50 }}">{% else %}<span style="color: var(--gold); font-weight: 800; font-size: 1rem;">جائزة جردانة</span>{% endif %}
     </a>
-    <a href="{% url 'home' %}" class="nav-award-title nav-award-title-mobile d-lg-none">جائزة انتصار عباس جردانة</a>
-    <button type="button" class="nav-search-btn d-lg-none ms-2" data-open-search aria-label="بحث في الموقع"><i class="fas fa-magnifying-glass"></i></button>
+    <a href="{% url 'home' %}" class="nav-award-title nav-award-title-mobile d-lg-none {{ vis.award_title }}">جائزة انتصار عباس جردانة</a>
+    <button type="button" class="nav-search-btn d-lg-none ms-2 {{ vis.search }}" data-open-search aria-label="بحث في الموقع"><i class="fas fa-magnifying-glass"></i></button>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="القائمة"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
@@ -710,13 +714,13 @@
             <li><a class="dropdown-item" href="{% url 'statistics_page' %}"><i class="fas fa-chart-bar ms-2" style="color: var(--gold);"></i> الإحصائيات</a></li>
           </ul>
         </li>
-        <li class="nav-item d-none d-lg-flex align-items-center"><button type="button" class="nav-search-btn" data-open-search aria-label="بحث في الموقع" title="بحث"><i class="fas fa-magnifying-glass"></i></button></li>
-        {% if social_links %}<li class="nav-item d-none d-lg-flex align-items-center soc-nav">
+        <li class="nav-item d-none d-lg-flex align-items-center {{ vis.search }}"><button type="button" class="nav-search-btn" data-open-search aria-label="بحث في الموقع" title="بحث"><i class="fas fa-magnifying-glass"></i></button></li>
+        {% if social_links %}<li class="nav-item d-none d-lg-flex align-items-center soc-nav {{ vis.social_menu }}">
           <button type="button" class="soc-nav-btn" aria-label="تابعونا على وسائل التواصل" title="تابعونا"><i class="fas fa-share-nodes"></i></button>
           <div class="soc-pop">{% with portal_title_off=True %}<nav class="social-bar" aria-label="التواصل الاجتماعي">{% for s in social_links %}<a href="{{ s.href }}" target="_blank" rel="noopener" title="{{ s.get_platform_display }}" aria-label="{{ s.get_platform_display }}"{% if s.color %} style="--soc-c: {{ s.color }}"{% endif %}><i class="{{ s.icon_class }}"></i></a>{% endfor %}</nav>{% endwith %}</div>
         </li>{% endif %}
         {% if reg_deadline and request.path == '/' %}
-        <li class="nav-item dropdown" id="countdownDropdown" style="position: relative;">
+        <li class="nav-item dropdown {{ vis.countdown }}" id="countdownDropdown" style="position: relative;">
           <a class="nav-link countdown-toggle" href="#" aria-label="موعد استقبال الطلبات">
             <span class="countdown-pulse" id="countdownBadge">{{ portal.countdown_badge|default:"التسجيل مفتوح" }}</span>
           </a>
@@ -738,7 +742,7 @@
         </li>
         {% endif %}
       </ul>
-      <div class="cyc-hover cyc-title-wrap d-none d-lg-flex">
+      <div class="cyc-hover cyc-title-wrap d-none d-lg-flex {{ vis.award_title }}">
         <a href="{% url 'home' %}" class="nav-award-title nav-award-title-desktop">جائزة انتصار عباس جردانة</a>
         {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">
           <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
@@ -749,13 +753,13 @@
         </div>{% endif %}
       </div>
       {% if user.is_authenticated %}
-      <a href="{% url 'notifications' %}" class="nav-bell" title="الإشعارات" aria-label="الإشعارات"><i class="fas fa-bell"></i>{% if unread_notes %}<span class="nav-bell-n">{{ unread_notes }}</span>{% endif %}</a>
-      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' or portal_role == 'manager' %}/manage/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' or portal_role == 'manager' %}إدارة الجائزة{% else %}{{ portal.account_btn_text|default:"حسابي" }}{% endif %}</a>
+      <a href="{% url 'notifications' %}" class="nav-bell {{ vis.login }}" title="الإشعارات" aria-label="الإشعارات"><i class="fas fa-bell"></i>{% if unread_notes %}<span class="nav-bell-n">{{ unread_notes }}</span>{% endif %}</a>
+      <a href="{% if portal_role == 'judge' %}{% url 'judge_home' %}{% elif portal_role == 'staff' or portal_role == 'manager' %}/manage/{% else %}{% url 'portal_home' %}{% endif %}" class="nav-account {{ vis.login }}"><span class="acc-ico"><i class="fas fa-user"></i></span> {% if portal_role == 'judge' %}التحكيم{% elif portal_role == 'staff' or portal_role == 'manager' %}إدارة الجائزة{% else %}{{ portal.account_btn_text|default:"حسابي" }}{% endif %}</a>
       {% elif not portal or portal.show_login_btn %}
-      <a href="{% url 'login' %}" class="nav-account"><span class="acc-ico"><i class="fas fa-user"></i></span> {{ portal.login_btn_text|default:"دخول" }}</a>
+      <a href="{% url 'login' %}" class="nav-account {{ vis.login }}"><span class="acc-ico"><i class="fas fa-user"></i></span> {{ portal.login_btn_text|default:"دخول" }}</a>
       {% endif %}
       {% if portal_role != 'judge' and portal_role != 'manager' and portal_role != 'staff' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':8' == '/manage/' and not request.path|slice:':10' == '/accounts/' and reg_open and portal.show_register_btn is not False %}
-      <span class="cyc-hover cyc-left">
+      <span class="cyc-hover cyc-left {{ vis.register }}">
         <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
         {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">
           <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
@@ -766,7 +770,7 @@
         </div>{% endif %}
       </span>
       {% endif %}
-      {% if portal.social_in_menu and social_links %}<div class="d-lg-none mt-3">{% include 'award/_social.html' %}</div>{% endif %}
+      {% if portal.social_in_menu and social_links %}<div class="d-lg-none mt-3 {{ vis.social_menu }}">{% include 'award/_social.html' %}</div>{% endif %}
     </div>
   </div>
 </nav>
@@ -775,7 +779,7 @@
 {% block content %}{% endblock %}
 </div>
 
-<div class="scroll-nav" aria-label="التنقل بين الأقسام">
+<div class="scroll-nav {{ vis.scroll_nav }}" aria-label="التنقل بين الأقسام">
     <button type="button" id="scrollTop" class="scroll-top is-hidden" aria-label="العودة إلى بداية الصفحة" title="العودة إلى بداية الصفحة"><i class="fas fa-angles-up"></i></button>
     <button type="button" id="scrollUp" class="scroll-arrow is-hidden" aria-label="القسم السابق"><i class="fas fa-chevron-up"></i></button>
     <button type="button" id="scrollDown" class="scroll-arrow" aria-label="القسم التالي"><i class="fas fa-chevron-down"></i></button>
@@ -788,13 +792,13 @@
             <div class="col mb-3"><h4 class="footer-title mb-1">جائزة انتصار عباس جردانة للثقافة والتعليم</h4><p style="color: #aaa; font-size: 0.9rem; margin: 0;">Intisar Abbas Jardaneh Award</p></div>
         </div>
         <div class="row">
-            <div class="col-md-4 ft-col"><h5 class="footer-title">عن الجائزة</h5><p class="mb-0" style="color: #ccc; font-size: 0.9rem; line-height: 1.8;">{{ footer.about_text }}</p></div>
-            <div class="col-md-4 ft-col"><h5 class="footer-title">روابط سريعة</h5><div class="footer-links ft-quick"><a href="{% url 'home' %}#about">الرؤية والرسالة</a><a href="{% url 'home' %}#fields">المجالات</a><a href="{% url 'home' %}#apply">التقديم</a><a href="{% url 'submit_project' %}">نموذج التسجيل</a></div></div>
-            <div class="col-md-4 ft-col"><h5 class="footer-title">تواصل معنا</h5><div class="footer-links ft-contact"><p><i class="fas fa-envelope ms-2" style="color: var(--gold);"></i> {{ footer.email }}</p><p><i class="fas fa-phone ms-2" style="color: var(--gold);"></i> <span dir="ltr">{{ footer.phone }}</span></p><p><i class="fas fa-map-marker-alt ms-2" style="color: var(--gold);"></i> {{ footer.address }}</p></div></div>
+            <div class="col-md-4 ft-col {{ vis.footer_cols }}"><h5 class="footer-title">عن الجائزة</h5><p class="mb-0" style="color: #ccc; font-size: 0.9rem; line-height: 1.8;">{{ footer.about_text }}</p></div>
+            <div class="col-md-4 ft-col {{ vis.footer_cols }}"><h5 class="footer-title">روابط سريعة</h5><div class="footer-links ft-quick"><a href="{% url 'home' %}#about">الرؤية والرسالة</a><a href="{% url 'home' %}#fields">المجالات</a><a href="{% url 'home' %}#apply">التقديم</a><a href="{% url 'submit_project' %}">نموذج التسجيل</a></div></div>
+            <div class="col-md-4 ft-col {{ vis.footer_cols }}"><h5 class="footer-title">تواصل معنا</h5><div class="footer-links ft-contact"><p><i class="fas fa-envelope ms-2" style="color: var(--gold);"></i> {{ footer.email }}</p><p><i class="fas fa-phone ms-2" style="color: var(--gold);"></i> <span dir="ltr">{{ footer.phone }}</span></p><p><i class="fas fa-map-marker-alt ms-2" style="color: var(--gold);"></i> {{ footer.address }}</p></div></div>
         </div>
         <hr class="ft-hr">
-        {% if portal.social_in_footer and social_links %}<div class="text-center ft-social">{% include 'award/_social.html' %}</div>{% endif %}
-        <div class="text-center ft-copy" style="color: #b9b9b0; font-size: 0.85rem;"><p class="mb-0">{{ footer.copyright_text }}</p></div>
+        {% if portal.social_in_footer and social_links %}<div class="text-center ft-social {{ vis.footer_social }}">{% include 'award/_social.html' %}</div>{% endif %}
+        <div class="text-center ft-copy {{ vis.footer_copy }}" style="color: #b9b9b0; font-size: 0.85rem;"><p class="mb-0">{{ footer.copyright_text }}</p></div>
     </div>
 </footer>
 
