@@ -306,8 +306,11 @@ section#{{ sid }} .timeline-date {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
             mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
 }
-.side-credits-scroll { width: 100%; animation: creditsRise 40s linear 4s infinite; }   /* يبدأ بعد 4 ثوانٍ */
-.side-credits:hover .side-credits-scroll { animation-play-state: paused; }
+.side-credits-scroll { width: 100%; animation: creditsRise 40s linear 4s infinite; animation-play-state: paused; }
+/* لا يبدأ العدّ (4 ثوانٍ ثم الصعود) إلا بعد اكتمال تحميل الصفحة والخطوط — على الهاتف البطيء كان العنوان
+   يصعد ويخرج قبل أن تظهر الصفحة، فلا يُرى إلا في الدورة الثانية */
+.side-credits.credits-go .side-credits-scroll { animation-play-state: running; }
+.side-credits.credits-go:hover .side-credits-scroll { animation-play-state: paused; }
 .sc-heading { font-size: calc(24px * var(--k, 1)); font-weight: 900; color: #fff; text-align: right; line-height: 1.8; overflow-wrap: anywhere; text-shadow: 0 3px 15px rgba(0,0,0,0.55); padding: 8px 0; margin: 0; }
 .sc-block .sc-text { padding: 4px 0 14px; }
 .sc-block .sc-heading { padding-top: 14px; }
@@ -449,6 +452,7 @@ section#{{ sid }} .timeline-date {
     .side-credits { -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 10%, #000 90%, transparent 100%);
                             mask-image: linear-gradient(to bottom, transparent 0%, #000 10%, #000 90%, transparent 100%); }
     .side-credits-scroll { padding-top: 14px; }
+    .sc-heading, .sc-text { text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 2px 12px rgba(0,0,0,.6); }   /* مقروء فوق الصور الفاتحة */
     .hero-transparent-card:hover { transform: none; box-shadow: none; }
 }
 @media (prefers-reduced-motion: reduce) { .side-credits-scroll { animation-duration: 120s; } }
@@ -905,7 +909,18 @@ section#{{ sid }} .timeline-date {
         el.style.animationDuration = Math.max(25, half / pxPerSec).toFixed(1) + 's';
     }
     setSpeed();
-    window.addEventListener('load', setSpeed);
+    var box = el.closest('.side-credits'), started = false;
+    function go() {
+        if (started) return;
+        started = true;
+        setSpeed();
+        box.classList.add('credits-go');          // يبدأ الآن: 4 ثوانٍ والعنوان ظاهر، ثم الصعود
+    }
+    function whenReady() {
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(go, go); else go();
+    }
+    if (document.readyState === 'complete') whenReady(); else window.addEventListener('load', whenReady);
+    setTimeout(go, 8000);                           // شبكة بطيئة جداً: لا ننتظر أكثر من 8 ثوانٍ
 })();
 </script>
 <!-- ========== نهاية Hero ========== -->
