@@ -48,6 +48,8 @@
 ### ج) الهاتف الاحتياطي (Termux)
 - كل نظام في مجلد على الهاتف (`~/iaj`، `~/rastkt`، `~/venues`، `~/attendance`، `~/timetable`، `~/bell`، `~/clearance`، `~/sas`).
 - `standby/phone.sh`: `setup` ← `configure` ← `update-code` ← **`takeover`** (أحدث نسخة من Drive + تشغيل + تحويل العنوان للهاتف) ← `server` (إعادته للكمبيوتر).
+- **هاتف جديد والقديم معطّل أو مفقود** (لا يحتاج شيئاً من الهاتف القديم): بعد تثبيت Termux وTermux:Widget (وTermux:API) من F-Droid أو GitHub:
+  `curl -fsSL https://raw.githubusercontent.com/AcsVe/IAJ/main/standby/phone_fresh.sh | bash` — يطلب رمز Cloudflare (`CF_API_TOKEN` من `C:\IAJ\.env`) وحساب Google للمدرسة مرة واحدة، ثم يثبّت الأنظمة المختارة من GitHub (الجائزة دائماً، فالبقية تأخذ منها الرمز وأزرار القفل واللغة)، ويجلب رموز أنفاق الهاتف من Cloudflare، وينشئ أزرار كل نظام. البيانات تأتي من Drive عند الطوارئ. إعادة تشغيله آمنة (يحدّث ولا يمسّ الإعدادات والبيانات).
 - **نقل Termux إلى هاتف جديد** (كل الأنظمة دفعة واحدة): على القديم `curl -fsSL https://raw.githubusercontent.com/AcsVe/IAJ/main/standby/phone_move_out.sh | bash` — ملف مشفّر بكلمة مرور في التنزيلات (الكود، البيانات، الأزرار، Termux:Boot، الرموز، rclone، ‎.ssh، قائمة pkg/pip/npm والخدمات، نسخة SQL من PostgreSQL؛ ويُزيل أي رمز مكتوب في عناوين git). على الجديد بعد تثبيت Termux وإضافاته من المصدر نفسه: `… /standby/phone_move_in.sh | bash`.
 
 ### د) النسخ الاحتياطي
