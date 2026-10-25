@@ -1,7 +1,7 @@
 # دليل أنظمة iajaward.org — الصورة الكاملة
 
 > جميع الأنظمة في حساب GitHub ‏`AcsVe` (ونظام المكتبة في `baqjo`): أين يعمل كل نظام، وكيف بُني، والبنية المشتركة، وحالة كل نظام، و**طريقة عمل أي وكيل ذكاء اصطناعي عليها**.
-> **آخر تحديث: 2026-10-23 (بتوقيت عمّان).**
+> **آخر تحديث: 2026-10-25 (بتوقيت عمّان).**
 > لكل نظام دليله الخاص داخل مستودعه (`SYSTEM_GUIDE_AR.md` و`SERVER_AR.md` أو `docs/…`)، وملف **`CLAUDE.md`** بقواعد الوكيل لذلك المستودع.
 
 ---
@@ -13,7 +13,7 @@
 | 0 | موقع الجائزة (IAJ) | `AcsVe/IAJ` | `https://iajaward.org` | `8000` | `C:\IAJ` | Django 5 + Waitress | **PostgreSQL** محلية (`iaj`) + مجلد `media` | `8cdd938` |
 | 1 | طلبات الدعم الفني (RASTKT) | `AcsVe/RASTKT` | `https://1.iajaward.org` | `8001` | `C:\TKT` | Flask + Waitress + تطبيق Android | SQLite `data\acs_tickets.db` | `0e25692` |
 | 2 | حجز القاعات (VENUES) | `AcsVe/venues` | `https://2.iajaward.org` | `8002` | `C:\Venue` | Flask + Waitress | SQLite `data\acs_booking.db` | `0a8b601` |
-| 3 | الحضور والانصراف (ATT) | `AcsVe/Attendance` | `https://3.iajaward.org` | `8003` | `C:\Att` | Flask + Waitress + تطبيقا Android + أجهزة بصمة ZKTeco | SQLite `data\attendance_web.db` | `851bce8` |
+| 3 | الحضور والانصراف (ATT) | `AcsVe/Attendance` | `https://3.iajaward.org` | `8003` | `C:\Att` | Flask + Waitress + تطبيقا Android + أجهزة بصمة ZKTeco وDahua | SQLite `data\attendance_web.db` | `f624266` |
 | 4 | الجدول المدرسي (TIMETABLE) | `AcsVe/Timetable` | `https://4.iajaward.org` | `8004` | `C:\TT\Timetable` | Flask + Alembic + OR-Tools + Waitress | **PostgreSQL** محلية (`timetable`) | `8d6a7cf` |
 | 5 | جرس الحصص (BELL) | `AcsVe/Bell` | `https://5.iajaward.org` | `8005` | `C:\Bell` | Flask + Waitress + تطبيقات + BellPlayer.exe + ESP32 | SQLite `data\bell.db` | `0df3d11` |
 | 6 | براءة الذمة والعهد (CLEARANCE) | `AcsVe/Clearance` | `https://6.iajaward.org` | `8006` | `C:\Clearance` | Flask + Alembic + Waitress | SQLite `data\clearance.db` | `2fac878` |
@@ -21,7 +21,7 @@
 | — | مراقبة الأجهزة (PULSE) | `AcsVe/Pulse` | Render أو `Pulse-Server.exe` | `5000` | مجلد مستقل | Flask + تطبيقا Android + عميل ويندوز | Postgres (Render) أو SQLite محلياً | `1e43023` |
 | — | طباعة الشيكات (ChequePrinter) | `AcsVe/Cheque` | برنامج ويندوز (`ChequePrinterSetup.exe`) | — | `%ProgramData%\ChequePrinter` | Python + PySide6 + PyInstaller + Inno Setup | SQLite `cheques.db` | `93dc994` |
 | — | المكتبة (LIBRARY) | `baqjo/Library` | **`7.iajaward.org` (مقترح)** | **`8007` (مقترح)** | `C:\Library` (مقترح) | Flask | SQLite (مقترح) | `00b40e4` |
-| — | برنامج التحليل المكتبي `home.py` | (ملف، ليس في مستودع) | — | — | بجانب `att2000.mdb` | tkinter | يقرأ `att.mdb` / `att2000.mdb` | — |
+| — | برنامج التحليل المكتبي `home.py` | (ملف، ليس في مستودع) | — | — | بجانب `att2000.mdb` | tkinter (32-بت، مثبّت Inno 1.11.0) | يقرأ `att.mdb` / `att2000.mdb` + أجهزة ZKTeco وDahua | `BUILD-2026-10-25-dahua` |
 
 > ⚠ **تصحيح:** المنفذ `8004` والعنوان `4.iajaward.org` يستخدمهما **نظام الجدول المدرسي**، لذلك اقتراح المكتبة صار `8007` / `7.iajaward.org`.
 > **سجل المنافذ:** 8000 الجائزة · 8001 التذاكر · 8002 القاعات · 8003 الحضور · 8004 الجدول · 8005 الجرس · 8006 براءة الذمة · 8007 المكتبة (محجوز) · 8008 غياب الطلبة · 5000 Pulse (خارج النفق). **أي نظام جديد يأخذ الرقم التالي (8009 / `9.iajaward.org`).**
@@ -90,7 +90,7 @@
 
 **2. حجز القاعات (VENUES)** — روزنامة شهرية، حجز واستعلام وتعديل وإلغاء، قيود الحجز (منع حصتين متتاليتين، منع تكرار حجز الشعبة باليوم، تعليق معلم)، بريد Graph، Push. الدليل: `SYSTEM_GUIDE_AR.md`، `SERVER_AR.md`.
 
-**3. الحضور (ATT)** — ويب + تطبيقا Android + أجهزة بصمة ZKTeco (ADMS أو السحب بالشبكة) + جهاز QR: البصمات الوسطى، الغداء، الإجازات، التصحيحات، الكشف الشهري، المتابعة والتتبع المباشر، شاشات العرض. **الحالة:** محدَّث إلى `851bce8`، بانتظار `backup_now.bat` ← `att_on.bat` والتأكيد؛ ثم APK ‏1.0.18. المؤجَّل: الرواتب (`docs/payroll_plan.md`). الدليل: `Att.md`، `SYSTEM_GUIDE_AR.md`.
+**3. الحضور (ATT)** — ويب + تطبيقا Android + أجهزة بصمة ZKTeco (ADMS أو السحب بالشبكة) و**Dahua** (مثل ASA3223A-W: سحب CGI داخل الشبكة، استقبال عبر الإنترنت `/dahua/push/<رمز>`، ملفات SmartPSS — `dahua.py`) + جهاز QR: البصمات الوسطى، الغداء، الإجازات، التصحيحات، الكشف الشهري، المتابعة والتتبع المباشر، شاشات العرض. ADMS يرد على الجهاز فوراً والتحليل في الخلفية (لا يتعطل الجهاز مع الطابور). **الحالة:** محدَّث إلى `f624266`، بانتظار `backup_now.bat` ← `update.bat` ← `att_on.bat` والتأكيد؛ ثم APK ‏1.0.18؛ Dahua لم يُجرَّب على جهاز حقيقي بعد. المؤجَّل: الرواتب (`docs/payroll_plan.md`). الدليل: `docs/Att.md`، `SYSTEM_GUIDE_AR.md`. **برنامج `home.py` المكتبي:** نسخة `BUILD-2026-10-25-dahua` (أجهزة Dahua وملفات SmartPSS، والسحب من ZKTeco لا يقفل الجهاز)؛ المثبّت 1.11.0 بلا `ignoreversion` لملفات `{sys}`.
 
 **4. الجدول المدرسي (TIMETABLE)** — بديل aSc Timetables: الكيانات (مراحل، شعب، معلمون، قاعات، قوالب توقيت)، الدروس والبطاقات والسحب والإفلات، محرّك منع التعارض (مع قيد `EXCLUDE` في PostgreSQL)، المولّد التلقائي (OR-Tools)، الغياب والبدلاء، الامتحانات والمناوبة وقواعد النصاب، الاجتماعات، التقارير والتصدير، الاستيراد من Excel/aSc، Web Push. **يحتاج PostgreSQL 15+.** الدليل: `README.md`، `SYSTEM_GUIDE_AR.md`، `docs/ERD.md`.
 
@@ -166,7 +166,8 @@
 | # | النظام | الخطوة | الحالة |
 |---|---|---|---|
 | 1 | الكل | **نفق Cloudflare `iajaward` (الخطأ 1033)** — على جهاز الخادم وحده؛ قرار: هل الجهاز الجديد بديل كامل؟ | ⚠ بانتظار قرارك |
-| 2 | ATT | `backup_now.bat` ← `att_on.bat` ← تأكيد التشغيل، ثم APK 1.0.18 | ⏳ |
+| 2 | ATT | `backup_now.bat` ← `update.bat` ← `att_on.bat` ← تأكيد التشغيل، ثم APK 1.0.18؛ ثم إضافة جهاز Dahua و«اختبار الاتصال» | ⏳ |
+| 15 | home.py | بناء 32-بت (`build_32bit.bat`) ← `installer.iss` 1.11.0 ← التثبيت فوق القديم ← تجربة Dahua وسحب ZKTeco وقت الطابور | ⏳ |
 | 3 | BELL | `update.bat` (الروزنامة الجديدة) + `3_autostart.bat` + BellPlayer 1.5 + «رنّ الآن» | ⏳ |
 | 4 | BELL | التحقق من النسخ كل ساعة في `RAS-Bell\db` | ⏳ |
 | 5 | BELL | `BELL_SERVER` + إعادة بناء التطبيقات + تحويل الأجهزة الحالية، ثم إيقاف Render/Neon بعد أسبوع | ⏳ |
