@@ -171,7 +171,11 @@ for d in $CHOSEN; do
   if { [ "$send_cf" = 1 ] && printf '%s\n' "$CF"; blanks; } | bash "$HOME/$d/standby/phone.sh" configure >> "$log" 2>&1; then
     SUMMARY="$SUMMARY\n  OK $name"
   else
-    SUMMARY="$SUMMARY\n  !  $name: configure did not finish - run: bash ~/$d/standby/phone.sh configure"
+    if [ "$d" = sas ] && grep -q 'standby' "$log"; then   # SAS not installed on the PC yet: its tunnel does not exist
+      SUMMARY="$SUMMARY\n  !  $name: not set up on the PC yet - to start it on this phone run: bash ~/sas/standby/phone.sh first"
+    else
+      SUMMARY="$SUMMARY\n  !  $name: configure did not finish - run: bash ~/$d/standby/phone.sh configure"
+    fi
     tail -3 "$log" | sed 's/^/     /'
   fi
 done
