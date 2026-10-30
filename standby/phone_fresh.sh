@@ -58,6 +58,7 @@ apt-get $APT_Y full-upgrade < /dev/null >/dev/null 2>&1 || { fix_dpkg; apt-get $
 apt-get $APT_Y install $PKGS termux-api < /dev/null >/dev/null 2>&1 \
   || { fix_dpkg; apt-get $APT_Y install $PKGS < /dev/null; } \
   || die "Installing the Termux packages failed - check the internet and run the same command again"
+pip install -q "arabic-reshaper==3.0.0" "python-bidi==0.4.2" >/dev/null 2>&1 || true   # readable Arabic messages
 if [ ! -d "$HOME/storage/shared" ]; then
   echo "  Allow Termux to access the phone's files (a window will appear)..."
   termux-setup-storage || true; sleep 5

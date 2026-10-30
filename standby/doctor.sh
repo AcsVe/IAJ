@@ -11,8 +11,9 @@
 . "$HOME/iaj/standby/systems.sh"
 [ -f "$HOME/.iaj_standby" ] && . "$HOME/.iaj_standby"
 REMOTE="${REMOTE:-gdrive:IAJ-backups}"
-LANG_UI="${LANG_UI:-en}"   # Termux cannot join or right-to-left Arabic: English unless chosen
+LANG_UI="${LANG_UI:-ar}"
 T() { if [ "$LANG_UI" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+. "$HOME/iaj/standby/arabic.sh"          # readable Arabic in Termux (ar_term.py)
 G='\033[1;32m'; Y='\033[1;33m'; R='\033[1;31m'; C='\033[1;36m'; D='\033[2m'; O='\033[0m'
 NOK=0; NWARN=0; NBAD=0
 ok()   { NOK=$((NOK + 1));   printf "  ${G}✓${O} %s\n" "$1"; }

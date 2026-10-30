@@ -37,9 +37,10 @@ REMOTE="gdrive:IAJ-backups"
 export DATABASE_URL=""            # الهاتف يستخدم قاعدة SQLite محلية
 export PYTHONUTF8=1
 
-LANG_UI="${LANG_UI:-en}"   # Termux cannot join or right-to-left Arabic: English unless chosen
+LANG_UI="${LANG_UI:-ar}"
 export IAJ_LANG="$LANG_UI"
 T() { if [ "$LANG_UI" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+[ -f "$HOME/iaj/standby/arabic.sh" ] && . "$HOME/iaj/standby/arabic.sh"   # readable Arabic in Termux
 guard() {   # الأزرار الحساسة لا تعمل وهي مقفلة (حماية من الضغط بالخطأ)
   if [ -f "$HOME/.iaj_lock" ] && [ -z "$IAJ_NOGUARD" ]; then
     die "$(T "🔒 الأزرار الحساسة مقفلة — اضغط «★ قفل أو فتح الأزرار» لفتحها" "🔒 Sensitive buttons are locked - press Â«â ÙÙÙ Ø£Ù ÙØªØ­ Ø§ÙØ£Ø²Ø±Ø§Ø±Â» to unlock")"
@@ -104,6 +105,7 @@ case "$1" in
     pkg install -y python python-pillow rclone cloudflared unzip
     pip install "Django==5.2.15" "whitenoise==6.12.0" "waitress==3.0.2" "dj-database-url==3.1.2" "pg8000==1.31.5" \
                 requests django-quill-editor tzdata sqlparse asgiref segno openpyxl
+    pip install "arabic-reshaper==3.0.0" "python-bidi==0.4.2" || true   # readable Arabic messages in Termux
     [ -d "$HOME/storage/shared" ] || termux-setup-storage || true   # once only: asking again wants y/n
     say "$(T "تم. الخطوة التالية: اربط Google Drive بالأمر:  rclone config   (اسم الاتصال: gdrive)" "Done. Next: connect Google Drive with:  rclone config   (remote name: gdrive)")"
     ;;

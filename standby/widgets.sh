@@ -28,8 +28,8 @@ rm -f "$SC/★ "*
 mk "★ لوحة الأنظمة"        "bash ~/iaj/standby/panel.sh"
 mk "★ تحديث كل الأنظمة"    "bash ~/iaj/standby/panel.sh update-all"
 mk "★ فحص جاهزية الهاتف"   "bash ~/iaj/standby/doctor.sh"
-mk "★ قفل أو فتح الأزرار"  "bash ~/iaj/standby/phone.sh lock"
-mk "★ English - عربي"      "bash ~/iaj/standby/phone.sh lang"
+mk "★ قفل أو فتح الأزرار"  "bash ~/iaj/standby/panel.sh lock"
+mk "★ English - عربي"      "bash ~/iaj/standby/panel.sh lang"
 
 n=0
 while IFS='|' read -r d code ar en url; do

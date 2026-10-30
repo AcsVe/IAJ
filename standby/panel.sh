@@ -11,9 +11,10 @@
 # ================================================================
 . "$HOME/iaj/standby/systems.sh"
 [ -f "$HOME/.iaj_standby" ] && . "$HOME/.iaj_standby"
-LANG_UI="${LANG_UI:-en}"   # Termux cannot join or right-to-left Arabic: English unless chosen
+LANG_UI="${LANG_UI:-ar}"
 export IAJ_LANG="$LANG_UI" PYTHONUTF8=1
 T() { if [ "$LANG_UI" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+. "$HOME/iaj/standby/arabic.sh"          # readable Arabic in Termux (ar_term.py)
 say() { printf '\n\033[1;36m» %s\033[0m\n' "$*"; }
 GREEN='\033[1;32m'; RED='\033[1;31m'; YEL='\033[1;33m'; DIM='\033[2m'; OFF='\033[0m'
 
@@ -84,7 +85,7 @@ system_menu() {
   acts="$(actions "$d")"; i=0
   for a in $acts; do i=$((i + 1)); printf '  %2d  %s\n' "$i" "$(label "$a")"; done
   printf '   0  %s\n\n' "$(T "خروج" "Exit")"
-  read -r -p "$(T "  الرقم: " "  Number: ")" pick
+  read -r -p "$(ar_prompt "$(T "  الرقم: " "  Number: ")")" pick
   [ -z "$pick" ] || [ "$pick" = 0 ] && return 0
   a="$(printf '%s\n' $acts | sed -n "${pick}p")"
   [ -n "$a" ] || { say "$(T "رقم غير صحيح" "Invalid number")"; return 1; }
@@ -109,7 +110,7 @@ overview() {
   done
   rm -rf "$dir"; echo; locked_note
   printf '  u  %s\n  m  %s\n  d  %s\n  0  %s\n\n' "$(T "تحديث كل الأنظمة" "Update all systems")" "$(T "إعدادات البريد لكل الأنظمة (من الكمبيوتر)" "Email settings of every system (from the PC)")" "$(T "فحص جاهزية الهاتف" "Check the phone is ready")" "$(T "خروج" "Exit")"
-  read -r -p "$(T "  رقم النظام لفتح قائمته: " "  System number to open its menu: ")" pick
+  read -r -p "$(ar_prompt "$(T "  رقم النظام لفتح قائمته: " "  System number to open its menu: ")")" pick
   case "$pick" in
     ''|0) return 0 ;;
     u|U) update_all; return ;;
@@ -155,6 +156,7 @@ update_all() {   # the award site first: it carries this panel and the buttons
 case "${1:-}" in
   '')         overview ;;
   update-all) update_all ;;
+  lock|lang)  bash "$HOME/iaj/standby/phone.sh" "$1" ;;
   mail)       mail_import ;;
   *)          system_menu "$1" ;;
 esac
