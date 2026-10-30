@@ -200,6 +200,9 @@ if rclone lsf gdrive:IAJ-backups/phone/mail-settings.enc >/dev/null 2>&1 && \
 fi
 
 # ---------------------------------------------------------------- 6) done
+say "Checking that everything is ready (standby/doctor.sh)"
+LANG_UI=en bash "$HOME/iaj/standby/doctor.sh" < /dev/null || true
+
 say "6) Result"
 printf '%b\n' "$SUMMARY"
 echo

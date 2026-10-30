@@ -108,12 +108,13 @@ overview() {
     printf '  %d  %-5s %s%*s' "$i" "$(field "$d" 2)" "$nm" "$pad" ''; state_line "$d" "$dir/$d"; echo
   done
   rm -rf "$dir"; echo; locked_note
-  printf '  u  %s\n  m  %s\n  0  %s\n\n' "$(T "تحديث كل الأنظمة" "Update all systems")" "$(T "إعدادات البريد لكل الأنظمة (من الكمبيوتر)" "Email settings of every system (from the PC)")" "$(T "خروج" "Exit")"
+  printf '  u  %s\n  m  %s\n  d  %s\n  0  %s\n\n' "$(T "تحديث كل الأنظمة" "Update all systems")" "$(T "إعدادات البريد لكل الأنظمة (من الكمبيوتر)" "Email settings of every system (from the PC)")" "$(T "فحص جاهزية الهاتف" "Check the phone is ready")" "$(T "خروج" "Exit")"
   read -r -p "$(T "  رقم النظام لفتح قائمته: " "  System number to open its menu: ")" pick
   case "$pick" in
     ''|0) return 0 ;;
     u|U) update_all; return ;;
     m|M) mail_import; return ;;
+    d|D) bash "$HOME/iaj/standby/doctor.sh"; return ;;
   esac
   d="$(printf '%s\n' $list | sed -n "${pick}p")"
   [ -n "$d" ] || { say "$(T "رقم غير صحيح" "Invalid number")"; return 1; }

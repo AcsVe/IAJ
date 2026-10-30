@@ -4,6 +4,7 @@
 #
 #   ★ لوحة الأنظمة            حالة كل المواقع في شاشة واحدة، ومنها قائمة أي نظام
 #   ★ تحديث كل الأنظمة        تحديث كود كل الأنظمة على الهاتف دفعة واحدة
+#   ★ فحص جاهزية الهاتف       هل كل شيء جاهز للطوارئ (doctor.sh)
 #   ★ قفل أو فتح الأزرار      حماية الإجراءات الحساسة من الضغط بالخطأ
 #   ★ English - عربي          لغة الرسائل
 #   IAJ · الجائزة، TKT · التذاكر، …   قائمة النظام: حالته الآن وإجراءاته
@@ -26,6 +27,7 @@ rm -f "$SC/★ "*
 
 mk "★ لوحة الأنظمة"        "bash ~/iaj/standby/panel.sh"
 mk "★ تحديث كل الأنظمة"    "bash ~/iaj/standby/panel.sh update-all"
+mk "★ فحص جاهزية الهاتف"   "bash ~/iaj/standby/doctor.sh"
 mk "★ قفل أو فتح الأزرار"  "bash ~/iaj/standby/phone.sh lock"
 mk "★ English - عربي"      "bash ~/iaj/standby/phone.sh lang"
 
@@ -36,4 +38,4 @@ while IFS='|' read -r d code ar en url; do
   n=$((n + 1))
 done <<< "$IAJ_SYSTEMS"
 
-[ -n "$WIDGETS_QUIET" ] || printf '\n\033[1;36m» Termux:Widget: %s\033[0m\n' "$((n + 4)) buttons (4 + $n systems)"
+[ -n "$WIDGETS_QUIET" ] || printf '\n\033[1;36m» Termux:Widget: %s\033[0m\n' "$((n + 5)) buttons (5 + $n systems)"
