@@ -41,6 +41,9 @@ elif ! timeout 60 rclone lsd "$REMOTE" --retries 1 --low-level-retries 2 >/dev/n
   if timeout 60 rclone lsd gdrive: --retries 1 --low-level-retries 1 >/dev/null 2>&1; then
     bad "$(T "الاتصال يعمل لكن المجلد غير موجود:" "Drive works but the folder is missing:") ${REMOTE#gdrive:}" \
         "$(T "سجّل الدخول بحساب Google الذي يحفظ فيه الكمبيوتر النسخ: rclone config ← gdrive ← Edit" "Sign in with the Google account the PC backs up to: rclone config > gdrive > Edit")"
+  elif printf '%s' "$ERR" | grep -qi 'rateLimit\|quota\|403'; then
+    warn "$(T "Google رفض مؤقتاً: كثرة الطلبات على مفتاح rclone المشترك" "Google refused for now: too many requests on rclone's shared key")" \
+         "$(T "أعد الفحص بعد دقائق؛ الحل الدائم مفتاح خاص بالمدرسة (client_id)" "Check again in a few minutes; the lasting fix is the school's own client_id")"
   else
     bad "$(T "تعذّر فتح Google Drive" "Google Drive cannot be opened")" "$ERR"
     printf "    ${D}→ %s${O}\n" "$(T "أعد ربطه: rclone config reconnect gdrive:" "Reconnect: rclone config reconnect gdrive:")"
