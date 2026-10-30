@@ -43,10 +43,18 @@ exec 3< "$TTY" || die "No keyboard input (run it in the Termux window)"   # answ
 
 # ---------------------------------------------------------------- 1) Termux
 say "1) Preparing Termux (several minutes the first time)"
-yes | pkg update -y >/dev/null 2>&1 || pkg update -y < /dev/null
-pkg install -y python rclone cloudflared unzip curl openssl-tool ca-certificates termux-api < /dev/null >/dev/null 2>&1 \
-  || pkg install -y python rclone cloudflared unzip curl openssl-tool ca-certificates < /dev/null \
-  || die "pkg install failed - check the internet and run again"
+# never stop at dpkg's «configuration file changed» question (there is no keyboard behind the curl pipe):
+# keep the file already on the phone, and finish any package an earlier run left half-installed
+export DEBIAN_FRONTEND=noninteractive
+APT_Y="-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
+fix_dpkg() { dpkg --force-confdef --force-confold --configure -a < /dev/null >/dev/null 2>&1 || true
+             apt-get $APT_Y -f install < /dev/null >/dev/null 2>&1 || true; }
+PKGS="python rclone cloudflared unzip curl openssl-tool ca-certificates"
+fix_dpkg
+apt-get update < /dev/null >/dev/null 2>&1 || pkg update -y < /dev/null >/dev/null 2>&1 || true
+apt-get $APT_Y install $PKGS termux-api < /dev/null >/dev/null 2>&1 \
+  || { fix_dpkg; apt-get $APT_Y install $PKGS < /dev/null; } \
+  || die "Installing the Termux packages failed - check the internet and run the same command again"
 if [ ! -d "$HOME/storage/shared" ]; then
   echo "  Allow Termux to access the phone's files (a window will appear)..."
   termux-setup-storage || true; sleep 5
