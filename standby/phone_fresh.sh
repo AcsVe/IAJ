@@ -52,6 +52,9 @@ fix_dpkg() { dpkg --force-confdef --force-confold --configure -a < /dev/null >/d
 PKGS="python rclone cloudflared unzip curl openssl-tool ca-certificates"
 fix_dpkg
 apt-get update < /dev/null >/dev/null 2>&1 || pkg update -y < /dev/null >/dev/null 2>&1 || true
+# Termux supports only fully upgraded packages: a new package (numpy from pkg, say) linked against a newer libc++
+# fails to load ("cannot locate symbol") next to old ones - so upgrade everything first
+apt-get $APT_Y full-upgrade < /dev/null >/dev/null 2>&1 || { fix_dpkg; apt-get $APT_Y full-upgrade < /dev/null >/dev/null 2>&1; } || true
 apt-get $APT_Y install $PKGS termux-api < /dev/null >/dev/null 2>&1 \
   || { fix_dpkg; apt-get $APT_Y install $PKGS < /dev/null; } \
   || die "Installing the Termux packages failed - check the internet and run the same command again"
