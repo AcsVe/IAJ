@@ -9,6 +9,11 @@
 #
 #  الإجراءات نفسها في standby/phone.sh لكل نظام (القفل يحمي الحساسة منها كما في السابق).
 # ================================================================
+# run from a copy: «update all» rewrites this file while it runs, and bash reads scripts as it goes
+if [ -z "$IAJ_PANEL_COPY" ]; then
+  c="${TMPDIR:-$HOME}/.iaj_panel_$$.sh"; cp "$0" "$c" && IAJ_PANEL_COPY="$c" exec bash "$c" "$@"
+fi
+trap 'rm -f "$IAJ_PANEL_COPY"' EXIT
 . "$HOME/iaj/standby/systems.sh"
 [ -f "$HOME/.iaj_standby" ] && . "$HOME/.iaj_standby"
 LANG_UI="${LANG_UI:-ar}"
@@ -136,12 +141,25 @@ mail_import() {   # the email settings of every system, prepared on the computer
   rm -rf "$tmp"
 }
 
+fetch_code() {   # the latest code straight from GitHub (public repositories); settings and data stay as they are
+  local d="$1" repo tmp
+  repo="$(printf '%s\n' "$IAJ_SYSTEMS" | grep "^$d|" | cut -d'|' -f6)"
+  tmp="$(mktemp -d)"
+  if curl -fsSL "https://codeload.github.com/AcsVe/$repo/zip/refs/heads/main" -o "$tmp/c.zip" && unzip -q "$tmp/c.zip" -d "$tmp/x"; then
+    (cd "$tmp/x"/*/ && tar -cf - --exclude=./.env --exclude=./config.env --exclude=./data --exclude=./logs .) | (cd "$HOME/$d" && tar -xf -)
+    sed -i 's/\r$//' "$HOME/$d"/standby/*.sh 2>/dev/null
+    rm -rf "$tmp"; echo "  GitHub: AcsVe/$repo"; return 0
+  fi
+  rm -rf "$tmp"
+  bash "$HOME/$d/standby/phone.sh" update-code     # no GitHub: the copy the computer keeps in Drive
+}
+
 update_all() {   # the award site first: it carries this panel and the buttons
   local d ok="" bad="" list=""
   while IFS='|' read -r d _; do installed "$d" && list="$list $d"; done <<< "$IAJ_SYSTEMS"
   for d in $list; do   # (not inside the while: configure may ask questions on the keyboard)
     say "$(field "$d" 2) · $(name "$d")"
-    if bash "$HOME/$d/standby/phone.sh" update-code && bash "$HOME/$d/standby/phone.sh" configure; then
+    if fetch_code "$d" && bash "$HOME/$d/standby/phone.sh" configure; then
       ok="$ok $(field "$d" 2)"
     else
       bad="$bad $(field "$d" 2)"

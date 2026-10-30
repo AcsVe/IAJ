@@ -32,7 +32,7 @@ mk "★ قفل أو فتح الأزرار"  "bash ~/iaj/standby/panel.sh lock"
 mk "★ English - عربي"      "bash ~/iaj/standby/panel.sh lang"
 
 n=0
-while IFS='|' read -r d code ar en url; do
+while IFS='|' read -r d code ar en url repo; do
   [ -f "$HOME/$d/standby/phone.sh" ] || continue
   mk "$code · $ar" "bash ~/iaj/standby/panel.sh $d"
   n=$((n + 1))

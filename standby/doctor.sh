@@ -119,7 +119,7 @@ PY
 }
 http_code() { local c; c="$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$1/" 2>/dev/null)"; echo "${c:-000}"; }
 
-while IFS='|' read -r d code ar en url <&3; do   # (fd 3: the checks below must not read the list)
+while IFS='|' read -r d code ar en url repo <&3; do   # (fd 3: the checks below must not read the list)
   name="$(T "$ar" "$en")"
   head_ "$code · $name  ${D}${url#https://}${O}"
   if [ ! -f "$HOME/$d/standby/phone.sh" ]; then
