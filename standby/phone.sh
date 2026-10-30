@@ -110,7 +110,7 @@ case "$1" in
 
   update-code)
     # ١) من GitHub مباشرة (لا يحتاج السيرفر) — إن وُجد رمز GitHub
-    if [ -s "$HOME/.iaj_github_token" ] && [ -f "$SITE/standby/gh_update.py" ]; then
+    if [ -f "$SITE/standby/gh_update.py" ]; then   # public repository: no token needed
       say "$(T "تنزيل الكود من GitHub" "Downloading code from GitHub")"
       if python "$SITE/standby/gh_update.py"; then
         sed -i 's/\r$//' "$SITE"/standby/*.sh 2>/dev/null || true
