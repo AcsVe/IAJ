@@ -11,7 +11,7 @@
 . "$HOME/iaj/standby/systems.sh"
 [ -f "$HOME/.iaj_standby" ] && . "$HOME/.iaj_standby"
 REMOTE="${REMOTE:-gdrive:IAJ-backups}"
-LANG_UI="${LANG_UI:-ar}"
+LANG_UI="${LANG_UI:-en}"   # Termux cannot join or right-to-left Arabic: English unless chosen
 T() { if [ "$LANG_UI" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
 G='\033[1;32m'; Y='\033[1;33m'; R='\033[1;31m'; C='\033[1;36m'; D='\033[2m'; O='\033[0m'
 NOK=0; NWARN=0; NBAD=0
@@ -53,12 +53,21 @@ else
 fi
 
 backup_age() {   # minutes since the newest *.gz in a Drive folder (computer backups, not the phone's)
-  rclone lsl "$1" --include "*.gz" --exclude "*-phone.*" --max-depth 1 2>/dev/null | sort -k2,3 | tail -1 | python -c "
-import sys, datetime
-p = sys.stdin.read().split()
-if len(p) < 3: print('?'); sys.exit()
-t = datetime.datetime.strptime(p[1] + ' ' + p[2][:8], '%Y-%m-%d %H:%M:%S')
-print(int((datetime.datetime.now() - t).total_seconds() // 60))"
+  # lsjson gives the time with its UTC offset, so the phone's own clock zone does not matter
+  rclone lsjson "$1" --include "*.gz" --exclude "*-phone.*" --max-depth 1 2>/dev/null | python -c "
+import sys, json, re, datetime
+try:
+    rows = json.load(sys.stdin)
+except Exception:
+    rows = []
+ts = []
+for r in rows:
+    m = re.match(r'(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.\d+)?(Z|[+-]\d\d:\d\d)$', r.get('ModTime', ''))
+    if m:
+        ts.append(datetime.datetime.fromisoformat(m.group(1) + ('+00:00' if m.group(2) == 'Z' else m.group(2))))
+if not ts: print('?'); sys.exit()
+now = datetime.datetime.now(datetime.timezone.utc)
+print(max(0, int((now - max(ts)).total_seconds() // 60)))"
 }
 
 # ---------------------------------------------------------------- Cloudflare
