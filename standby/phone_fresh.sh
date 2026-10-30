@@ -214,7 +214,7 @@ echo "   - Add the Termux:Widget to the home screen (long-press the home screen 
 echo "     or refresh it if it is already there."
 echo "   - Sensitive actions start LOCKED: press '★ قفل أو فتح الأزرار' to unlock before an emergency."
 if [ "${MAIL_DONE:-0}" = 1 ]; then echo "   - Email settings: copied from the PC for every system."
-else echo "   - Email: on the PC run C:\\IAJ\\phone_mail.bat once, then on the phone: '★ لوحة الأنظمة' > m"; fi
+else echo "   - Email: on the PC run phone_mail.bat (award site folder) once, then on the phone: '★ لوحة الأنظمة' > m"; fi
 echo "   - Where each site runs: '★ لوحة الأنظمة'."
 }
 

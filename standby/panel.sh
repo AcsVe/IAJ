@@ -5,7 +5,7 @@
 #   bash ~/iaj/standby/panel.sh              # حالة كل المواقع + اختيار نظام
 #   bash ~/iaj/standby/panel.sh venues       # قائمة نظام واحد: حالته الآن وإجراءاته
 #   bash ~/iaj/standby/panel.sh update-all   # تحديث كود كل الأنظمة المثبّتة على الهاتف
-#   bash ~/iaj/standby/panel.sh mail         # إعدادات البريد لكل نظام من الكمبيوتر (phone_mail.bat في C:\IAJ)
+#   bash ~/iaj/standby/panel.sh mail         # إعدادات البريد لكل نظام من الكمبيوتر (phone_mail.bat في مجلد موقع الجائزة على الكمبيوتر)
 #
 #  الإجراءات نفسها في standby/phone.sh لكل نظام (القفل يحمي الحساسة منها كما في السابق).
 # ================================================================
@@ -121,14 +121,14 @@ overview() {
   system_menu "$d"
 }
 
-mail_import() {   # the email settings of every system, prepared on the computer by phone_mail.bat (C:\IAJ)
+mail_import() {   # the email settings of every system, prepared on the computer by phone_mail.bat (award site folder)
   local tmp remote="${REMOTE:-gdrive:IAJ-backups}"
   tmp="$(mktemp -d)"
   say "$(T "تنزيل ملف إعدادات البريد من Drive" "Downloading the email settings file from Drive")"
   rclone copy "$remote/phone/mail-settings.enc" "$tmp" 2>/dev/null
   if [ ! -f "$tmp/mail-settings.enc" ]; then
     rm -rf "$tmp"
-    say "$(T "لا يوجد الملف بعد — على الكمبيوتر شغّل C:\IAJ\phone_mail.bat ثم أعد المحاولة بعد دقيقة" "No file yet - on the PC run C:\IAJ\phone_mail.bat, then try again a minute later")"
+    say "$(T "لا يوجد الملف بعد — على الكمبيوتر شغّل phone_mail.bat في مجلد موقع الجائزة ثم أعد المحاولة بعد دقيقة" "No file yet - on the PC run phone_mail.bat in the award site folder, then try again a minute later")"
     return 1
   fi
   python "$HOME/iaj/standby/mail_bundle.py" import "$tmp/mail-settings.enc"

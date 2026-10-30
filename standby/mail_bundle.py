@@ -3,7 +3,7 @@
 Each system has its own email settings (its own keys and sender) in its settings file on the computer. Copying
 them to the phone by hand means typing dozens of values; instead:
 
-  on the computer:  phone_mail.bat           (C:\\IAJ)  -> export: reads the email lines of every system's
+  on the computer:  phone_mail.bat           (award site)  -> export: reads the email lines of every system's
                     settings file, encrypts them with a password you choose, and puts the file in the Google
                     Drive backup folder:  IAJ-backups/phone/mail-settings.enc
   on the phone:     «★ لوحة الأنظمة» > m      -> import: downloads that file, asks for the password, and writes
@@ -24,17 +24,57 @@ import sys
 
 MAGIC = b'IAJMAIL1'
 ROUNDS = 300_000
-# folder on the computer | settings file | file on the phone (inside ~/<system>)
+# GitHub repository | usual folder on the computer | settings file | file on the phone (inside ~/<system>)
 SYSTEMS = {
-    'iaj':        (r'C:\IAJ', '.env', '.env'),
-    'rastkt':     (r'C:\TKT', '.env', '.env'),
-    'venues':     (r'C:\Venue', '.env', '.env'),
-    'attendance': (r'C:\Att', '.env', '.env'),
-    'timetable':  (r'C:\TT\Timetable', '.env', '.env'),
-    'bell':       (r'C:\Bell', '.env', '.env'),
-    'clearance':  (r'C:\Clearance', 'config.env', 'config.env'),
-    'sas':        (r'C:\SAS', 'config.env', 'config.env'),
+    'iaj':        ('IAJ', r'C:\IAJ', '.env', '.env'),
+    'rastkt':     ('RASTKT|Ticketing', r'C:\TKT', '.env', '.env'),
+    'venues':     ('venues', r'C:\Venue', '.env', '.env'),
+    'attendance': ('Attendance', r'C:\Att', '.env', '.env'),
+    'timetable':  ('Timetable', r'C:\TT\Timetable', '.env', '.env'),
+    'bell':       ('Bell', r'C:\Bell', '.env', '.env'),
+    'clearance':  ('Clearance', r'C:\Clearance', 'config.env', 'config.env'),
+    'sas':        ('sas', r'C:\SAS', 'config.env', 'config.env'),
 }
+
+
+def _repo_of(folder):
+    """The AcsVe repository a folder was cloned from (its .git/config), lower-case; '' when none."""
+    try:
+        cfg = open(os.path.join(folder, '.git', 'config'), encoding='utf-8', errors='ignore').read()
+    except OSError:
+        return ''
+    m = re.search(r'github\.com[/:]AcsVe/([A-Za-z0-9_.-]+?)(?:\.git)?\s*$', cfg, re.I | re.M)
+    return m.group(1).lower() if m else ''
+
+
+def find_folder(name):
+    """Where this system is installed on the computer: the usual folder, else any folder on C: (two levels deep)
+    cloned from its repository — the one that has its settings file, the shallowest first."""
+    repo, usual, fn, _ = SYSTEMS[name]
+    names = repo.lower().split('|')          # the current name and earlier names of the repository
+    if _repo_of(usual) in names or (os.path.isfile(os.path.join(usual, fn)) and not _repo_of(usual)):
+        return usual
+    found = []
+    for top in sorted(os.listdir('C:\\')) if os.path.isdir('C:\\') else []:
+        a = os.path.join('C:\\', top)
+        if not os.path.isdir(a) or top.lower() in ('windows', 'program files', 'program files (x86)', 'programdata', 'users'):
+            continue
+        cands = [a]
+        try:
+            cands += [os.path.join(a, x) for x in os.listdir(a) if os.path.isdir(os.path.join(a, x))]
+        except OSError:
+            pass
+        for c in cands:
+            if _repo_of(c) in names:
+                found.append((not os.path.isfile(os.path.join(c, fn)), c.count(os.sep), c))
+    return sorted(found)[0][2] if found else None
+
+
+def _home():
+    """The award site's folder on this computer (this file is in its standby folder)."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 MAIL_KEY = re.compile(r'^(MS_[A-Z0-9_]+|EMAIL_[A-Z0-9_]+|MAIL_[A-Z0-9_]+|SMTP_[A-Z0-9_]+|GRAPH_[A-Z0-9_]+)\s*=')
 SKIP = re.compile(r'(_PATH|_DIR|_OUTBOX|_FILE)$')      # folders of the computer mean nothing on the phone
 
@@ -116,7 +156,7 @@ def _ask_new_password():
 def _drive_folder():
     """IAJ-backups in Google Drive on this computer: BACKUP_DIR of the award site, else the usual Drive folders."""
     try:
-        env = open(os.path.join(SYSTEMS['iaj'][0], '.env'), encoding='utf-8-sig').read().splitlines()
+        env = open(os.path.join(_home(), '.env'), encoding='utf-8-sig').read().splitlines()
     except OSError:
         env = []
     for ln in env:
@@ -134,21 +174,23 @@ def _drive_folder():
 
 def export():
     bundle, report = {}, []
-    for name, (folder, fn, _) in SYSTEMS.items():
-        lines = mail_lines(os.path.join(folder, fn))
+    for name in SYSTEMS:
+        fn = SYSTEMS[name][2]
+        folder = _home() if name == 'iaj' else find_folder(name)
+        lines = mail_lines(os.path.join(folder, fn)) if folder else None
         if lines is None:
             report.append(f'  -  {name:<11} not on this computer')
         elif not lines:
             report.append(f'  -  {name:<11} no email settings')
         else:
             bundle[name] = lines
-            report.append(f'  OK {name:<11} {len(lines)} lines')
+            report.append(f'  OK {name:<11} {len(lines)} lines   ({folder})')
     print('\n'.join(report))
     if not bundle:
         sys.exit('\n  No email settings were found - nothing was written.')
     drive = _drive_folder()
     if not drive:
-        sys.exit('\n  The Google Drive folder IAJ-backups was not found on this computer (BACKUP_DIR in C:\\IAJ\\.env).')
+        sys.exit('\n  The Google Drive folder IAJ-backups was not found on this computer (BACKUP_DIR in the award site .env).')
     print()
     pw = _ask_new_password()
     out = os.path.join(drive, 'phone')
@@ -174,7 +216,7 @@ def import_(path):
     for name, lines in bundle.items():
         if name not in SYSTEMS or not os.path.isdir(os.path.join(home, name, 'standby')):
             continue
-        merge(os.path.join(home, name, SYSTEMS[name][2]), lines)
+        merge(os.path.join(home, name, SYSTEMS[name][3]), lines)
         try:
             os.remove(os.path.join(home, name, '.mail_skip'))
         except OSError:
