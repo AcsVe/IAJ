@@ -141,6 +141,20 @@ def merge(path, lines):
         pass
 
 
+def _cf_token(env_path):
+    """The Cloudflare token of the award site: the computer and the phone both have it already, so it locks the
+    file without asking anyone for a password."""
+    try:
+        for ln in open(env_path, encoding='utf-8-sig').read().splitlines():
+            if ln.strip().startswith('CF_API_TOKEN='):
+                v = ln.split('=', 1)[1].strip().strip('"')
+                if v:
+                    return 'cf:' + v
+    except OSError:
+        pass
+    return None
+
+
 def _ask_new_password():
     for _ in range(3):
         a = getpass.getpass('  Choose a password for the file (it is asked again on the phone): ')
@@ -194,25 +208,36 @@ def export():
     if not drive:
         sys.exit('\n  The Google Drive folder IAJ-backups was not found on this computer (BACKUP_DIR in the award site .env).')
     print()
-    pw = _ask_new_password()
+    pw = _cf_token(os.path.join(_home(), '.env'))
+    if pw:
+        print('  Locked with the Cloudflare token already on the computer and the phone - no password needed.')
+    else:
+        pw = _ask_new_password()
     out = os.path.join(drive, 'phone')
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, 'mail-settings.enc'), 'wb') as f:
         f.write(seal(json.dumps(bundle).encode('utf-8'), pw))
     print(f'\n  Saved (encrypted): {os.path.join(out, "mail-settings.enc")}')
-    print('  On the phone: the Systems panel button (lawhat al-anzima) > m, then the same password.')
+    print('  On the phone: the Systems panel button (lawhat al-anzima) > m')
 
 
 def import_(path):
     blob = open(path, 'rb').read()
-    for _ in range(3):
+    bundle = None
+    key = _cf_token(os.path.join(os.path.expanduser('~'), 'iaj', '.env'))
+    if key:
+        try:
+            bundle = json.loads(unseal(blob, key))
+        except (PermissionError, ValueError):
+            bundle = None
+    for _ in range(0 if bundle is not None else 3):
         pw = getpass.getpass('  Password of the email settings file: ')
         try:
             bundle = json.loads(unseal(blob, pw))
             break
         except PermissionError:
             print('  Wrong password.')
-    else:
+    if bundle is None:
         sys.exit(1)
     home = os.path.expanduser('~')
     for name, lines in bundle.items():

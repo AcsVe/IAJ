@@ -66,7 +66,7 @@
 | `3_autostart.bat` | **كمسؤول**: البدء مع ويندوز + النسخ كل ساعة + المراقب |
 | `update.bat` | **التحديث الوحيد**: سحب من GitHub + المكتبات + ترحيل القاعدة + إعادة التشغيل |
 | `<نظام>_on.bat` / `<نظام>_off.bat` | تشغيل/إيقاف هذا النظام فقط (`tkt`، `ven`، `att`، `tt`، `bell`، `clr`، `iaj`) |
-| `phone_mail.bat` | (في `C:\IAJ`) إعدادات البريد لكل نظام ← ملف مشفّر بكلمة مرور في `IAJ-backups/phone` على Drive؛ على الهاتف: «★ لوحة الأنظمة» ← `m` |
+| `phone_mail.bat` | (في `C:\IAJ`) إعدادات البريد لكل نظام ← ملف مشفّر (برمز Cloudflare المشترك) في `IAJ-backups/phone` على Drive؛ على الهاتف: «★ لوحة الأنظمة» ← `m` |
 | `site_where.bat` | أين يشير العنوان (الكمبيوتر أم الهاتف) + تشخيص |
 | `switch_to_server.bat` / `back_to_server.bat` | إعادة العنوان للكمبيوتر / أخذ بيانات الهاتف بعد الطوارئ |
 | `backup_now.bat` / `restore_backup.bat` / `stop_autostart.bat` | نسخ / استرجاع / إلغاء المهام |
