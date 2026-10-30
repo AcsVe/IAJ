@@ -21,9 +21,10 @@ OFF = '\x1b[0m'
 
 def width():
     try:
-        return os.get_terminal_size(sys.stdout.fileno()).columns
+        cols = os.get_terminal_size(sys.stdout.fileno()).columns
     except OSError:
-        return int(os.environ.get('COLUMNS') or 0)
+        cols = 0
+    return cols or int(os.environ.get('COLUMNS') or 0)
 
 
 def shape(line):
@@ -38,7 +39,9 @@ def shape(line):
         lead = ''
     indent = len(plain) - len(plain.lstrip(' '))
     text = plain.strip(' ')
-    visual = get_display(arabic_reshaper.reshape(text))
+    # addresses that start with a digit (2.iajaward.org) stay in one piece: a left-to-right mark before them
+    text = re.sub(r'(?<![\w.])(\d[\w-]*\.[A-Za-z][\w./-]*)', '\u200e\\1', text)
+    visual = get_display(arabic_reshaper.reshape(text)).replace('\u200e', '')
     for mark, colour in MARKS.items():                            # keep the colour of the ✓ ! ✗ marks
         if visual.endswith(mark) or visual.endswith(mark + ' '):
             i = visual.rfind(mark)
