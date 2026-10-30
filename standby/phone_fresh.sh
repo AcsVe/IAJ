@@ -190,6 +190,15 @@ for d in $CHOSEN; do
   fi
 done
 
+# ---------------------------------------------------------------- email settings (prepared on the PC)
+MAIL_DONE=0
+if rclone lsf gdrive:IAJ-backups/phone/mail-settings.enc >/dev/null 2>&1 && \
+   [ -n "$(rclone lsf gdrive:IAJ-backups/phone/mail-settings.enc 2>/dev/null)" ]; then
+  say "Email settings of every system (file made on the PC by phone_mail.bat)"
+  read -r -p "  Copy them to this phone now? [Y/n] " A <&3
+  case "$A" in n|N) ;; *) REMOTE=gdrive:IAJ-backups bash "$HOME/iaj/standby/panel.sh" mail <&3 && MAIL_DONE=1 ;; esac
+fi
+
 # ---------------------------------------------------------------- 6) done
 say "6) Result"
 printf '%b\n' "$SUMMARY"
@@ -201,7 +210,8 @@ echo "  Next:"
 echo "   - Add the Termux:Widget to the home screen (long-press the home screen > Widgets > Termux:Widget),"
 echo "     or refresh it if it is already there."
 echo "   - Sensitive actions start LOCKED: press '★ قفل أو فتح الأزرار' to unlock before an emergency."
-echo "   - Email settings were skipped. To add them for a system:  bash ~/<system>/standby/phone.sh mail"
+if [ "${MAIL_DONE:-0}" = 1 ]; then echo "   - Email settings: copied from the PC for every system."
+else echo "   - Email: on the PC run C:\\IAJ\\phone_mail.bat once, then on the phone: '★ لوحة الأنظمة' > m"; fi
 echo "   - Where each site runs: '★ لوحة الأنظمة'."
 }
 
