@@ -100,7 +100,7 @@ for attempt in 1 2 3; do
 done
 cf_check "$CF" || die "No working Cloudflare token - without it the phone cannot take over the sites. Run again when you have it."
 
-if [ ! -s "$HOME/.iaj_github_token" ]; then
+if [ ! -s "$HOME/.iaj_github_token" ] && [ ! -f "$HOME/.iaj_github_skip" ]; then   # asked once
   read -r -s -p "  (optional) GitHub read-only token - or Enter to skip: " GH <&3; echo
   GH="$(printf '%s' "$GH" | tr -d '[:space:]')"
   if [ -n "$GH" ]; then printf '%s' "$GH" > "$HOME/.iaj_github_token"; chmod 600 "$HOME/.iaj_github_token"; rm -f "$HOME/.iaj_github_skip"
