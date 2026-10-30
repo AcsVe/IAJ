@@ -43,6 +43,6 @@ echo   Backup runs every hour (folder: BACKUP_DIR in .env, or backups).
 echo   Log file: logs\server.log
 echo   Sleep is turned off while the PC is plugged in.
 echo   To stop it: run stop_autostart.bat as administrator.
-timeout /t 5 >nul
+"%SystemRoot%\System32\timeout.exe" /t 5 >nul
 start "" http://localhost:8000/
 pause

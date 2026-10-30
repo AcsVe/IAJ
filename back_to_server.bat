@@ -20,7 +20,7 @@ schtasks /end /tn "IAJ Website" >nul 2>nul
 "%PY%" manage.py standby_return
 if errorlevel 1 (schtasks /run /tn "IAJ Website" >nul 2>nul & echo. & echo   [X] Not finished - see the message above & pause & exit /b 1)
 schtasks /run /tn "IAJ Website" >nul 2>nul
-timeout /t 8 /nobreak >nul
+"%SystemRoot%\System32\timeout.exe" /t 8 /nobreak >nul
 "%PY%" standby\cf_switch.py server
 echo.
 pause
