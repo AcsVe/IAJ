@@ -42,7 +42,7 @@ export IAJ_LANG="$LANG_UI"
 T() { if [ "$LANG_UI" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
 guard() {   # الأزرار الحساسة لا تعمل وهي مقفلة (حماية من الضغط بالخطأ)
   if [ -f "$HOME/.iaj_lock" ] && [ -z "$IAJ_NOGUARD" ]; then
-    die "$(T "🔒 الأزرار الحساسة مقفلة — اضغط «IAJ 0 - قفل أو فتح الأزرار» لفتحها" "🔒 Sensitive buttons are locked - press IAJ 0 to unlock")"
+    die "$(T "🔒 الأزرار الحساسة مقفلة — اضغط «★ قفل أو فتح الأزرار» لفتحها" "🔒 Sensitive buttons are locked - press Â«â ÙÙÙ Ø£Ù ÙØªØ­ Ø§ÙØ£Ø²Ø±Ø§Ø±Â» to unlock")"
   fi
 }
 neon_on() { grep -qE '^(NEON_BACKUP_URL|CLOUD_DATABASE_URL)=.' "$SITE/.env" 2>/dev/null; }
@@ -160,7 +160,7 @@ case "$1" in
     [ -n "$N" ] || die "$(T "لم يُنزَّل شيء" "Nothing was downloaded")"
     pkill -f "python serve.py" 2>/dev/null || true
     cd "$SITE" && python manage.py restore_site "$N" --yes
-    say "$(T "تم. بيانات Neon على الهاتف الآن — للتشغيل للعامة: زر IAJ 1 (الصور من Drive)" "Done. Neon data is on the phone - to serve it publicly: IAJ 1 (images come from Drive)")"
+    say "$(T "تم. بيانات Neon على الهاتف الآن — للتشغيل للعامة: زر «IAJ» ← تشغيل الطوارئ (الصور من Drive)" "Done. Neon data is on the phone - to serve it publicly: the IAJ button > Emergency (images come from Drive)")"
     ;;
 
   start)
@@ -333,6 +333,8 @@ case "$1" in
     mk "IAJ N - استرجاع من Neon إلى الهاتف" "bash ~/iaj/standby/phone.sh neon"
     mk "IAJ 0 - قفل أو فتح الأزرار" "bash ~/iaj/standby/phone.sh lock"
     rm -f "$HOME/.shortcuts/IAJ 2 - إنهاء الطوارئ"
+    # one button per system instead of one per action (when the award site is on this phone): ~/iaj/standby/widgets.sh
+    [ -f "$HOME/iaj/standby/widgets.sh" ] && WIDGETS_QUIET=1 bash "$HOME/iaj/standby/widgets.sh"
     say "$(T "تم. الأزرار جاهزة في ~/.shortcuts — ثبّت Termux:Widget من F-Droid وأضف الأداة للشاشة الرئيسية" "Done. Buttons are ready in ~/.shortcuts - install Termux:Widget from F-Droid and add the widget to the home screen")"
     cd "$SITE" && python standby/cf_switch.py status || true
     ;;
@@ -355,7 +357,7 @@ case "$1" in
     read -r -s -p "$(T "  الصق رمز GitHub للقراءة ثم Enter: " "  Paste the read-only GitHub token, then Enter: ")" TK; echo
     [ -n "$TK" ] || die "$(T "تم الإلغاء" "Cancelled")"
     printf '%s' "$TK" > "$HOME/.iaj_github_token"; chmod 600 "$HOME/.iaj_github_token"; rm -f "$HOME/.iaj_github_skip"
-    say "$(T "حُفظ الرمز — زر IAJ 4 يحدّث الآن من GitHub مباشرة" "Saved - IAJ 4 now updates straight from GitHub")"
+    say "$(T "حُفظ الرمز — زر «IAJ» ← تحديث الكود يحدّث الآن من GitHub مباشرة" "Saved - IAJ > Update the code now updates straight from GitHub")"
     ;;
 
   lock)
@@ -364,7 +366,7 @@ case "$1" in
       say "$(T "🔓 الأزرار مفتوحة — يمكنك استخدام تشغيل الطوارئ والإرجاع. أعد القفل بعد الانتهاء" "🔓 Buttons unlocked - remember to lock again when done")"
     else
       touch "$HOME/.iaj_lock"
-      say "$(T "🔒 الأزرار الحساسة مقفلة (1، 2، 5، 8). الأزرار الأخرى تعمل" "🔒 Sensitive buttons locked (1, 2, 5, 8). Other buttons still work")"
+      say "$(T "🔒 الأزرار الحساسة مقفلة (تشغيل الطوارئ، والإرجاع للكمبيوتر، والنسخ، والاسترجاع). الفحص والحالة يعملان" "🔒 Sensitive buttons locked (emergency, hand-back, backup, restore). Checks and status still work")"
     fi
     ;;
 
@@ -435,7 +437,7 @@ case "$1" in
 
   try)
     guard
-    [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — اضغط IAJ 4" "Code not found - press IAJ 4")"
+    [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — اضغط «IAJ» ← تحديث الكود" "Code not found - press IAJ > Update the code")"
     if pgrep -f "iaj/standby/phone.sh takeover" >/dev/null; then die "$(T "الطوارئ تعمل الآن على الهاتف — لا يمكن التجربة في نفس الوقت" "Emergency mode is running on this phone - cannot run a trial at the same time")"; fi
     pkill -f "python serve.py" 2>/dev/null || true
     ensure_env

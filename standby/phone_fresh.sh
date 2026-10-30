@@ -6,7 +6,8 @@
 #
 #  Rebuilds the standby of every iajaward.org system on this phone:
 #    iaj (award site), rastkt (1), venues (2), attendance (3), timetable (4),
-#    bell (5), clearance (6), sas (8) - and their buttons in Termux:Widget.
+#    bell (5), clearance (6), sas (8) - and the Termux:Widget buttons (standby/widgets.sh):
+#    a systems panel, update-all, lock, language and one button per system.
 #
 #  Before: install Termux and Termux:Widget (and Termux:API) from the SAME source -
 #  F-Droid or GitHub, not the Play Store. Then in Termux:
@@ -184,13 +185,15 @@ done
 say "6) Result"
 printf '%b\n' "$SUMMARY"
 echo
-echo "  Buttons created: $(ls "$HOME/.shortcuts" 2>/dev/null | wc -l)  (IAJ, TKT, VEN, ATT, TT, BELL, CLR, SAS ...)"
+WIDGETS_QUIET=1 bash "$HOME/iaj/standby/widgets.sh" 2>/dev/null || true
+echo "  Termux:Widget buttons: '★ لوحة الأنظمة' (all sites at a glance), '★ تحديث كل الأنظمة', lock, language,"
+echo "  and one button per system (IAJ, TKT, VEN, ATT, TT, BELL, CLR, SAS) that opens its actions."
 echo "  Next:"
 echo "   - Add the Termux:Widget to the home screen (long-press the home screen > Widgets > Termux:Widget),"
 echo "     or refresh it if it is already there."
-echo "   - The buttons start LOCKED: press 'IAJ 0' to unlock before an emergency."
+echo "   - Sensitive actions start LOCKED: press '★ قفل أو فتح الأزرار' to unlock before an emergency."
 echo "   - Email settings were skipped. To add them for a system:  bash ~/<system>/standby/phone.sh mail"
-echo "   - Check where each site runs: the '... 3' button of each system (e.g. 'TT 3')."
+echo "   - Where each site runs: '★ لوحة الأنظمة'."
 }
 
 main "$@"
