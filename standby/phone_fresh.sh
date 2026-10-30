@@ -68,6 +68,7 @@ while IFS='|' read -r d r n; do
   printf '   %d  %s%s\n' "$i" "$n" "$mark"; i=$((i + 1))
 done <<< "$SYSTEMS"
 read -r -p "  Enter = all, or the numbers separated by spaces (e.g.  0 1 4): " PICK <&3
+case "$(printf '%s' "$PICK" | tr -d '[:space:]' | tr 'A-Z' 'a-z')" in all|a|\*|كل|الكل) PICK="" ;; esac
 CHOSEN=""
 i=0
 while IFS='|' read -r d r n; do
