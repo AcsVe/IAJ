@@ -46,6 +46,7 @@
 - `protection_on.bat` / `protection_off.bat` (في الأنظمة القديمة) يشغّلان/يوقفان حاجز Cloudflare أمام الموقع.
 
 ### ج) الهاتف الاحتياطي (Termux)
+- **النسخ إلى Drive تلقائياً:** كل نظام يحفظ نسخه في `IAJ-backups/<النظام>` داخل مجلد Google Drive على الكمبيوتر (يجده من `BACKUP_DIR` في `C:\IAJ\.env` أو من «My Drive») حتى لو لم يُضبط `BACKUP_DIR` له أو ضُبط على مجلد محلي — فالهاتف يجد أحدث نسخة دائماً (`ops/common.py: backup_root`).
 - كل نظام في مجلد على الهاتف (`~/iaj`، `~/rastkt`، `~/venues`، `~/attendance`، `~/timetable`، `~/bell`، `~/clearance`، `~/sas`).
 - **أزرار Termux:Widget** (`standby/widgets.sh` و`standby/panel.sh` في IAJ): «★ لوحة الأنظمة» تعرض حالة كل المواقع وتفتح قائمة أي نظام، «★ تحديث كل الأنظمة»، «★ فحص جاهزية الهاتف» (`standby/doctor.sh`: الأدوات، Drive وعمر آخر نسخة، رمز Cloudflare، ولكل نظام المكتبات والإعدادات ورمز النفق والبريد والموقع العام — ✓/!/✗ مع طريقة الإصلاح)، «★ قفل أو فتح الأزرار»، «★ English - عربي»، وزر واحد لكل نظام (IAJ، TKT، VEN، ATT، TT، BELL، CLR، SAS) يفتح إجراءاته — بدل زر لكل إجراء. يُعاد بناؤها مع `configure` لأي نظام، فتُحذف الأزرار القديمة تلقائياً.
 - `standby/phone.sh`: `setup` ← `configure` ← `update-code` ← **`takeover`** (أحدث نسخة من Drive + تشغيل + تحويل العنوان للهاتف) ← `server` (إعادته للكمبيوتر).
