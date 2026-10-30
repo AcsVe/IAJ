@@ -146,6 +146,8 @@ while IFS='|' read -r d code ar en url <&3; do   # (fd 3: the checks below must 
   if pgrep -f "$d/standby/phone.sh (takeover|start)" >/dev/null 2>&1; then warn "$(T "يعمل من الهاتف الآن (طوارئ)" "Served by this phone now (emergency)")"; fi
   case "$hc" in
     2??|3??) ok "$(T "الموقع العام يعمل" "Public site up") ($hc)" ;;
+    530|52?|502) warn "$(T "الموقع العام متوقف: الكمبيوتر أو نفقه في Cloudflare غير متصل" "Public site down: the PC or its Cloudflare tunnel is not connected") ($hc)" \
+         "$(T "تحقّق من الكمبيوتر (site_where.bat)، أو زر النظام ← تشغيل الطوارئ" "Check the PC (site_where.bat), or system button > Emergency")" ;;
     *) warn "$(T "الموقع العام لا يفتح" "Public site not reachable") ($hc)" "$(T "إن كان الكمبيوتر متوقفاً: زر النظام ← تشغيل الطوارئ" "If the PC is down: system button > Emergency")" ;;
   esac
 done 3<<< "$IAJ_SYSTEMS"
