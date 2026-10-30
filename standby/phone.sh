@@ -104,7 +104,7 @@ case "$1" in
     pkg install -y python python-pillow rclone cloudflared unzip
     pip install "Django==5.2.15" "whitenoise==6.12.0" "waitress==3.0.2" "dj-database-url==3.1.2" "pg8000==1.31.5" \
                 requests django-quill-editor tzdata sqlparse asgiref segno openpyxl
-    termux-setup-storage || true
+    [ -d "$HOME/storage/shared" ] || termux-setup-storage || true   # once only: asking again wants y/n
     say "$(T "تم. الخطوة التالية: اربط Google Drive بالأمر:  rclone config   (اسم الاتصال: gdrive)" "Done. Next: connect Google Drive with:  rclone config   (remote name: gdrive)")"
     ;;
 
