@@ -178,7 +178,9 @@ def export():
         fn = SYSTEMS[name][2]
         folder = _home() if name == 'iaj' else find_folder(name)
         lines = mail_lines(os.path.join(folder, fn)) if folder else None
-        if lines is None:
+        if folder and lines is None:
+            report.append(f'  -  {name:<11} not set up on this computer (no {fn} in {folder})')
+        elif lines is None:
             report.append(f'  -  {name:<11} not on this computer')
         elif not lines:
             report.append(f'  -  {name:<11} no email settings')
