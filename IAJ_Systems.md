@@ -20,6 +20,7 @@
 | 8 | غياب الطلبة والاستئذان (SAS) | `AcsVe/SAS` | `https://8.iajaward.org` | `8008` | `C:\SAS` | Flask + Alembic + Waitress | SQLite `data\sas.db` | `af1e9ab` |
 | — | مراقبة الأجهزة (PULSE) | `AcsVe/Pulse` | Render أو `Pulse-Server.exe` | `5000` | مجلد مستقل | Flask + تطبيقا Android + عميل ويندوز | Postgres (Render) أو SQLite محلياً | `1e43023` |
 | — | طباعة الشيكات (ChequePrinter) | `AcsVe/Cheque` | برنامج ويندوز (`ChequePrinterSetup.exe`) | — | `%ProgramData%\ChequePrinter` | Python + PySide6 + PyInstaller + Inno Setup | SQLite `cheques.db` | `93dc994` |
+| — | منشئ الأدلة المؤسسية (ManualBuilder) | `AcsVe/Manual` | برنامج ويندوز (`ManualBuilderSetup.exe`) | — | `%ProgramData%\ManualBuilder` | Python + PySide6 + QtWebEngine + PyInstaller + Inno Setup | SQLite `manuals.db` | `30b7124` |
 | — | المكتبة (LIBRARY) | `baqjo/Library` | **`7.iajaward.org` (مقترح)** | **`8007` (مقترح)** | `C:\Library` (مقترح) | Flask | SQLite (مقترح) | `00b40e4` |
 | — | برنامج التحليل المكتبي `home.py` | (ملف، ليس في مستودع) | — | — | بجانب `att2000.mdb` | tkinter (32-بت، مثبّت Inno 1.11.0) | يقرأ `att.mdb` / `att2000.mdb` + أجهزة ZKTeco وDahua | `BUILD-2026-10-26-dahua2` |
 
@@ -85,6 +86,7 @@
 | Bell | تطبيقات Android / Desktop، و`BellPlayer.exe`، وبرنامج ESP32 (في `static/firmware`) — الإصدارات في `releases/tag/apps` |
 | Pulse | `Pulse-Server.exe`، عميل ويندوز، تطبيقا Android |
 | Cheque | `ChequePrinterSetup.exe` (PyInstaller + Inno Setup) — الإصدار `latest` |
+| Manual | `ManualBuilderSetup.exe` (PyInstaller + Inno Setup) — الإصدار `latest` |
 
 ---
 
@@ -109,6 +111,8 @@
 **PULSE** — نظام مراقبة أجهزة **مُعلَن** (أيقونة ظاهرة، إشعار دائم، موافقة على الجهاز): خادم لوحة تقارير + تطبيق Android للجهاز المراقَب + تطبيق للمشاهِد + عميل ويندوز. يعمل على Render أو `Pulse-Server.exe` (المنفذ 5000)، **وليس ضمن نفق iajaward** حالياً. إن نُقل إلى كمبيوتر المدرسة يأخذ `8009` / `9.iajaward.org` بالقالب المشترك. الدليل: `README.md`.
 
 **ChequePrinter** — برنامج سطح مكتب لإصدار الشيكات وطباعة معلوماتها على ورقة الشيك الأصلية (المعاينة محاكاة للشيك): المبلغ كتابةً بالعربية الفصحى، ختم التسطير، قالب قابل للمعايرة لكل بنك، سجل الشيكات والمستفيدين والحسابات، يعمل محلياً، ترخيص لكل جهاز بالمولّد نفسه المستخدم للجرس (بصمة مختلفة). يُبنى المثبّت آلياً في GitHub Actions. الدليل: `docs/ChequePrinter.md`، `docs/Requirements.md`.
+
+**ManualBuilder** — برنامج سطح مكتب لإنشاء الأدلة المؤسسية (النظام الداخلي، السياسات والإجراءات، الحوكمة، الهيكل التنظيمي، سجل الالتزام) بالعربية والإنجليزية: أقسام هرمية، قوالب جداول الحوكمة، مخطط تنظيمي آلي، تصميم الصفحة والترويسة والتذييل والخلفيات، سير عمل اختياري (إعداد/مراجعة/اعتماد). الإخراج PDF وWord وHTML تفاعلي، والاستيراد من Word وHTML وPDF. ترخيص لكل جهاز بالمولّد نفسه (بصمة مختلفة). الدليل: `docs/ManualBuilder.md`، `docs/Requirements.md`.
 
 **LIBRARY** — مكتبة على نمط Follett Destiny (المراحل 1–6 مكتملة، استيراد فهرس Destiny). المرحلة 7 (التشغيل بالقالب المشترك) بانتظار: تأكيد `8007` / `7.iajaward.org`، المجلد، و**تقرير نسخ Destiny**. الدليل: `Library.md`.
 
@@ -139,6 +143,7 @@
 | IAJ | `python manage.py test` |
 | Pulse | `cd server && python -m pytest -q` |
 | Cheque | `QT_QPA_PLATFORM=offscreen python -m pytest -q tests` |
+| Manual | `QT_QPA_PLATFORM=offscreen QTWEBENGINE_DISABLE_SANDBOX=1 python -m pytest -q tests` |
 | venues / RASTKT / Attendance | لا توجد اختبارات آلية: شغّل التطبيق على SQLite مؤقتة وجرّب الصفحات المعدّلة |
 - أي تعديل في الواجهة يُفحص في **متصفح حقيقي** (Playwright/Chromium): لا أخطاء JavaScript، والعربية RTL سليمة، وعرض الهاتف.
 
