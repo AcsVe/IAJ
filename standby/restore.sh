@@ -46,8 +46,8 @@ for pair in $SYSTEMS; do
     git -C "$HOME/$d" remote set-url origin "$url"
     git -C "$HOME/$d" fetch -q origin main && git -C "$HOME/$d" reset -q --hard origin/main && ok "$d محدَّث" || wn "تعذّر تحديث $d"
   else
-    c "تنزيل $d"
-    git clone -q "$url" "$HOME/$d" && ok "$d جاهز" || { wn "تعذّر تنزيل $d — تحقّق أن الرمز يشمل مستودع $repo"; continue; }
+    c "تحميل $d"
+    git clone -q "$url" "$HOME/$d" && ok "$d جاهز" || { wn "تعذّر تحميل $d — تحقّق أن الرمز يشمل مستودع $repo"; continue; }
   fi
   git -C "$HOME/$d" remote set-url origin "$clean"   # لا نُبقي الرمز داخل إعدادات git
 done

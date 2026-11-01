@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
             model_name="sitesetting",
             name="logo_size_mobile",
             field=models.PositiveSmallIntegerField(
-                default=38, verbose_name="حجم الشعار على الموبايل (بكسل)"
+                default=38, verbose_name="حجم الشعار على الهاتف (بكسل)"
             ),
         ),
         migrations.AddField(

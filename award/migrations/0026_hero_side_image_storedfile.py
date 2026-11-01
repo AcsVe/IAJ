@@ -10,7 +10,7 @@ SECTION_COLUMNS = [
 
 
 def add_missing_section_columns(apps, schema_editor):
-    """يضيف أعمدة ألوان الأقسام فقط إذا مش موجودة (آمن على قاعدة السيرفر وعلى قاعدة جديدة)"""
+    """يضيف أعمدة ألوان الأقسام فقط إن لم تكن موجودة (آمن على قاعدة الخادم وعلى قاعدة جديدة)"""
     model = apps.get_model("award", "SectionBackground")
     table = model._meta.db_table
     with schema_editor.connection.cursor() as cursor:
@@ -100,7 +100,7 @@ class Migration(migrations.Migration):
             ],
             database_operations=[],
         ),
-        # أعمدة الألوان أُضيفت سابقاً بـ RunSQL في 0023 (موجودة على السيرفر)
+        # أعمدة الألوان أُضيفت سابقاً بـ RunSQL في 0023 (موجودة على الخادم)
         # هنا نسجّلها بالـ state ونضيفها للقاعدة فقط إذا كانت ناقصة
         migrations.SeparateDatabaseAndState(
             state_operations=[
@@ -177,7 +177,7 @@ class Migration(migrations.Migration):
             name="hero_side_image",
             field=models.ImageField(
                 blank=True,
-                help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الموبايل). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
+                help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الهاتف). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
                 null=True,
                 upload_to="site_media/",
                 verbose_name="صورة جانبية بجانب الصورة الرئيسية (الهيرو)",
@@ -671,7 +671,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 default="",
                 max_length=100,
-                verbose_name="التاريخ (مثال: 17 سبتمبر 2025) - اتركه فارغاً لو مش تاريخ",
+                verbose_name="التاريخ (مثال: 17 سبتمبر 2025) - اتركه فارغاً إن لم يكن تاريخاً",
             ),
         ),
         migrations.AlterField(

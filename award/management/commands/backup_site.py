@@ -73,10 +73,10 @@ class Command(BaseCommand):
         root = opts['dir'] or os.environ.get('BACKUP_DIR') or os.path.join(settings.BASE_DIR, 'backups')
         db_dir = os.path.join(root, 'db')
         os.makedirs(db_dir, exist_ok=True)
-        # بتوقيت الجائزة (عمّان) على كل الأجهزة — حتى تُقارن نسخ السيرفر والهاتف بشكل صحيح
+        # بتوقيت الجائزة (عمّان) على كل الأجهزة — حتى تُقارن نسخ الخادم والهاتف بشكل صحيح
         stamp = f"{timezone.localtime(timezone.now()):%Y-%m-%d_%H%M%S}" + (f"-{opts['tag']}" if opts['tag'] else '')
 
-        # ١) نسخة PostgreSQL الكاملة (على جهاز السيرفر)
+        # ١) نسخة PostgreSQL الكاملة (على جهاز الخادم)
         if 'postgresql' in db['ENGINE']:
             pg_dump = find_pg_tool('pg_dump')
             if not pg_dump:

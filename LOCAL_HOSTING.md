@@ -81,7 +81,7 @@ EMAIL_HOST_PASSWORD=...
 
 بدون `EMAIL_HOST` تُحفظ الرسائل في `logs\emails` ويُفعَّل حساب المدرسة فوراً دون رسالة تفعيل. كل رسالة تظهر في «سجل رسائل البريد».
 
-## جهاز احتياطي / الهاتف عند انقطاع الإنترنت عن السيرفر
+## جهاز احتياطي / الهاتف عند انقطاع الإنترنت عن الخادم
 1. **النسخ إلى Google Drive:** ثبّت Google Drive for desktop، وأضف إلى `.env`:  `BACKUP_DIR=G:\My Drive\IAJ-backups`  ثم شغّل `3_autostart.bat` مرة (النسخ كل ساعة) و`backup_now.bat` للتجربة.
    كل نسخة فيها: `db\*.dump` (PostgreSQL) + `db\*.json.gz` (محمولة لأي جهاز) + `media` + `code\iaj-code.zip`.
 2. **نفق ثانٍ للهاتف:** في Cloudflare ← Tunnels ← Create a tunnel باسم `iaj-standby`، وضع له العنوان `standby.iajaward.org` → `http://localhost:8000`. احفظ الرمز (token).
@@ -91,7 +91,7 @@ EMAIL_HOST_PASSWORD=...
    `bash ~/iaj/standby/phone.sh restore` ← `bash ~/iaj/standby/phone.sh start --public`
 4. **رمز Cloudflare API** (للتحويل التلقائي): My Profile ← API Tokens ← Create Custom Token بصلاحيات
    `Zone: Zone: Read` + `Zone: DNS: Edit` (النطاق iajaward.org) + `Account: Cloudflare Tunnel: Edit`،
-   ثم ضع `CF_API_TOKEN=...` في `.env` على السيرفر وفي `~/iaj/.env` على الهاتف.
+   ثم ضع `CF_API_TOKEN=...` في `.env` على الخادم وفي `~/iaj/.env` على الهاتف.
 5. **عند الطوارئ (على الهاتف):** `bash ~/iaj/standby/phone.sh takeover` ← أحدث بيانات + تشغيل + تحويل iajaward.org للهاتف.
-6. **الرجوع:** الهاتف: Ctrl+C ثم `phone.sh handback` ← السيرفر: `back_to_server.bat` (ينقل البيانات ويعيد iajaward.org).
+6. **الرجوع:** الهاتف: Ctrl+C ثم `phone.sh handback` ← الخادم: `back_to_server.bat` (ينقل البيانات ويعيد iajaward.org).
    لمعرفة أين يعمل الموقع الآن: `site_where.bat` أو `phone.sh status`.

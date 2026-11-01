@@ -166,7 +166,7 @@ STORAGES = {
     "raw": {"BACKEND": "award.storage.LocalMediaStorage"},
 }
 
-# بيانات Cloudinary القديمة — تُستخدم فقط لتنزيل الملفات القديمة (localize_media)
+# بيانات Cloudinary القديمة — تُستخدم فقط لتحميل الملفات القديمة (localize_media)
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dd1ylbi9k')
 
 FILE_UPLOAD_PERMISSIONS = 0o644
@@ -175,7 +175,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ذاكرة مؤقتة داخل السيرفر (للإعدادات العامة والصور المخزّنة)
+# ذاكرة مؤقتة داخل الخادم (للإعدادات العامة والصور المخزّنة)
 CACHES = {
     'default': {
         'BACKEND': 'award.preview_state.PreviewAwareLocMemCache',   # كاش الذاكرة + تجاهله أثناء «المعاينة»
@@ -221,7 +221,7 @@ else:
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'logs', 'emails')
 
-# تفعيل الحساب برابط في البريد قبل الدخول؟ (False = يدخل فوراً، فلا يتعطل لو ذهبت الرسالة إلى Spam)
+# تفعيل الحساب برابط في البريد قبل الدخول؟ (False = يدخل فوراً، فلا يتعطل إذا ذهبت الرسالة إلى Spam)
 REQUIRE_EMAIL_VERIFICATION = os.environ.get('REQUIRE_EMAIL_VERIFICATION', 'False') == 'True'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/portal/'

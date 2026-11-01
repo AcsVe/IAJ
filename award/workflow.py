@@ -39,7 +39,7 @@ def _school_message(sub, status, note=''):
 
 
 def change_status(sub, new, by=None, note='', notify_school=True, save=True):
-    """تغيير حالة طلب مع السجل والإشعارات. يرجع True لو تغيّرت."""
+    """تغيير حالة طلب مع السجل والإشعارات. يُرجع True إذا تغيّرت."""
     old = sub.status
     if old == new:
         return False

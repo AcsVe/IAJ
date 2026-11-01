@@ -45,7 +45,7 @@ if defined NEEDREOPEN (
 
 echo.
 echo =====================================================
-echo   الخطوة 2: تنزيل الاكواد من GitHub
+echo   الخطوة 2: تحميل الاكواد من GitHub
 echo =====================================================
 set "TK="
 set /p "TK=الصق رمز GitHub (Fine-grained . Contents: Read) ثم Enter: "
@@ -83,8 +83,8 @@ if exist "%D%\.git" (
   git -C "%D%" remote set-url origin https://%TK%@github.com/AcsVe/%REPO%.git
   git -C "%D%" fetch origin main && git -C "%D%" reset --hard origin/main
 ) else (
-  echo تنزيل %REPO% الى %D% ...
-  git clone https://%TK%@github.com/AcsVe/%REPO%.git "%D%" || (echo [!] تعذّر تنزيل %REPO% - تحقّق ان الرمز يشمله.)
+  echo تحميل %REPO% الى %D% ...
+  git clone https://%TK%@github.com/AcsVe/%REPO%.git "%D%" || (echo [!] تعذّر تحميل %REPO% - تحقّق ان الرمز يشمله.)
 )
 if exist "%D%\.git" git -C "%D%" remote set-url origin https://github.com/AcsVe/%REPO%.git
 exit /b 0

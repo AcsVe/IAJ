@@ -99,7 +99,7 @@ def _status_items():
     n_soc = SocialLink.objects.filter(is_active=True).exclude(url='').count()
     rows.append(('ok' if n_soc else 'off', 'روابط التواصل الاجتماعي', f'{n_soc} رابط' if n_soc else 'لا توجد روابط مفعّلة', _admin_url('sociallink_changelist')))
     rows.append(('ok' if p.social_in_footer else 'off', 'التواصل في الفوتر', 'ظاهر' if p.social_in_footer else 'مخفي', _admin_url('portalsetting_changelist')))
-    rows.append(('ok' if p.social_in_menu else 'off', 'التواصل في قائمة الموبايل', 'ظاهر' if p.social_in_menu else 'مخفي', _admin_url('portalsetting_changelist')))
+    rows.append(('ok' if p.social_in_menu else 'off', 'التواصل في قائمة الهاتف', 'ظاهر' if p.social_in_menu else 'مخفي', _admin_url('portalsetting_changelist')))
     rows.append(('ok' if p.wm_enabled else 'off', 'شعار الجائزة على الصور والفيديو', 'ظاهر' if p.wm_enabled else 'مخفي', _admin_url('portalsetting_changelist')))
     rows.append(('ok' if p.captions_enabled else 'off', 'نص الشرح بجانب الشعار', 'ظاهر' if p.captions_enabled else 'مخفي', _admin_url('portalsetting_changelist')))
     groups.append(('التواصل والوسائط', rows))

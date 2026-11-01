@@ -23,7 +23,7 @@ def brand_colors():
         v = (v or '').strip() or default
         return v if v.startswith('#') else '#' + v
     menu = _hex(getattr(theme, 'primary_color', ''), '#0a1632')          # لون الهيدر (القائمة) على الكمبيوتر
-    nav = _hex(getattr(ticker, 'bg_color', ''), menu)                    # لون القائمة على الموبايل
+    nav = _hex(getattr(ticker, 'bg_color', ''), menu)                    # لون القائمة على الهاتف
     gold = (getattr(theme, 'gold_color', '') or '#c5a059').strip()
     return {
         'menu': menu,

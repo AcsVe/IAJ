@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                 (
                     "social_in_menu",
                     models.BooleanField(
-                        default=True, verbose_name="شريط التواصل في قائمة الموبايل"
+                        default=True, verbose_name="شريط التواصل في قائمة الهاتف"
                     ),
                 ),
                 (

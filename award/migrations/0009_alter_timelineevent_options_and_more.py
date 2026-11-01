@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='timelineevent',
             name='date_text',
-            field=models.CharField(blank=True, default='', max_length=100, verbose_name='التاريخ (مثال: 17 سبتمبر 2025) - اتركه فارغاً لو مش تاريخ'),
+            field=models.CharField(blank=True, default='', max_length=100, verbose_name='التاريخ (مثال: 17 سبتمبر 2025) - اتركه فارغاً إن لم يكن تاريخاً'),
         ),
         migrations.AlterField(
             model_name='timelineevent',

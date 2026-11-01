@@ -355,7 +355,7 @@ class SectionBackgroundAdmin(admin.ModelAdmin):
     fieldsets = (
         ('القسم', {
             'fields': ('section_id',),
-            'description': 'اختر القسم اللي تبي تتحكم بتصميمه',
+            'description': 'اختر القسم الذي تريد التحكم في تصميمه',
         }),
         ('خلفية القسم', {
             'fields': (

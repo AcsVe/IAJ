@@ -248,7 +248,7 @@ from django.contrib.auth.forms import PasswordResetForm as _PRF
 
 
 class SafePasswordResetForm(_PRF):
-    """استعادة كلمة المرور بقالب الجائزة — والإرسال في الخلفية حتى لا تتعطل الصفحة لو فشل البريد"""
+    """استعادة كلمة المرور بقالب الجائزة — والإرسال في الخلفية حتى لا تتعطل الصفحة إذا فشل البريد"""
     email = forms.EmailField(label='البريد الإلكتروني', widget=_w(forms.EmailInput, 'name@example.com', dir='ltr', autocomplete='email'))
 
     def send_mail(self, subject_template_name, email_template_name, context, from_email, to_email,

@@ -12,7 +12,7 @@ def _ip(request):
 
 
 def audit(request_or_user, action, target='', detail=''):
-    """يسجّل عملية — لا يوقف أي شيء لو فشل"""
+    """يسجّل عملية — لا يوقف أي شيء إذا فشل"""
     from .models import AuditLog
     request = request_or_user if hasattr(request_or_user, 'META') else None
     user = getattr(request, 'user', None) if request else request_or_user

@@ -1,19 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ================================================================
-#  تشغيل موقع الجائزة من الهاتف (Termux) — جهاز احتياطي عند انقطاع الإنترنت عن السيرفر
+#  تشغيل موقع الجائزة من الهاتف (Termux) — جهاز احتياطي عند انقطاع الإنترنت عن الخادم
 #
 #   bash ~/iaj/standby/phone.sh setup          # مرة واحدة: تثبيت المتطلبات
 #   bash ~/iaj/standby/phone.sh update-code    # جلب آخر نسخة من الكود من Google Drive
-#   bash ~/iaj/standby/phone.sh restore        # تنزيل أحدث نسخة بيانات + ملفات من Drive واسترجاعها
+#   bash ~/iaj/standby/phone.sh restore        # تحميل أحدث نسخة بيانات + ملفات من Drive واسترجاعها
 #   bash ~/iaj/standby/phone.sh start          # تشغيل الموقع على الهاتف فقط (تجربة: http://127.0.0.1:8000)
 #   bash ~/iaj/standby/phone.sh start --public # تشغيل + ربطه بنفق الهاتف في Cloudflare (iaj-standby)
-#   bash ~/iaj/standby/phone.sh backup         # رفع بيانات الهاتف إلى Drive (قبل الرجوع للسيرفر)
+#   bash ~/iaj/standby/phone.sh backup         # رفع بيانات الهاتف إلى Drive (قبل الرجوع للخادم)
 #
 #   ★ للطوارئ (أمر واحد لكل اتجاه):
 #   bash ~/iaj/standby/phone.sh takeover       # أحدث بيانات + تشغيل + تحويل iajaward.org إلى الهاتف
-#   bash ~/iaj/standby/phone.sh handback       # (احتياط) رفع بيانات الهاتف يدوياً — ثم على السيرفر: back_to_server.bat
-#   bash ~/iaj/standby/phone.sh stop           # إنهاء الطوارئ (مثل Ctrl+C في نافذتها): إرجاع للسيرفر أو رفع البيانات
-#   bash ~/iaj/standby/phone.sh server         # إعادة iajaward.org للسيرفر فوراً (بدون نقل بيانات)
+#   bash ~/iaj/standby/phone.sh handback       # (احتياط) رفع بيانات الهاتف يدوياً — ثم على الخادم: back_to_server.bat
+#   bash ~/iaj/standby/phone.sh stop           # إنهاء الطوارئ (مثل Ctrl+C في نافذتها): إرجاع للخادم أو رفع البيانات
+#   bash ~/iaj/standby/phone.sh server         # إعادة iajaward.org للخادم فوراً (بدون نقل بيانات)
 #   bash ~/iaj/standby/phone.sh status         # أين يعمل iajaward.org الآن
 #
 #   bash ~/iaj/standby/phone.sh configure      # مرة واحدة: الرموز + أزرار على الشاشة الرئيسية (Termux:Widget)
@@ -21,11 +21,11 @@
 #   bash ~/iaj/standby/phone.sh monitor        # تشغيل/إيقاف مراقبة الموقع (إشعار إذا توقف) — يحتاج Termux:API
 #   bash ~/iaj/standby/phone.sh try            # تجربة الموقع على الهاتف فقط (بدون تحويل iajaward.org)
 #   bash ~/iaj/standby/phone.sh lock           # قفل/فتح الأزرار الحساسة (حماية من الضغط بالخطأ)
-#   bash ~/iaj/standby/phone.sh github         # إضافة/تغيير رمز GitHub (تحديث الكود بدون السيرفر)
+#   bash ~/iaj/standby/phone.sh github         # إضافة/تغيير رمز GitHub (تحديث الكود بدون الخادم)
 #
 #  الإعدادات (اختياري) في ~/.iaj_standby:
 #     REMOTE=gdrive:IAJ-backups      # اسم الاتصال في rclone + المجلد في Drive
-#  رمز نفق الهاتف «iaj-standby» (نفق ثانٍ غير نفق السيرفر) في الملف: ~/.iaj_tunnel_token
+#  رمز نفق الهاتف «iaj-standby» (نفق ثانٍ غير نفق الخادم) في الملف: ~/.iaj_tunnel_token
 #  أي عنوان يُوجَّه لهذا النفق من لوحة Cloudflare يعرض الموقع من الهاتف:
 #    للتجربة: standby.iajaward.org — وعند الطوارئ: انقل iajaward.org إليه
 # ================================================================
@@ -65,7 +65,7 @@ CSRF_TRUSTED_ORIGINS=https://iajaward.org,https://www.iajaward.org
 PORT=8000
 THREADS=4
 EOF
-    say "$(T "أُنشئ ملف الإعدادات $SITE/.env (يمكنك نسخ إعدادات البريد من السيرفر إليه لاحقاً)" "Created settings file $SITE/.env (you can copy the email settings from the server later)")"
+    say "$(T "أُنشئ ملف الإعدادات $SITE/.env (يمكنك نسخ إعدادات البريد من الخادم إليه لاحقاً)" "Created settings file $SITE/.env (you can copy the email settings from the server later)")"
   fi
 }
 
@@ -111,9 +111,9 @@ case "$1" in
     ;;
 
   update-code)
-    # ١) من GitHub مباشرة (لا يحتاج السيرفر) — إن وُجد رمز GitHub
+    # ١) من GitHub مباشرة (لا يحتاج الخادم) — إن وُجد رمز GitHub
     if [ -f "$SITE/standby/gh_update.py" ]; then   # public repository: no token needed
-      say "$(T "تنزيل الكود من GitHub" "Downloading code from GitHub")"
+      say "$(T "تحميل الكود من GitHub" "Downloading code from GitHub")"
       if python "$SITE/standby/gh_update.py"; then
         sed -i 's/\r$//' "$SITE"/standby/*.sh 2>/dev/null || true
         say "$(T "تم تحديث الكود في $SITE" "Code updated in $SITE")"
@@ -121,11 +121,11 @@ case "$1" in
       fi
       say "$(T "تعذّر GitHub — أحاول من Google Drive" "GitHub failed - trying Google Drive")"
     fi
-    # ٢) من Google Drive (النسخة التي يضعها السيرفر)
-    say "$(T "تنزيل الكود من $REMOTE/code" "Downloading code from $REMOTE/code")"
+    # ٢) من Google Drive (النسخة التي يضعها الخادم)
+    say "$(T "تحميل الكود من $REMOTE/code" "Downloading code from $REMOTE/code")"
     mkdir -p "$LOCAL_BK/code"
     rclone copy "$REMOTE/code" "$LOCAL_BK/code" --progress
-    [ -f "$LOCAL_BK/code/iaj-code.zip" ] || die "$(T "لم أجد iaj-code.zip في Drive — شغّل backup_now.bat على السيرفر أولاً" "iaj-code.zip not found in Drive - run backup_now.bat on the server first")"
+    [ -f "$LOCAL_BK/code/iaj-code.zip" ] || die "$(T "لم أجد iaj-code.zip في Drive — شغّل backup_now.bat على الخادم أولاً" "iaj-code.zip not found in Drive - run backup_now.bat on the server first")"
     unzip -oq "$LOCAL_BK/code/iaj-code.zip" -d "$HOME"
     sed -i 's/\r$//' "$SITE"/standby/*.sh 2>/dev/null || true
     say "$(T "تم تحديث الكود في $SITE" "Code updated in $SITE")"
@@ -134,10 +134,10 @@ case "$1" in
   restore)
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — شغّل: bash phone.sh update-code" "Code not found - run: bash phone.sh update-code")"
     ensure_env
-    say "$(T "تنزيل أحدث نسخة بيانات من Drive" "Downloading the latest data backup from Drive")"
+    say "$(T "تحميل أحدث نسخة بيانات من Drive" "Downloading the latest data backup from Drive")"
     mkdir -p "$LOCAL_BK/db"
     rclone copy "$REMOTE/db" "$LOCAL_BK/db" --include "*.json.gz" --max-age 30d --progress
-    say "$(T "تنزيل الصور والملفات (المرة الأولى أطول — بعدها الجديد فقط)" "Downloading images and files (first time is longer - then only new files)")"
+    say "$(T "تحميل الصور والملفات (المرة الأولى أطول — بعدها الجديد فقط)" "Downloading images and files (first time is longer - then only new files)")"
     rclone copy "$REMOTE/media" "$SITE/media" --progress
     if neon_on; then
       ensure_pg8000
@@ -155,11 +155,11 @@ case "$1" in
     ensure_env
     neon_on || die "$(T "لا يوجد رابط Neon — شغّل configure وألصقه عند الطلب" "No Neon link - run configure and paste it when asked")"
     ensure_pg8000
-    say "$(T "تنزيل أحدث نسخة من Neon وتثبيتها على الهاتف" "Downloading the latest copy from Neon onto the phone")"
+    say "$(T "تحميل أحدث نسخة من Neon وتثبيتها على الهاتف" "Downloading the latest copy from Neon onto the phone")"
     rm -rf "$LOCAL_BK/neon"; mkdir -p "$LOCAL_BK/neon"
-    python "$SITE/standby/neon_store.py" pull "$LOCAL_BK/neon" || die "$(T "تعذّر التنزيل من Neon" "Download from Neon failed")"
+    python "$SITE/standby/neon_store.py" pull "$LOCAL_BK/neon" || die "$(T "تعذّر التحميل من Neon" "Download from Neon failed")"
     N=$(ls -t "$LOCAL_BK/neon"/*.json.gz 2>/dev/null | head -1)
-    [ -n "$N" ] || die "$(T "لم يُنزَّل شيء" "Nothing was downloaded")"
+    [ -n "$N" ] || die "$(T "لم يُحمَّل شيء" "Nothing was downloaded")"
     pkill -f "python serve.py" 2>/dev/null || true
     cd "$SITE" && python manage.py restore_site "$N" --yes
     say "$(T "تم. بيانات Neon على الهاتف الآن — للتشغيل للعامة: زر «IAJ» ← تشغيل الطوارئ (الصور من Drive)" "Done. Neon data is on the phone - to serve it publicly: the IAJ button > Emergency (images come from Drive)")"
@@ -190,7 +190,7 @@ case "$1" in
     say "$(T "رفع النسخة والملفات الجديدة إلى Drive" "Uploading the backup and new files to Drive")"
     rclone copy "$LOCAL_BK/db" "$REMOTE/db" --include "*-phone.json.gz" --max-age 1d --progress
     rclone copy "$SITE/media" "$REMOTE/media" --progress
-    say "$(T "تم. على السيرفر: restore_backup.bat ← اختر 1 (نسخة الهاتف)، ثم أعد iajaward.org لنفق السيرفر من لوحة Cloudflare" "Done. On the server run back_to_server.bat to take the phone data and move iajaward.org back")"
+    say "$(T "تم. على الخادم: restore_backup.bat ← اختر 1 (نسخة الهاتف)، ثم أعد iajaward.org لنفق الخادم من لوحة Cloudflare" "Done. On the server run back_to_server.bat to take the phone data and move iajaward.org back")"
     ;;
 
   takeover)
@@ -198,13 +198,13 @@ case "$1" in
     [ -f "$SITE/manage.py" ] || die "$(T "الكود غير موجود — شغّل: bash phone.sh update-code" "Code not found - run: bash phone.sh update-code")"
     [ -s "$HOME/.iaj_tunnel_token" ] || die "$(T "ضع رمز نفق الهاتف في ~/.iaj_tunnel_token أولاً" "Put the phone tunnel token in ~/.iaj_tunnel_token first")"
     grep -q '^CF_API_TOKEN=.' "$SITE/.env" 2>/dev/null || die "$(T "ضع CF_API_TOKEN=... في $SITE/.env أولاً (رمز API من Cloudflare)" "Add CF_API_TOKEN=... to $SITE/.env first (Cloudflare API token)")"
-    # الطوارئ للحالة التي يكون فيها السيرفر متوقفاً فقط — إذا كان يعمل لا داعي لتحويل الموقع للهاتف
+    # الطوارئ للحالة التي يكون فيها الخادم متوقفاً فقط — إذا كان يعمل لا داعي لتحويل الموقع للهاتف
     if (cd "$SITE" && python standby/cf_switch.py server-up 2>/dev/null); then
       echo
-      echo "$(T "  ✋ السيرفر يعمل الآن والموقع سليم — لا حاجة لتشغيل الطوارئ." "  ✋ The server is up and the site is fine - no need for the emergency mode.")"
+      echo "$(T "  ✋ الخادم يعمل الآن والموقع سليم — لا حاجة لتشغيل الطوارئ." "  ✋ The server is up and the site is fine - no need for the emergency mode.")"
       echo "$(T "  (الطوارئ تُستخدم فقط عندما يتوقف الكمبيوتر أو ينقطع عنه الإنترنت)" "  (Use it only when the PC is off or has no internet)")"
       read -r -p "$(T "  للتشغيل رغم ذلك اكتب FORCE، أو اضغط Enter للإلغاء: " "  To run anyway type FORCE, or press Enter to cancel: ")" ANS
-      [ "$ANS" = "FORCE" ] || die "$(T "تم الإلغاء — الموقع باقٍ على السيرفر" "Cancelled - the site stays on the server")"
+      [ "$ANS" = "FORCE" ] || die "$(T "تم الإلغاء — الموقع باقٍ على الخادم" "Cancelled - the site stays on the server")"
     fi
     # إيقاف أي تشغيل قديم على الهاتف (حتى لا يتعارض مع المنفذ 8000)
     pkill -f "python serve.py" 2>/dev/null || true
@@ -228,7 +228,7 @@ case "$1" in
     done
     if [ $OK != 1 ]; then
       kill $WEB 2>/dev/null; tail -20 "$HOME/iaj-serve.log"
-      die "$(T "الموقع لم يعمل على الهاتف — لم يُحوَّل شيء، iajaward.org ما زال على السيرفر" "The site did not start on the phone - nothing was switched, iajaward.org is still on the server")"
+      die "$(T "الموقع لم يعمل على الهاتف — لم يُحوَّل شيء، iajaward.org ما زال على الخادم" "The site did not start on the phone - nothing was switched, iajaward.org is still on the server")"
     fi
     say "$(T "تشغيل نفق الهاتف" "Starting the phone tunnel")"
     cloudflared tunnel --no-autoupdate run --token "$(cat "$HOME/.iaj_tunnel_token")" > "$HOME/cloudflared.log" 2>&1 &
@@ -242,18 +242,18 @@ case "$1" in
       say "$(T "إيقاف الموقع على الهاتف" "Stopping the site on the phone")"
       FP1=$(python manage.py standby_fingerprint 2>/dev/null | tail -1)
       if [ "$FP0" = "$FP1" ]; then
-        # لم يُسجَّل شيء على الهاتف ← نعيد الموقع للسيرفر فوراً بلا نقل بيانات
+        # لم يُسجَّل شيء على الهاتف ← نعيد الموقع للخادم فوراً بلا نقل بيانات
         if python standby/cf_switch.py server; then
           echo "server $(date +%F_%H%M%S)" > "$LOCAL_BK/db/ACTIVE_SITE.txt"
           rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" 2>/dev/null || true
         else
-          say "$(T "السيرفر غير متصل — iajaward.org سيبقى متوقفاً حتى يعود السيرفر أو تعيد تشغيل الطوارئ" "Server is offline - iajaward.org stays down until the server is back or you start the emergency mode again")"
+          say "$(T "الخادم غير متصل — iajaward.org سيبقى متوقفاً حتى يعود الخادم أو تعيد تشغيل الطوارئ" "Server is offline - iajaward.org stays down until the server is back or you start the emergency mode again")"
         fi
       else
-        # سُجّلت بيانات على الهاتف ← نرفعها، والسيرفر يأخذها بـ back_to_server.bat
+        # سُجّلت بيانات على الهاتف ← نرفعها، والخادم يأخذها بـ back_to_server.bat
         IAJ_NOGUARD=1 bash "$0" backup || true
         echo
-        echo "$(T "  ⚠ الآن على السيرفر شغّل:  back_to_server.bat  (ينقل بيانات الهاتف ويعيد الموقع)" "  ⚠ Now on the server run:  back_to_server.bat  (moves the phone data and the site back)")"
+        echo "$(T "  ⚠ الآن على الخادم شغّل:  back_to_server.bat  (ينقل بيانات الهاتف ويعيد الموقع)" "  ⚠ Now on the server run:  back_to_server.bat  (moves the phone data and the site back)")"
       fi
       pgrep -f "(rastkt|venues|attendance)/standby/phone.sh takeover" >/dev/null 2>&1 || termux-wake-unlock 2>/dev/null || true
     }
@@ -265,10 +265,10 @@ case "$1" in
       echo "phone $NOW" > "$LOCAL_BK/db/ACTIVE_SITE.txt"
       rclone copyto "$LOCAL_BK/db/ACTIVE_SITE.txt" "$REMOTE/db/ACTIVE_SITE.txt" 2>/dev/null || true
     else
-      die "$(T "لم يتم التحويل — iajaward.org ما زال على السيرفر" "Switch failed - iajaward.org is still on the server")"
+      die "$(T "لم يتم التحويل — iajaward.org ما زال على الخادم" "Switch failed - iajaward.org is still on the server")"
     fi
-    say "$(T "✅ الهاتف يشغّل iajaward.org الآن — لا تغلق هذه النافذة. للإنهاء: Ctrl+C (يُعاد الموقع للسيرفر تلقائياً)" "✅ The phone is serving iajaward.org now - do NOT close this window. To finish: Ctrl+C (the site goes back to the server automatically)")"
-    # مراقبة: إذا توقف الموقع أو النفق على الهاتف لأي سبب ← finish يعيد الموقع للسيرفر
+    say "$(T "✅ الهاتف يشغّل iajaward.org الآن — لا تغلق هذه النافذة. للإنهاء: Ctrl+C (يُعاد الموقع للخادم تلقائياً)" "✅ The phone is serving iajaward.org now - do NOT close this window. To finish: Ctrl+C (the site goes back to the server automatically)")"
+    # مراقبة: إذا توقف الموقع أو النفق على الهاتف لأي سبب ← finish يعيد الموقع للخادم
     while kill -0 $WEB 2>/dev/null && kill -0 $CF 2>/dev/null; do sleep 5; done
     say "$(T "توقف الموقع أو النفق على الهاتف" "The site or tunnel stopped on the phone")"
     exit 0
@@ -277,8 +277,8 @@ case "$1" in
   handback)
     IAJ_NOGUARD=1 bash "$0" backup
     echo
-    echo "$(T "  الخطوة التالية على جهاز السيرفر (بعد عودة الإنترنت إليه): شغّل  back_to_server.bat" "  Next, on the server (once it is online again): run  back_to_server.bat")"
-    echo "$(T "  سيأخذ بيانات الهاتف من Drive ويعيد iajaward.org إلى السيرفر تلقائياً." "  It takes the phone data from Drive and moves iajaward.org back automatically.")"
+    echo "$(T "  الخطوة التالية على جهاز الخادم (بعد عودة الإنترنت إليه): شغّل  back_to_server.bat" "  Next, on the server (once it is online again): run  back_to_server.bat")"
+    echo "$(T "  سيأخذ بيانات الهاتف من Drive ويعيد iajaward.org إلى الخادم تلقائياً." "  It takes the phone data from Drive and moves iajaward.org back automatically.")"
     ;;
 
   status)
@@ -288,7 +288,7 @@ case "$1" in
   server)
     guard
     echo
-    echo "$(T "  إعادة iajaward.org إلى السيرفر فوراً، بدون نقل أي بيانات من الهاتف." "  Move iajaward.org back to the server now, WITHOUT moving any data from the phone.")"
+    echo "$(T "  إعادة iajaward.org إلى الخادم فوراً، بدون نقل أي بيانات من الهاتف." "  Move iajaward.org back to the server now, WITHOUT moving any data from the phone.")"
     echo "$(T "  (إن كان الهاتف يشغّل الموقع وسُجّلت عليه بيانات: أوقفه بـ Ctrl+C في نافذته بدل هذا الزر)" "  (If the phone is serving the site and has new data: stop it with Ctrl+C in its window instead)")"
     read -r -p "$(T "  اكتب YES للمتابعة: " "  Type YES to continue: ")" OK
     [ "$OK" = "YES" ] || die "$(T "تم الإلغاء" "Cancelled")"
@@ -324,7 +324,7 @@ case "$1" in
     mk() { printf '#!/data/data/com.termux/files/usr/bin/bash\n%s\necho; read -r -p "Enter ↵" _\n' "$2" > "$HOME/.shortcuts/$1"; chmod +x "$HOME/.shortcuts/$1"; }
     mk "IAJ 1 - تشغيل الطوارئ"  "bash ~/iaj/standby/phone.sh takeover"
     mk "IAJ 1 - إنهاء الطوارئ" "bash ~/iaj/standby/phone.sh stop"
-    mk "IAJ 2 - إرجاع الموقع للسيرفر" "bash ~/iaj/standby/phone.sh server"
+    mk "IAJ 2 - إرجاع الموقع للخادم" "bash ~/iaj/standby/phone.sh server"
     mk "IAJ 3 - أين يعمل الموقع" "bash ~/iaj/standby/phone.sh status"
     mk "IAJ 4 - تحديث الكود"    "bash ~/iaj/standby/phone.sh update-code && bash ~/iaj/standby/phone.sh configure"
     mk "IAJ 5 - نسخ بيانات الهاتف إلى Drive" "bash ~/iaj/standby/phone.sh backup"
@@ -342,7 +342,7 @@ case "$1" in
     ;;
 
   stop)
-    # إنهاء الطوارئ من زر: يرسل Ctrl+C لنافذة التشغيل، فتُعاد الأمور تلقائياً (إرجاع للسيرفر أو رفع البيانات)
+    # إنهاء الطوارئ من زر: يرسل Ctrl+C لنافذة التشغيل، فتُعاد الأمور تلقائياً (إرجاع للخادم أو رفع البيانات)
     PID=$(pgrep -f "iaj/standby/phone.sh takeover" | grep -v "^$$\$" | head -1)
     if [ -z "$PID" ]; then
       say "$(T "الطوارئ ليست قيد التشغيل على هذا الهاتف" "Emergency mode is not running on this phone")"

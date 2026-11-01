@@ -1,5 +1,5 @@
 """
-تنزيل كل الملفات القديمة إلى مجلد media على الجهاز:
+تحميل كل الملفات القديمة إلى مجلد media على الجهاز:
 
   • روابط Cloudinary (صور، فيديو، PDF)
   • الصور التي كانت مخزّنة داخل قاعدة البيانات (db/...)
@@ -9,7 +9,7 @@
     python manage.py localize_media             # تنفيذ
     python manage.py localize_media --cleanup   # + حذف نسخ الصور القديمة من القاعدة بعد نقلها
 
-آمن للتكرار: ما تم نقله سابقاً يتم تجاهله. يحتاج إنترنت لتنزيل ملفات Cloudinary.
+آمن للتكرار: ما تم نقله سابقاً يتم تجاهله. يحتاج إنترنت لتحميل ملفات Cloudinary.
 """
 import os
 import re
@@ -42,16 +42,16 @@ def _name_from_url(url):
 
 
 class Command(BaseCommand):
-    help = 'تنزيل الملفات من Cloudinary ومن قاعدة البيانات إلى مجلد media'
+    help = 'تحميل الملفات من Cloudinary ومن قاعدة البيانات إلى مجلد media'
 
     def add_arguments(self, parser):
         parser.add_argument('--dry-run', action='store_true')
         parser.add_argument('--cleanup', action='store_true',
                             help='حذف نسخ الصور من قاعدة البيانات بعد نقلها للمجلد')
 
-    # ---------- تنزيل ----------
+    # ---------- تحميل ----------
     def _download(self, url, dest):
-        """تنزيل على دفعات (الفيديوهات الكبيرة لا تُحمّل كلها في الذاكرة)"""
+        """تحميل على دفعات (الفيديوهات الكبيرة لا تُحمّل كلها في الذاكرة)"""
         with requests.get(url, stream=True, timeout=(15, 300)) as r:
             r.raise_for_status()
             tmp = tempfile.NamedTemporaryFile(delete=False)

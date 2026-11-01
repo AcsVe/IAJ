@@ -1,11 +1,11 @@
 """
-تحويل iajaward.org بين السيرفر والهاتف تلقائياً عبر Cloudflare API — بدون الدخول للوحة Cloudflare.
+تحويل iajaward.org بين الخادم والهاتف تلقائياً عبر Cloudflare API — بدون الدخول للوحة Cloudflare.
 
     python standby/cf_switch.py status    # أين يشير الموقع الآن + حالة النفقين
     python standby/cf_switch.py phone     # iajaward.org ← الهاتف (نفق iaj-standby)
-    python standby/cf_switch.py server    # iajaward.org ← السيرفر (نفق iajaward)
+    python standby/cf_switch.py server    # iajaward.org ← الخادم (نفق iajaward)
 
-يحتاج في ملف .env (على السيرفر وعلى الهاتف):
+يحتاج في ملف .env (على الخادم وعلى الهاتف):
     CF_API_TOKEN=...            # رمز API من Cloudflare بصلاحيات: Zone:Read + DNS:Edit + Cloudflare Tunnel:Edit
 اختياري:
     CF_ZONE=iajaward.org
@@ -98,14 +98,14 @@ def main():
         return res[0]
 
     t_main, t_standby = tunnel(main_name), tunnel(standby_name)
-    by_target = {f"{t_main['id']}.cfargotunnel.com": t(f'السيرفر ({main_name})', f'SERVER ({main_name})'),
+    by_target = {f"{t_main['id']}.cfargotunnel.com": t(f'الخادم ({main_name})', f'SERVER ({main_name})'),
                  f"{t_standby['id']}.cfargotunnel.com": t(f'الهاتف ({standby_name})', f'PHONE ({standby_name})')}
 
     def ingress(tun):
         res = cf.call('GET', f"/accounts/{acc}/cfd_tunnel/{tun['id']}/configurations") or {}
         return (res.get('config') or {}).get('ingress') or []
 
-    # الأسماء العامة للموقع = أسماء نفق السيرفر (مثل iajaward.org و www.iajaward.org)
+    # الأسماء العامة للموقع = أسماء نفق الخادم (مثل iajaward.org و www.iajaward.org)
     # فقط أسماء هذا الموقع (المنفذ 8000) — أسماء أنظمة أخرى على نفس النفق (مثل 1.iajaward.org للتذاكر) لا تُلمس
     port = os.environ.get('PORT', '8000')
     rules = [r for r in ingress(t_main) if r.get('hostname') and not r['hostname'].startswith('standby.')]
@@ -129,14 +129,14 @@ def main():
         return (tun.get('status') or '').lower() in ('healthy', 'degraded')
 
     if cmd == 'server-up':
-        # للهاتف: هل السيرفر يعمل؟ (رمز خروج 0 = نعم) — يمنع تشغيل الطوارئ والسيرفر سليم
+        # للهاتف: هل الخادم يعمل؟ (رمز خروج 0 = نعم) — يمنع تشغيل الطوارئ والخادم سليم
         sys.exit(0 if is_up(t_main) else 1)
 
     logs = os.path.join(HERE, '..', 'logs')
 
     if cmd == 'auto':
-        # حارس على السيرفر (كل 5 دقائق): إذا كان الموقع موجّهاً للهاتف والهاتف منقطع والسيرفر متصل
-        # ← نتحقق مرة ثانية بعد 30 ثانية، ثم نعيد الموقع للسيرفر (يحمي من توقف الهاتف أو إغلاق Termux)
+        # حارس على الخادم (كل 5 دقائق): إذا كان الموقع موجّهاً للهاتف والهاتف منقطع والخادم متصل
+        # ← نتحقق مرة ثانية بعد 30 ثانية، ثم نعيد الموقع للخادم (يحمي من توقف الهاتف أو إغلاق Termux)
         os.makedirs(logs, exist_ok=True)
         stamp = time.strftime('%Y-%m-%d %H:%M:%S')
         with open(os.path.join(logs, 'watchdog_last.txt'), 'w', encoding='utf-8') as fh:
@@ -156,12 +156,12 @@ def main():
             if rec['content'] != content:
                 cf.call('PATCH', f"/zones/{zone}/dns_records/{rec['id']}", json={'content': content, 'proxied': True})
         with open(os.path.join(logs, 'failover.log'), 'a', encoding='utf-8') as fh:
-            fh.write(f'{stamp} الهاتف منقطع والموقع موجّه له — أُعيد iajaward.org إلى السيرفر تلقائياً\n')
-        print(f'{stamp} ✅ الهاتف منقطع — أُعيد iajaward.org إلى السيرفر تلقائياً')
+            fh.write(f'{stamp} الهاتف منقطع والموقع موجّه له — أُعيد iajaward.org إلى الخادم تلقائياً\n')
+        print(f'{stamp} ✅ الهاتف منقطع — أُعيد iajaward.org إلى الخادم تلقائياً')
         return
 
     if cmd == 'status':
-        print(t(f'\nنفق السيرفر  «{main_name}»: {status_line(t_main)}', f'\nServer tunnel  {main_name}: {status_line(t_main)}'))
+        print(t(f'\nنفق الخادم  «{main_name}»: {status_line(t_main)}', f'\nServer tunnel  {main_name}: {status_line(t_main)}'))
         print(t(f'نفق الهاتف   «{standby_name}»: {status_line(t_standby)}\n', f'Phone tunnel   {standby_name}: {status_line(t_standby)}\n'))
         recs = records()
         for h, rec in recs.items():
@@ -181,22 +181,22 @@ def main():
             print(t(f'❌ النفق متصل لكن موقع الجائزة نفسه لا يستجيب ({code or "لا رد"}) — متوقف؟ على الكمبيوتر: iaj_on.bat',
                     f'❌ The tunnel is connected but the award site itself does not respond ({code or "no reply"}) - stopped? On the PC: iaj_on.bat'))
         elif on_phone and is_up(t_main):
-            print(t('❌ الموقع متوقف: موجّه للهاتف والهاتف منقطع.\n   الحل الآن: switch_to_server.bat (على السيرفر)',
+            print(t('❌ الموقع متوقف: موجّه للهاتف والهاتف منقطع.\n   الحل الآن: switch_to_server.bat (على الخادم)',
                     '❌ The site is DOWN: it points to the phone and the phone is offline.\n   Fix now: switch_to_server.bat (on the server)'))
         elif on_phone:
-            print(t('❌ الموقع متوقف: الهاتف والسيرفر كلاهما منقطعان.', '❌ The site is DOWN: both the phone and the server are offline.'))
+            print(t('❌ الموقع متوقف: الهاتف والخادم كلاهما منقطعان.', '❌ The site is DOWN: both the phone and the server are offline.'))
         else:
-            print(t('❌ الموقع متوقف: السيرفر منقطع — تأكد أن الكمبيوتر يعمل ومتصل بالإنترنت، أو شغّل الطوارئ من الهاتف.',
+            print(t('❌ الموقع متوقف: الخادم منقطع — تأكد أن الكمبيوتر يعمل ومتصل بالإنترنت، أو شغّل الطوارئ من الهاتف.',
                     '❌ The site is DOWN: the server is offline - check the PC and its internet, or start the emergency mode on the phone.'))
         last = os.path.join(logs, 'watchdog_last.txt')
         if os.path.isfile(os.path.join(HERE, '..', 'manage.py')) and os.name == 'nt':
             if os.path.isfile(last):
                 age = (time.time() - os.path.getmtime(last)) / 60
                 ok = age < 15
-                print(t(f'{"✅" if ok else "⚠"} حارس السيرفر: آخر فحص قبل {age:.0f} دقيقة' + ('' if ok else ' — لا يعمل! شغّل 3_autostart.bat كمسؤول'),
+                print(t(f'{"✅" if ok else "⚠"} حارس الخادم: آخر فحص قبل {age:.0f} دقيقة' + ('' if ok else ' — لا يعمل! شغّل 3_autostart.bat كمسؤول'),
                         f'{"✅" if ok else "⚠"} Server watchdog: last check {age:.0f} min ago' + ('' if ok else ' - NOT running! Run 3_autostart.bat as administrator')))
             else:
-                print(t('⚠ حارس السيرفر غير مفعّل — شغّل 3_autostart.bat كمسؤول (زر يمين ← Run as administrator)',
+                print(t('⚠ حارس الخادم غير مفعّل — شغّل 3_autostart.bat كمسؤول (زر يمين ← Run as administrator)',
                         '⚠ Server watchdog is not set up - run 3_autostart.bat as administrator'))
             flog = os.path.join(logs, 'failover.log')
             if os.path.isfile(flog):
@@ -208,7 +208,7 @@ def main():
         return
 
     target = t_standby if cmd == 'phone' else t_main
-    who = (t('الهاتف', 'the PHONE') if cmd == 'phone' else t('السيرفر', 'the SERVER'))
+    who = (t('الهاتف', 'the PHONE') if cmd == 'phone' else t('الخادم', 'the SERVER'))
 
     # ١) النفق المستهدف يجب أن يعرف أسماء الموقع (يُضاف مرة واحدة لنفق الهاتف)
     rules = ingress(target)

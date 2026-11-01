@@ -222,7 +222,7 @@ class SiteSetting(models.Model):
     hero_side_image = models.ImageField(max_length=500, 
         upload_to='site_media/', blank=True, null=True,
         verbose_name="صورة جانبية بجانب الصورة الرئيسية (الهيرو)",
-        help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الموبايل). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
+        help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الهاتف). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
     )
     hero_side_video = models.FileField(max_length=500, 
         upload_to='site_media/videos/', blank=True, null=True,
@@ -237,7 +237,7 @@ class SiteSetting(models.Model):
     logo_size = models.PositiveSmallIntegerField(default=50, verbose_name="حجم الشعار على الكمبيوتر (بكسل)",
                                                  help_text="المقترح بين 40 و 80")
     logo_size_scrolled = models.PositiveSmallIntegerField(default=44, verbose_name="حجم الشعار بعد النزول في الصفحة (بكسل)")
-    logo_size_mobile = models.PositiveSmallIntegerField(default=38, verbose_name="حجم الشعار على الموبايل (بكسل)")
+    logo_size_mobile = models.PositiveSmallIntegerField(default=38, verbose_name="حجم الشعار على الهاتف (بكسل)")
     cd_show_days = models.BooleanField(default=True, verbose_name="العداد: إظهار الأيام")
     cd_show_hours = models.BooleanField(default=True, verbose_name="العداد: إظهار الساعات")
     cd_show_minutes = models.BooleanField(default=True, verbose_name="العداد: إظهار الدقائق")
@@ -368,7 +368,7 @@ class HeroSlide(models.Model):
 
 
 class TimelineEvent(models.Model):
-    date_text = models.CharField(max_length=100, verbose_name="التاريخ (مثال: 17 سبتمبر 2025) - اتركه فارغاً لو مش تاريخ", blank=True, default="")
+    date_text = models.CharField(max_length=100, verbose_name="التاريخ (مثال: 17 سبتمبر 2025) - اتركه فارغاً إن لم يكن تاريخاً", blank=True, default="")
     title = models.CharField(max_length=200, verbose_name="عنوان الخطوة/الحدث")
     description = models.TextField(verbose_name="وصف مختصر للخطوة", blank=True, default="")
     modal_image = models.ImageField(max_length=500, upload_to='timeline/', verbose_name="صورة البطاقة المنبثقة", blank=True, null=True)
@@ -1513,7 +1513,7 @@ class PortalSetting(models.Model):
     account_btn_text = models.CharField(max_length=40, default='حسابي', verbose_name="نص الزر بعد الدخول")
     show_register_btn = models.BooleanField(default=True, verbose_name="إظهار زر «سجل الآن» في الهيدر")
     social_in_footer = models.BooleanField(default=True, verbose_name="شريط التواصل في الفوتر")
-    social_in_menu = models.BooleanField(default=True, verbose_name="شريط التواصل في قائمة الموبايل")
+    social_in_menu = models.BooleanField(default=True, verbose_name="شريط التواصل في قائمة الهاتف")
     social_title = models.CharField(max_length=100, blank=True, default='تابعونا', verbose_name="عنوان شريط التواصل (اختياري)")
     login_intro = models.CharField(max_length=300, default='لحسابات المدارس والمحكّمين.', verbose_name="نص صفحة الدخول")
     signup_title = models.CharField(max_length=100, default='حساب مدرسة جديد', verbose_name="عنوان صفحة التسجيل")

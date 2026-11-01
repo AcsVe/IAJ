@@ -25,7 +25,7 @@ _STAMP = re.compile(r'iaj-(\d{4}-\d{2}-\d{2}_\d{4,6})')
 
 
 def newest_backup(root, allow_dump=True, tag=''):
-    """أحدث نسخة في المجلد (حسب التاريخ في اسم الملف) — من أي جهاز (السيرفر أو الهاتف)"""
+    """أحدث نسخة في المجلد (حسب التاريخ في اسم الملف) — من أي جهاز (الخادم أو الهاتف)"""
     db_dir = os.path.join(root, 'db') if os.path.isdir(os.path.join(root, 'db')) else root
     files = glob.glob(os.path.join(db_dir, 'iaj-*.json.gz'))
     if allow_dump:

@@ -1,5 +1,5 @@
 """يبني award/static/award/js/icons.js: أيقونات SVG للعناصر التي تُنشئها الجافاسكربت بعد تحميل الصفحة.
-(الأيقونات في HTML نفسه تُملأ على السيرفر — انظر award/svg_icons.py). يُشغَّل تلقائياً في update.bat."""
+(الأيقونات في HTML نفسه تُملأ على الخادم — انظر award/svg_icons.py). يُشغَّل تلقائياً في update.bat."""
 import json
 import os
 import re

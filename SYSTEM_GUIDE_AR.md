@@ -67,7 +67,7 @@
 
 المتطلبات: PostgreSQL مثبّت وتعرف كلمة مرور `postgres`، وPython 3.12 (64-bit) مع «Add to PATH».
 
-1. **`1_setup.bat`** — يثبّت المكتبات، ينشئ قاعدة `iaj`، وينقل البيانات من Neon وينزّل الوسائط من Cloudinary إلى `media`.
+1. **`1_setup.bat`** — يثبّت المكتبات، ينشئ قاعدة `iaj`، وينقل البيانات من Neon ويحمّل الوسائط من Cloudinary إلى `media`.
 2. **`2_start.bat`** — تشغيل للتجربة: `http://localhost:8000`.
 3. **`3_autostart.bat`** (كمسؤول) — تشغيل تلقائي مع ويندوز + نسخة احتياطية يومية 2 فجراً + منع النوم.
 
@@ -102,7 +102,7 @@ pkg install -y git && git clone https://github.com/AcsVe/IAJ ~/iaj 2>/dev/null; 
 السكربت يقوم تلقائياً بـ:
 1. طلب **رمز GitHub** مرة واحدة وحفظه (`~/.iaj_github_token`).
 2. تثبيت الأدوات: `git · python · rclone · cloudflared · termux-api`.
-3. تنزيل الأكواد الأربعة إلى `~/iaj` و`~/attendance` و`~/rastkt` و`~/venues` (دون إبقاء الرمز داخل إعدادات git).
+3. تحميل الأكواد الأربعة إلى `~/iaj` و`~/attendance` و`~/rastkt` و`~/venues` (دون إبقاء الرمز داخل إعدادات git).
 4. تشغيل `setup` ثم `configure` لكل نظام (IAJ أولاً لأنه مصدر الرموز المشتركة) — فيُنشئ أزرار الشاشة في `~/.shortcuts` ويجلب رموز الأنفاق من Cloudflare.
 5. ربط **Google Drive** عبر `rclone config` (الاسم: `gdrive`) — الخطوة الوحيدة التي تتطلب تسجيل دخول.
 
@@ -129,7 +129,7 @@ pkg install -y git && git clone https://github.com/AcsVe/IAJ ~/iaj 2>/dev/null; 
 بأمر واحد عبر `setup_new_pc.bat` (في مستودع IAJ) الذي يُعيد بناء **الأنظمة الأربعة** معاً.
 
 **الخطوات:**
-1. نزّل `setup_new_pc.bat` على الجهاز الجديد (من المستودع، أو انسخه من هاتفك).
+1. حمِّل `setup_new_pc.bat` على الجهاز الجديد (من المستودع، أو انسخه من هاتفك).
 2. شغّله بزر اليمين ← **Run as administrator**. سيقوم بـ:
    - تثبيت الأدوات عبر `winget`: **Git · Python 3.12 · cloudflared · Google Drive for desktop**. (إن ثبّت أدوات جديدة سيطلب إغلاق النافذة وإعادة تشغيله لإكمال الباقي.)
    - طلب **رمز GitHub** مرة واحدة واستنساخ الأكواد إلى `C:\IAJ` و`C:\Att` و`C:\TKT` و`C:\Venue`.

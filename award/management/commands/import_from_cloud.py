@@ -9,7 +9,7 @@
 
 • يقرأ فقط من Neon (إلا إذا كانت جداولها قديمة: يضيف الأعمدة الناقصة فقط، بدون حذف أي بيانات).
 • يمسح القاعدة المحلية أولاً ثم ينسخ كل شيء: الإعدادات، الأخبار، الطلبات، المستخدمين، الصور المخزّنة.
-• بعده شغّل:  python manage.py localize_media   لتنزيل الصور والفيديو إلى مجلد media
+• بعده شغّل:  python manage.py localize_media   لتحميل الصور والفيديو إلى مجلد media
 """
 import os
 import tempfile
@@ -60,7 +60,7 @@ class Command(BaseCommand):
         fd, tmp = tempfile.mkstemp(suffix='.json')
         os.close(fd)
         try:
-            self.stdout.write('3/5 تنزيل البيانات من Neon (قد يأخذ دقيقة)...')
+            self.stdout.write('3/5 تحميل البيانات من Neon (قد يأخذ دقيقة)...')
             call_command('dumpdata', database='cloud', exclude=EXCLUDE, natural_foreign=True,
                          natural_primary=True, output=tmp, verbosity=0)
             self.stdout.write(f'    الحجم: {os.path.getsize(tmp) / 1024 / 1024:.1f} MB')

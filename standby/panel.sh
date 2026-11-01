@@ -130,7 +130,7 @@ overview() {
 mail_import() {   # the email settings of every system, prepared on the computer by phone_mail.bat (award site folder)
   local tmp remote="${REMOTE:-gdrive:IAJ-backups}"
   tmp="$(mktemp -d)"
-  say "$(T "تنزيل ملف إعدادات البريد من Drive" "Downloading the email settings file from Drive")"
+  say "$(T "تحميل ملف إعدادات البريد من Drive" "Downloading the email settings file from Drive")"
   rclone copy "$remote/phone/mail-settings.enc" "$tmp" 2>/dev/null
   if [ ! -f "$tmp/mail-settings.enc" ]; then
     rm -rf "$tmp"

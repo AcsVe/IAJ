@@ -13,7 +13,7 @@
     {% empty %}<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Noto+Kufi+Arabic:wght@700;800;900&display=swap" rel="stylesheet">
     {% endfor %}
 {% load static %}
-    {# أيقونات SVG مدمجة بدل خط Font Awesome الخارجي (تُرسم على السيرفر — award/svg_icons.py) #}
+    {# أيقونات SVG مدمجة بدل خط Font Awesome الخارجي (تُرسم على الخادم — award/svg_icons.py) #}
     <style>
         .fa, .fas, .far, .fab, .fa-solid, .fa-regular, .fa-brands { display: inline-block; font-style: normal; font-variant: normal; line-height: 1; text-rendering: auto; }
         svg.ic { display: inline-block; height: 1em; overflow: visible; vertical-align: -.125em; flex-shrink: 0; }
@@ -47,7 +47,7 @@
             --header-h: 90px;         /* التيكر + النافبار — يتحدد بالـ JS */
             --logo-d: {{ settings.logo_size|default:50 }}px;          /* حجم الشعار على الكمبيوتر */
             --logo-s: {{ settings.logo_size_scrolled|default:44 }}px; /* بعد النزول */
-            --logo-m: {{ settings.logo_size_mobile|default:38 }}px;   /* على الموبايل */
+            --logo-m: {{ settings.logo_size_mobile|default:38 }}px;   /* على الهاتف */
             font-size: {{ theme.font_size|default:"16px" }};
             --menu: var(--primary);
             --menu-rgb: {{ brand.menu_rgb|default:"10,22,50" }};
@@ -116,7 +116,7 @@
         .navbar-royal .navbar-toggler { border-color: rgba(255,255,255,0.6); padding: 6px 10px; background-color: rgba(var(--deep-2,10,22,50),0.55); }
         .navbar-royal .navbar-toggler:focus { box-shadow: 0 0 0 2px var(--gold); }
 
-        /* الموبايل: قائمة نحيفة بلون داكن متناسق مع شريط الأخبار */
+        /* الهاتف: قائمة نحيفة بلون داكن متناسق مع شريط الأخبار */
         @media (max-width: 991.98px) {
             .navbar-royal, .navbar-royal.scrolled, body.not-home .navbar-royal, .navbar-royal.menu-open {
                 background-color: var(--nav-dark) !important; background-image: var(--nav-glass) !important; padding: 6px 0 !important;
@@ -384,7 +384,7 @@
         }
         @media (prefers-reduced-motion: reduce) { .navbar-royal .nav-register, .navbar-royal .nav-register::before { animation: none; } }
 
-        /* منع أي عنصر من توسيع الصفحة عرضياً (كان يسبب شريط أبيض وانزياح على الموبايل) */
+        /* منع أي عنصر من توسيع الصفحة عرضياً (كان يسبب شريط أبيض وانزياح على الهاتف) */
         #pageContentWrapper, #siteFooter { overflow-x: hidden; max-width: 100%; }
         @supports (overflow: clip) { #pageContentWrapper, #siteFooter { overflow-x: clip; } }
 
@@ -814,7 +814,7 @@
     var track = document.getElementById('tickerTrack');
     var isHome = document.body.classList.contains('is-home');
 
-    // على الموبايل: حركات الدخول الجانبية تدفع المحتوى للخارج — نحولها لحركة من الأسفل
+    // على الهاتف: حركات الدخول الجانبية تدفع المحتوى للخارج — نحولها لحركة من الأسفل
     if (window.innerWidth < 992) {
         document.querySelectorAll('[data-aos]').forEach(function (el) {
             var a = el.getAttribute('data-aos') || '';
@@ -890,7 +890,7 @@
             op = Math.max(op, 0.97);
             ticker.style.backgroundColor = 'rgba(' + r + ',' + g + ',' + b + ',' + op + ')';
         }
-        // لمسة على الموبايل = إيقاف/تشغيل
+        // لمسة على الهاتف = إيقاف/تشغيل
         ticker.addEventListener('click', function (e) { if (!e.target.closest('a')) ticker.classList.toggle('paused'); });
         buildTicker(true);
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { buildTicker(true); });
@@ -940,7 +940,7 @@
     }
     function maxScroll() { return Math.max(0, document.documentElement.scrollHeight - window.innerHeight); }
     function goBottom() {
-        // نطلب أكبر قيمة والمتصفح يوقف عند الحافة، ثم نتأكد بعد انتهاء الحركة (لو كبرت الصفحة بتحميل صور)
+        // نطلب أكبر قيمة والمتصفح يوقف عند الحافة، ثم نتأكد بعد انتهاء الحركة (إذا كبرت الصفحة بتحميل صور)
         window.scrollTo({ top: document.documentElement.scrollHeight + 1000, behavior: 'smooth' });
         setTimeout(function () {
             if (window.pageYOffset < maxScroll() - 2) window.scrollTo({ top: document.documentElement.scrollHeight + 1000, behavior: 'smooth' });
@@ -998,7 +998,7 @@
             var cdd = document.getElementById('countdownDropdown');   // إخفاء بطاقة الوقت عند التمرير
             if (cdd && Math.abs(y - (window._lastY || 0)) > 8) cdd.classList.remove('show');
             window._lastY = y;
-            // الموبايل: إغلاق القائمة عند النزول أو الصعود في الصفحة
+            // الهاتف: إغلاق القائمة عند النزول أو الصعود في الصفحة
             var cEl = document.getElementById('navbarNav');
             if (cEl && cEl.classList.contains('show') && window.innerWidth < 992 && typeof bootstrap !== 'undefined'
                 && Math.abs(y - (window._menuOpenY || 0)) > 30) {
@@ -1007,7 +1007,7 @@
         });
     }
 
-    /* ---------- قائمة الموبايل ---------- */
+    /* ---------- قائمة الهاتف ---------- */
     var collapseEl = document.getElementById('navbarNav');
     if (collapseEl && navbar) {
         collapseEl.addEventListener('show.bs.collapse', function () { navbar.classList.add('menu-open'); window._menuOpenY = window.pageYOffset; });
@@ -1060,7 +1060,7 @@
     }
     {% endif %}
 
-    /* ---------- Flip cards: لمسة على الموبايل ---------- */
+    /* ---------- Flip cards: لمسة على الهاتف ---------- */
     document.querySelectorAll('.flip-card').forEach(function (card) {
         card.setAttribute('tabindex', '0');
         card.addEventListener('click', function () { card.classList.toggle('flipped'); });
@@ -1103,7 +1103,7 @@
         });
     }
 
-    /* عنوان الجائزة على الموبايل: سطر واحد دائماً — يصغر الخط حتى يتسع (حتى مع تكبير خط الهاتف) */
+    /* عنوان الجائزة على الهاتف: سطر واحد دائماً — يصغر الخط حتى يتسع (حتى مع تكبير خط الهاتف) */
     function fitMobileTitle() {
         var t = document.querySelector('.nav-award-title-mobile');
         if (!t || !t.offsetParent) return;

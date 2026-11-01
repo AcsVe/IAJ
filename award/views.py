@@ -21,7 +21,7 @@ def get_or_none(model):
 
 
 def _site_objects():
-    """الإعدادات العامة (من الذاكرة المؤقتة) — تُنشأ تلقائياً أول مرة لو مش موجودة"""
+    """الإعدادات العامة (من الذاكرة المؤقتة) — تُنشأ تلقائياً أول مرة إن لم تكن موجودة"""
     b = get_site_bundle()
     if not all(b[k] for k in ('settings', 'theme', 'content', 'footer', 'hero_card')):
         for m in (SiteSetting, ThemeSetting, HomeContent, FooterContent, HeroCard):

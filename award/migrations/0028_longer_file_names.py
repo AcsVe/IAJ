@@ -82,7 +82,7 @@ class Migration(migrations.Migration):
             name="hero_side_image",
             field=models.ImageField(
                 blank=True,
-                help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الموبايل). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
+                help_text="تظهر بجانب صورة الخلفية الرئيسية (يسار على الكمبيوتر، وتحتها على الهاتف). اتركها فارغة لعرض الصورة الرئيسية بعرض كامل.",
                 max_length=500,
                 null=True,
                 upload_to="site_media/",

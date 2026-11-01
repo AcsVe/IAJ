@@ -1,5 +1,5 @@
 """
-الرجوع من الهاتف إلى السيرفر: نقل بيانات الهاتف (من Google Drive) إلى قاعدة السيرفر.
+الرجوع من الهاتف إلى الخادم: نقل بيانات الهاتف (من Google Drive) إلى قاعدة الخادم.
 
     python manage.py standby_return
 
@@ -25,7 +25,7 @@ def marker_path():
 
 
 class Command(BaseCommand):
-    help = 'نقل بيانات الهاتف إلى السيرفر بعد انتهاء الطوارئ'
+    help = 'نقل بيانات الهاتف إلى الخادم بعد انتهاء الطوارئ'
 
     def handle(self, *args, **opts):
         root, marker = marker_path()
@@ -50,4 +50,4 @@ class Command(BaseCommand):
         call_command('restore_site', path, media=True, yes=True)
         with open(marker, 'w', encoding='utf-8') as fh:
             fh.write(f'server {timezone.localtime(timezone.now()):%Y-%m-%d_%H%M%S}\n')
-        self.stdout.write(self.style.SUCCESS('✓ بيانات الهاتف صارت على السيرفر'))
+        self.stdout.write(self.style.SUCCESS('✓ بيانات الهاتف أصبحت على الخادم'))
