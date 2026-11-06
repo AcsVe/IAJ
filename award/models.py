@@ -1915,3 +1915,65 @@ class SimulationRun(models.Model):
         verbose_name = "تشغيل محاكاة"
         verbose_name_plural = "تقارير المحاكاة"
         ordering = ['-created_at']
+
+
+# ========================================= #
+#   بوابة أنظمة العمل (الصفحة الرئيسية /)     #
+# ========================================= #
+
+WORK_PORTAL_ICONS = [(f'fa-{n}', n) for n in (
+    'headset laptop fingerprint calendar-week bell file-signature user-clock clipboard-list grip globe book '
+    'book-open chalkboard-user user-graduate users school bus calendar-days clock chart-line chart-pie envelope '
+    'print folder-open wrench screwdriver-wrench shield-halved gear id-card money-bill-wave building door-open '
+    'video camera microphone qrcode list-check box hand-holding-heart trophy award star stethoscope utensils').split()]
+
+
+class WorkPortalSetting(models.Model):
+    """نصوص الصفحة الرئيسية (بوابة أنظمة العمل) — سجل واحد"""
+    title_ar = models.CharField(max_length=120, default='بوابة أنظمة العمل', verbose_name="العنوان (عربي)")
+    title_en = models.CharField(max_length=120, default='Work Systems Portal', verbose_name="العنوان (إنجليزي)")
+    subtitle_ar = models.CharField(max_length=200, default='جميع أنظمة العمل في مكان واحد', verbose_name="العنوان الفرعي (عربي)")
+    subtitle_en = models.CharField(max_length=200, default='All work systems in one place', verbose_name="العنوان الفرعي (إنجليزي)")
+    hint_ar = models.CharField(max_length=200, blank=True, default='اختر نظاماً للتعرّف عليه ثم ادخل إليه مباشرة',
+                               verbose_name="الإرشاد فوق البطاقات (عربي)", help_text="فارغ = لا يظهر")
+    hint_en = models.CharField(max_length=200, blank=True, default='Choose a system to learn about it, then sign in directly',
+                               verbose_name="الإرشاد فوق البطاقات (إنجليزي)")
+    show_ticker = models.BooleanField(default=True, verbose_name="إظهار الشريط الإخباري؟",
+                                      help_text="محتوى الشريط وسرعته وألوانه من لوحة تحكم نظام القاعات ← الشريط الإعلاني.")
+    show_award_link = models.BooleanField(default=True, verbose_name="إظهار رابط موقع الجائزة أسفل الصفحة؟")
+
+    class Meta:
+        verbose_name = "إعدادات الصفحة الرئيسية (البوابة)"
+        verbose_name_plural = "إعدادات الصفحة الرئيسية (البوابة)"
+
+    def __str__(self):
+        return "إعدادات بوابة أنظمة العمل"
+
+
+class WorkPortalSystem(models.Model):
+    """بطاقة نظام في الصفحة الرئيسية"""
+    name_ar = models.CharField(max_length=120, verbose_name="اسم النظام (عربي)")
+    name_en = models.CharField(max_length=120, verbose_name="اسم النظام (إنجليزي)")
+    url = models.URLField(max_length=300, verbose_name="رابط الدخول", help_text="مثال: https://1.iajaward.org")
+    icon = models.CharField(max_length=40, choices=WORK_PORTAL_ICONS, default='fa-grip', verbose_name="الأيقونة")
+    color = models.CharField(max_length=7, default='#60a5fa', verbose_name="لون البطاقة")
+    tagline_ar = models.CharField(max_length=200, verbose_name="سطر تعريفي (عربي)")
+    tagline_en = models.CharField(max_length=200, verbose_name="سطر تعريفي (إنجليزي)")
+    about_ar = models.TextField(verbose_name="عن النظام (عربي)")
+    about_en = models.TextField(verbose_name="عن النظام (إنجليزي)")
+    steps_ar = models.TextField(blank=True, default='', verbose_name="آلية العمل (عربي)", help_text="كل خطوة في سطر.")
+    steps_en = models.TextField(blank=True, default='', verbose_name="آلية العمل (إنجليزي)", help_text="كل خطوة في سطر.")
+    order = models.IntegerField(default=0, verbose_name="الترتيب")
+    is_active = models.BooleanField(default=True, verbose_name="ظاهر؟")
+
+    class Meta:
+        verbose_name = "نظام في البوابة"
+        verbose_name_plural = "أنظمة البوابة (بطاقات الصفحة الرئيسية)"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return self.name_ar
+
+    def steps(self, lang):
+        text = self.steps_en if lang == 'en' else self.steps_ar
+        return [s.strip() for s in (text or '').splitlines() if s.strip()]

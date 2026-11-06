@@ -228,7 +228,7 @@ else:
 REQUIRE_EMAIL_VERIFICATION = os.environ.get('REQUIRE_EMAIL_VERIFICATION', 'False') == 'True'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/portal/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/award/'
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3   # روابط التفعيل/الاستعادة صالحة 3 أيام
 AUTHENTICATION_BACKENDS = ['award.auth.EmailOrUsernameBackend']
 

@@ -720,3 +720,72 @@ admin.ModelAdmin.formfield_for_dbfield = _color_formfield
 admin.ModelAdmin.save_on_top = True   # أزرار المعاينة والحفظ أعلى النموذج أيضاً (ومثبّتة عند التمرير)
 
 from . import admin_portal  # noqa: E402,F401  التسجيل والتحكيم
+
+
+# ───────────── بوابة أنظمة العمل (الصفحة الرئيسية /) ─────────────
+from .models import WorkPortalSetting, WorkPortalSystem  # noqa: E402
+import re as _re  # noqa: E402
+
+
+@admin.register(WorkPortalSetting)
+class WorkPortalSettingAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('نصوص الصفحة', {
+            'fields': (('title_ar', 'title_en'), ('subtitle_ar', 'subtitle_en'), ('hint_ar', 'hint_en')),
+            'description': mark_safe('بطاقات الأنظمة نفسها من: <a href="/admin/award/workportalsystem/"><b>أنظمة البوابة</b></a>.'),
+        }),
+        ('العرض', {'fields': ('show_ticker', 'show_award_link')}),
+    )
+
+    def has_add_permission(self, request):
+        return not WorkPortalSetting.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+class WorkPortalSystemForm(forms.ModelForm):
+    class Meta:
+        model = WorkPortalSystem
+        fields = '__all__'
+        widgets = {
+            'color': ColorWidget(),
+            'url': forms.URLInput(attrs={'dir': 'ltr', 'style': 'width:28em'}),
+            'name_en': forms.TextInput(attrs={'dir': 'ltr'}),
+            'tagline_en': forms.TextInput(attrs={'dir': 'ltr', 'style': 'width:36em'}),
+            'tagline_ar': forms.TextInput(attrs={'style': 'width:36em'}),
+            'about_ar': forms.Textarea(attrs={'rows': 3}),
+            'about_en': forms.Textarea(attrs={'rows': 3, 'dir': 'ltr'}),
+            'steps_ar': forms.Textarea(attrs={'rows': 5}),
+            'steps_en': forms.Textarea(attrs={'rows': 5, 'dir': 'ltr'}),
+        }
+
+    def clean_color(self):
+        c = (self.cleaned_data.get('color') or '').strip()
+        if not _re.fullmatch(r'#[0-9a-fA-F]{6}', c):
+            raise forms.ValidationError('اختر لوناً من المربع (مثل #60a5fa).')
+        return c
+
+
+@admin.register(WorkPortalSystem)
+class WorkPortalSystemAdmin(admin.ModelAdmin):
+    form = WorkPortalSystemForm
+    list_display = ('name_ar', 'name_en', 'url', 'order', 'is_active')
+    list_display_links = ('name_ar',)
+    list_editable = ('order', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name_ar', 'name_en', 'url', 'tagline_ar', 'tagline_en')
+    ordering = ('order', 'id')
+    fieldsets = (
+        ('البطاقة', {'fields': (('name_ar', 'name_en'), 'url', ('icon', 'color'), 'tagline_ar', 'tagline_en', ('order', 'is_active'))}),
+        ('نافذة التفاصيل', {'fields': ('about_ar', 'about_en', 'steps_ar', 'steps_en')}),
+    )
+    actions = ['make_active', 'make_inactive']
+
+    @admin.action(description='إظهار الأنظمة المحددة')
+    def make_active(self, request, qs):
+        qs.update(is_active=True)
+
+    @admin.action(description='إخفاء الأنظمة المحددة')
+    def make_inactive(self, request, qs):
+        qs.update(is_active=False)

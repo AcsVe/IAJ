@@ -4,7 +4,9 @@
   <a href="{% url 'admin_site_status' %}"><b>🔎 حالة الموقع</b><span>ما الظاهر وما المخفي ولماذا — مع رابط الإصلاح</span></a>
   <a href="{% url 'admin_roles_guide' %}"><b>🧭 دليل الأدوار والمصطلحات</b><span>من يدير ماذا، وأين، ومعنى كل مسمى</span></a>
   {% if user.is_superuser or perms.award.view_submission %}<a href="/manage/"><b>🏆 لوحة إدارة الجائزة</b><span>الطلبات والتحكيم والنتائج والإعلانات (مدير الجائزة)</span></a>{% endif %}
-  <a href="/" target="_blank" rel="noopener"><b>🌐 عرض الموقع</b><span>يفتح الموقع كما يراه الزوار</span></a>
+  <a href="/" target="_blank" rel="noopener"><b>🌐 الصفحة الرئيسية</b><span>بوابة أنظمة العمل كما يراها الزوار</span></a>
+  <a href="/award/" target="_blank" rel="noopener"><b>🏅 موقع الجائزة</b><span>يفتح موقع الجائزة كما يراه الزوار</span></a>
+  <a href="/admin/award/workportalsystem/"><b>🧩 بطاقات الصفحة الرئيسية</b><span>أنظمة البوابة: الأسماء والروابط والأوصاف والترتيب والإظهار</span></a>
 </div>
 {{ block.super }}
 {% endblock %}

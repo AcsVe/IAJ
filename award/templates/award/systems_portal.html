@@ -150,6 +150,8 @@
   .go small{font-weight:700;opacity:.8;direction:ltr}
 
   .foot{position:relative;z-index:1;text-align:center;color:rgba(226,236,255,.6);font-size:.85rem;padding:8px 16px 26px}
+  .foot a{color:rgba(226,236,255,.85);text-decoration:none;border-bottom:1px dotted rgba(226,236,255,.5)}
+  .foot a:hover{color:#fff}
 
   @media (max-width:640px){
     :root{--tk-h:34px}
@@ -184,13 +186,13 @@
       <i class="fa-solid fa-globe" aria-hidden="true"></i><span>{{ t.switch }}</span></a>
   </header>
 
-  <p class="hint"><i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>{{ t.hint }}</p>
+  {% if t.hint %}<p class="hint"><i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>{{ t.hint }}</p>{% endif %}
 
   <section class="grid" aria-label="{{ t.title }}">
     {% for s in systems %}
     <button type="button" class="card" style="--c:{{ s.color }}" data-open="sys-{{ s.key }}" aria-haspopup="dialog" aria-controls="sys-{{ s.key }}">
       <span class="top"><span class="sicon" aria-hidden="true"><i class="fa-solid {{ s.icon }}"></i></span>
-        <span class="host" aria-hidden="true">{{ s.url|slice:"8:" }}</span></span>
+        <span class="host" aria-hidden="true">{{ s.host }}</span></span>
       <h2>{{ s.name }}</h2>
       <p class="tag">{{ s.tagline }}</p>
       <span class="more">{{ t.details }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
@@ -215,12 +217,12 @@
     <h3><i class="fa-solid fa-list-check" aria-hidden="true"></i>{{ t.how }}</h3>
     <ol class="steps">{% for st in s.steps %}<li>{{ st }}</li>{% endfor %}</ol>
     <a class="go" href="{{ s.url }}" target="_blank" rel="noopener">
-      <span>{{ t.open }}</span><small>{{ s.url|slice:"8:" }}</small><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      <span>{{ t.open }}</span><small>{{ s.host }}</small><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
   </div>
 </dialog>
 {% endfor %}
 
-<footer class="foot">© <span id="yr"></span> · iajaward.org</footer>
+<footer class="foot">© <span id="yr"></span> · iajaward.org{% if portal.show_award_link %} · <a href="{% url 'home' %}">{{ t.award }}</a>{% endif %}</footer>
 
 <script>
 (function () {
@@ -302,7 +304,7 @@
   }
   // يُبنى بعد تحميل الخط: القياس بخط بديل أعرض كان يعطي مساراً أقصر من الشاشة
   var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  Promise.all([fetch('{% url "systems_ticker" %}', {headers: {'Accept': 'application/json'}})
+  if ({{ portal.show_ticker|yesno:"true,false" }}) Promise.all([fetch('{% url "systems_ticker" %}', {headers: {'Accept': 'application/json'}})
                  .then(function (r) { return r.ok ? r.json() : null; }), fontsReady])
     .then(function (res) { build(res[0]); }).catch(function () {});
 })();

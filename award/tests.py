@@ -184,7 +184,7 @@ class RegistrationFlowTest(TestCase):
         # 8) الإشعارات والجرس
         r = c.get('/portal/notifications/')
         self.assertContains(r, 'مبارك')
-        r = c.get('/')
+        r = c.get('/award/')
         self.assertContains(r, 'nav-bell-n')
 
     def test_login_logout_and_admin_pages(self):
@@ -303,7 +303,7 @@ class CyclesArchiveTest(TestCase):
         TimelineEvent.objects.create(title='خطوة حالية', cycle=self.cur)
         from .site_cache import clear_home_bundle
         clear_home_bundle()
-        r = self.client.get('/')
+        r = self.client.get('/award/')
         self.assertContains(r, 'خطوة حالية')
         self.assertNotContains(r, 'خطوة قديمة')
         self.assertContains(r, 'استقبال طلبات الدورة 14')
@@ -398,7 +398,7 @@ class ManagerConsoleTest(TestCase):
                                           'youtube': 'https://youtu.be/dQw4w9WgXcQ'})
         a = Announcement.objects.get(title='إعلان الفائزين')
         self.assertEqual(a.media.count(), 2)
-        self.assertContains(self.client_class().get('/'), 'إعلان الفائزين')
+        self.assertContains(self.client_class().get('/award/'), 'إعلان الفائزين')
         self.assertContains(self.client_class().get(f'/announcements/{a.pk}/'), 'dQw4w9WgXcQ')
         # تصدير CSV و Excel
         r = c.post('/manage/submissions/', {'ids': [self.sub.pk], 'bulk': 'export_csv'})
