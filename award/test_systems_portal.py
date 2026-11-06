@@ -109,6 +109,32 @@ class SystemsPortalTest(TestCase):
         r = self.client.post('/admin/logout/')
         self.assertEqual((r.status_code, r['Location']), (302, '/'))
 
+    def test_why_page(self):
+        from award.models import WorkPortalSystem
+        r = self.client.get('/why/')
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertIn('لماذا أنظمة العمل؟', html)
+        self.assertEqual(html.count('class="why"'), 8)
+        self.assertEqual(html.count('class="why-result"'), 8)
+        self.assertIn('النتيجة: أعطال تُحَلّ أسرع', html)
+        for u in URLS:
+            self.assertIn(f'href="{u}"', html)
+        self.assertNotRegex(self._visible_text(html), TECH)
+        en = self.client.get('/why/?lang=en').content.decode()
+        self.assertIn('lang="en" dir="ltr"', en)
+        self.assertIn('Result: faults are fixed faster', en)
+        self.assertNotRegex(self._visible_text(en), TECH)
+        # التعديل من لوحة التحكم يظهر، والفارغ يرجع إلى السطر التعريفي وآلية العمل
+        WorkPortalSystem.objects.filter(url='https://5.iajaward.org').update(
+            why_title_ar='', why_points_ar='', why_result_ar='')
+        html = self.client.get('/why/?lang=ar').content.decode()
+        self.assertEqual(html.count('class="why-result"'), 7)
+        self.assertIn('إدارة مواعيد الجرس المدرسي من مكان واحد', html)
+        # روابط بين الصفحتين
+        self.assertIn('href="/why/"', self.client.get('/').content.decode())
+        self.assertIn('href="/"', html)
+
     def test_admin_named_for_the_whole_site(self):
         self.client.logout()
         html = self.client.get('/admin/login/').content.decode()

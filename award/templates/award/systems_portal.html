@@ -1,204 +1,8 @@
-{% load static %}<!DOCTYPE html>
-<html lang="{{ lang }}" dir="{{ dir }}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{{ t.title }}</title>
-<meta name="description" content="{{ t.subtitle }}">
-<meta name="theme-color" content="#0a2a66">
-<link rel="icon" type="image/svg+xml" href="{% static 'award/portal-icon.svg' %}">
-<link rel="apple-touch-icon" href="{% static 'award/portal-icon.svg' %}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --primary:#0C67EC; --primary-dark:#0847B0; --primary-deep:#0a3a8a; --primary-light:#3D8EF5; --navy:#071a3d;
-    --glass:rgba(255,255,255,.09); --glass-strong:rgba(255,255,255,.14); --glass-line:rgba(255,255,255,.22);
-    --text:#f4f8ff; --muted:rgba(226,236,255,.78); --tk-h:38px;
-  }
-  *{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
-  /* صفحة واحدة بطول الشاشة دون تمرير: البطاقات تتقاسم المساحة المتبقية، والتمرير داخل الصفحة فقط في الشاشات الصغيرة جداً */
-  html,body{height:100%}
-  body{margin:0;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;font-family:'Tajawal','Segoe UI',Arial,sans-serif;color:var(--text);line-height:1.6;
-    background:radial-gradient(1200px 700px at 85% -10%,#1d5fd6 0%,transparent 60%),
-               radial-gradient(900px 600px at -10% 110%,#0b4fb8 0%,transparent 55%),
-               linear-gradient(160deg,#04122e 0%,var(--navy) 45%,#0a2a66 100%);
-    background-attachment:fixed;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
-  a{color:inherit}
-  i[class*="fa-"]{display:inline-flex;align-items:center;justify-content:center;line-height:1;font-style:normal}
-  i[class*="fa-"] svg{width:1em;height:1em;display:block}
-  /* هالات ضوئية متحركة خلف الزجاج */
-  .orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-  .orbs span{position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;animation:drift 22s ease-in-out infinite alternate}
-  .orbs span:nth-child(1){width:420px;height:420px;background:#2f7bff;top:8%;inset-inline-start:-120px}
-  .orbs span:nth-child(2){width:360px;height:360px;background:#7c5cff;bottom:-80px;inset-inline-end:-60px;animation-duration:26s}
-  .orbs span:nth-child(3){width:280px;height:280px;background:#13c3e6;top:45%;left:45%;opacity:.28;animation-duration:30s}
-  @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,-40px) scale(1.15)}}
-
-  /* ── الشريط الإخباري (أسلوب نظام القاعات وإعداداته) ── */
-  /* الشريط نفسه من اليسار إلى اليمين دائماً: حركة المسار محسوبة بالبكسل من الحافة اليسرى (اتجاه كل خبر يحدده dir="auto") */
-  #portalTicker{direction:ltr;position:fixed;top:0;left:0;right:0;z-index:60;height:var(--tk-h);overflow:hidden;display:none;align-items:center;
-    background:rgba(7,26,61,.55);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);
-    border-bottom:1px solid rgba(255,255,255,.14);box-shadow:0 4px 18px rgba(0,0,0,.25);--tk-bg:rgba(7,26,61,.9)}
-  #portalTicker[data-tone="dark"]{background:rgba(255,255,255,.88);border-bottom-color:#e3e9f2;--tk-bg:#fff}
-  #portalTicker::before,#portalTicker::after{content:"";position:absolute;top:0;bottom:0;width:56px;z-index:1;pointer-events:none}
-  #portalTicker::before{left:0;background:linear-gradient(to right,var(--tk-bg),transparent)}
-  #portalTicker::after{right:0;background:linear-gradient(to left,var(--tk-bg),transparent)}
-  #portalTicker .tk-track{display:flex;flex:none;width:max-content;direction:ltr;will-change:transform;
-    animation-timing-function:linear;animation-iteration-count:infinite}
-  #portalTicker:hover .tk-track{animation-play-state:paused}
-  #portalTicker .tk-seg{display:flex;flex:none;align-items:center;white-space:nowrap}
-  #portalTicker .tk-item{flex:none;color:var(--ticker-text,#fff);font-weight:800;font-size:1rem;padding:0 23px;
-    white-space:nowrap!important;display:inline-block!important}
-  #portalTicker .tk-item *{white-space:nowrap!important;display:inline!important}
-  #portalTicker .tk-item a{color:inherit;text-decoration:underline}
-  #portalTicker .tk-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--ticker-text,#fff);opacity:.5}
-  #portalTicker .shadow-light .tk-item{text-shadow:0 1px 3px rgba(0,0,0,.6),0 0 2px rgba(0,0,0,.45)}
-  #portalTicker .shadow-strong .tk-item{text-shadow:0 2px 5px rgba(0,0,0,.85),0 0 6px rgba(0,0,0,.7)}
-  #portalTicker[data-tone="dark"] .tk-item{text-shadow:none!important}
-  @keyframes tk-ltr{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  @keyframes tk-rtl{from{transform:translateX(-50%)}to{transform:translateX(0)}}
-  @keyframes tk-pulse{0%,100%{opacity:1}50%{opacity:.35}}
-  #portalTicker .tk-track.dir-ltr{animation-name:tk-ltr}
-  #portalTicker .tk-track.dir-rtl{animation-name:tk-rtl}
-  #portalTicker .tk-track.dir-ltr.pulse-on{animation-name:tk-ltr,tk-pulse}
-  #portalTicker .tk-track.dir-rtl.pulse-on{animation-name:tk-rtl,tk-pulse}
-  body.has-ticker{padding-top:var(--tk-h)}
-
-  /* ── الصفحة ── */
-  .page{position:relative;z-index:1;flex:1 1 auto;min-height:0;width:100%;max-width:1280px;margin:0 auto;padding:16px 18px 4px;
-    display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
-  .hero{flex:none;display:flex;align-items:center;gap:16px;padding:14px 20px;border-radius:22px;
-    background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.05));border:1px solid var(--glass-line);
-    -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
-    box-shadow:0 20px 50px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25)}
-  .emblem{flex:none;width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:1.45rem;color:#fff;
-    background:linear-gradient(135deg,var(--primary-light),var(--primary-dark));
-    box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 8px 26px rgba(12,103,236,.6),0 0 40px rgba(61,142,245,.45)}
-  .hero-text{flex:1;min-width:0}
-  .hero h1{margin:0;font-size:clamp(1.25rem,2.8vw,1.95rem);font-weight:900;line-height:1.25;
-    background:linear-gradient(90deg,#fff,#cfe2ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .hero p{margin:2px 0 0;color:var(--muted);font-size:.98rem;font-weight:500}
-  .lang-btn{flex:none;display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:999px;text-decoration:none;
-    font-weight:800;font-size:.95rem;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);
-    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:background .2s,box-shadow .2s,transform .2s}
-  .lang-btn:hover,.lang-btn:focus-visible{background:rgba(255,255,255,.22);box-shadow:0 0 22px rgba(120,170,255,.55);transform:translateY(-1px);outline:none}
-  .hint{flex:none;margin:12px 4px 10px;color:var(--muted);font-weight:700;font-size:.98rem;display:flex;align-items:center;gap:8px}
-  .hint i{color:#9cc3ff}
-
-  .grid{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(104px,1fr);gap:16px;
-    padding:6px 2px 8px}
-  /* البطاقة حاوية: ما يظهر فيها يتبع حجمها (السطر التعريفي ثم «التفاصيل» يختفيان في البطاقة الصغيرة) */
-  .card{--c:#60a5fa;position:relative;display:flex;flex-direction:column;gap:8px;text-align:start;width:100%;height:100%;min-height:0;
-    container-type:size;padding:clamp(12px,2.2vh,20px) clamp(12px,1.6vw,20px);border-radius:22px;cursor:pointer;color:var(--text);font:inherit;
-    background:linear-gradient(150deg,rgba(255,255,255,.15),rgba(255,255,255,.04));border:1px solid var(--glass-line);
-    -webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);
-    box-shadow:0 12px 34px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.22);
-    transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;overflow:hidden;animation:rise .5s ease both}
-  .card::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
-    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.15) 50%,transparent 70%);
-    background-size:260% 100%;background-position:100% 0;transition:background-position .8s ease}
-  .card::after{content:"";position:absolute;inset:auto -30% -55% auto;width:220px;height:220px;border-radius:50%;
-    background:var(--c);filter:blur(60px);opacity:.28;pointer-events:none;transition:opacity .25s}
-  .card:hover,.card:focus-visible{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c) 70%,#fff);outline:none;
-    box-shadow:0 18px 44px rgba(0,0,0,.38),0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent),0 0 36px color-mix(in srgb,var(--c) 55%,transparent),
-      inset 0 1px 0 rgba(255,255,255,.3)}
-  .card:hover::before,.card:focus-visible::before{background-position:0 0}
-  .card:hover::after,.card:focus-visible::after{opacity:.5}
-  .card .sicon{flex:none;width:clamp(40px,6.5vh,54px);height:clamp(40px,6.5vh,54px);border-radius:15px;display:grid;place-items:center;font-size:clamp(1.1rem,2.6vh,1.4rem);color:#fff;
-    background:linear-gradient(135deg,color-mix(in srgb,var(--c) 90%,#fff),color-mix(in srgb,var(--c) 70%,#000));
-    box-shadow:0 8px 22px color-mix(in srgb,var(--c) 55%,transparent),0 0 26px color-mix(in srgb,var(--c) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.4)}
-  .card h2{margin:2px 0 0;font-size:clamp(1rem,1.5vw,1.2rem);font-weight:900;line-height:1.3}
-  .card .tag{margin:0;color:var(--muted);font-size:.92rem;line-height:1.5;flex:1 1 auto;min-height:0;overflow:hidden;
-    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-  .card .more{margin-top:auto}
-  .card .more{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.88rem;color:color-mix(in srgb,var(--c) 70%,#fff)}
-  html[dir=rtl] .card .more i{transform:scaleX(-1)}
-  .card .top{flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-  .card .host{font-size:.72rem;font-weight:800;letter-spacing:.02em;direction:ltr;
-    padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:var(--muted)}
-  /* بعد قواعد الإظهار حتى تغلبها */
-  @container (max-height:178px){.card .tag{display:none}}
-  @container (max-height:132px){.card .more,.card .host{display:none}}
-  @container (max-width:200px){.card .host{display:none}}
-  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  .grid .card:nth-child(2){animation-delay:.04s}.grid .card:nth-child(3){animation-delay:.08s}.grid .card:nth-child(4){animation-delay:.12s}
-  .grid .card:nth-child(5){animation-delay:.16s}.grid .card:nth-child(6){animation-delay:.2s}.grid .card:nth-child(7){animation-delay:.24s}
-  .grid .card:nth-child(8){animation-delay:.28s}
-
-  /* ── نافذة التفاصيل ── */
-  dialog.sys{--c:#60a5fa;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:0;border-radius:24px;color:var(--text);
-    background:linear-gradient(155deg,rgba(23,52,110,.92),rgba(8,24,58,.94));
-    -webkit-backdrop-filter:blur(22px) saturate(160%);backdrop-filter:blur(22px) saturate(160%);
-    box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.18),0 0 60px color-mix(in srgb,var(--c) 40%,transparent);overflow:auto}
-  dialog.sys::backdrop{background:rgba(3,10,28,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-  dialog.sys[open]{animation:pop .22s ease-out}
-  @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
-  .sys-head{display:flex;align-items:center;gap:14px;padding:22px 22px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
-  .sys-head .sicon{flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center;font-size:1.35rem;color:#fff;
-    background:linear-gradient(135deg,color-mix(in srgb,var(--c) 90%,#fff),color-mix(in srgb,var(--c) 70%,#000));
-    box-shadow:0 0 26px color-mix(in srgb,var(--c) 55%,transparent)}
-  .sys-head h2{margin:0;font-size:1.3rem;font-weight:900;line-height:1.3;flex:1}
-  .sys-head p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
-  .x{flex:none;width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;
-    font-size:1rem;cursor:pointer;display:grid;place-items:center}
-  .x:hover,.x:focus-visible{background:rgba(255,255,255,.18);outline:none}
-  .sys-body{padding:16px 22px 22px}
-  .sys-body h3{margin:6px 0 6px;font-size:.98rem;font-weight:800;color:color-mix(in srgb,var(--c) 65%,#fff);display:flex;align-items:center;gap:8px}
-  .sys-body p{margin:0 0 12px;color:#e6eeff}
-  .steps{list-style:none;margin:0 0 18px;padding:0;counter-reset:s;display:grid;gap:8px}
-  .steps li{counter-increment:s;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;
-    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#e6eeff}
-  .steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:.85rem;
-    color:#fff;background:color-mix(in srgb,var(--c) 75%,#000);box-shadow:0 0 14px color-mix(in srgb,var(--c) 50%,transparent)}
-  .go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:50px;border-radius:15px;text-decoration:none;
-    font-weight:900;font-size:1.02rem;color:#fff;
-    background:linear-gradient(135deg,color-mix(in srgb,var(--c) 85%,#fff),color-mix(in srgb,var(--c) 65%,#000));
-    box-shadow:0 10px 26px color-mix(in srgb,var(--c) 45%,transparent),0 0 30px color-mix(in srgb,var(--c) 40%,transparent);
-    transition:transform .2s,box-shadow .2s}
-  .go:hover,.go:focus-visible{transform:translateY(-2px);outline:none;box-shadow:0 14px 32px color-mix(in srgb,var(--c) 55%,transparent),0 0 44px color-mix(in srgb,var(--c) 55%,transparent)}
-  html[dir=rtl] .go i{transform:scaleX(-1)}
-  .go small{font-weight:700;opacity:.8;direction:ltr}
-
-  .foot{flex:none;position:relative;z-index:1;text-align:center;color:rgba(226,236,255,.6);font-size:.82rem;padding:4px 16px 10px}
-  .foot a{color:rgba(226,236,255,.85);text-decoration:none;border-bottom:1px dotted rgba(226,236,255,.5)}
-  .foot a:hover{color:#fff}
-
-  @media (max-width:900px){
-    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  }
-  @media (max-width:640px){
-    :root{--tk-h:34px}
-    #portalTicker .tk-item{font-size:.88rem;padding:0 15px}
-    #portalTicker::before,#portalTicker::after{width:24px}
-    .page{padding:10px 12px 2px}
-    .hero{padding:10px 12px;border-radius:18px;gap:10px}
-    .emblem{width:42px;height:42px;font-size:1.1rem;border-radius:13px}
-    .hero h1{font-size:1.15rem}
-    .hero p{font-size:.8rem}
-    .lang-btn{height:34px;padding:0 11px;font-size:.85rem;gap:6px}
-    .hint{margin:8px 2px 6px;font-size:.84rem}
-    .grid{gap:10px;grid-auto-rows:minmax(96px,1fr);padding:4px 0 6px}
-    .card{gap:6px;border-radius:18px}
-    .card h2{font-size:.98rem}
-    .sys-head{padding:18px 16px 12px}.sys-body{padding:14px 16px 18px}
-  }
-  @media (max-height:700px){ .hint{display:none} }
-  /* أصغر الهواتف (مثل 320×568): لا تتسع البطاقات الثماني، فتطول قليلاً مع تمرير بسيط بدل قصّ الأسماء */
-  @media (max-width:640px) and (max-height:600px){ .grid{grid-auto-rows:minmax(118px,1fr)} }
-  @media (prefers-reduced-motion:reduce){
-    .orbs span,.card,dialog.sys[open]{animation:none}
-    .card,.card::before,.go,.lang-btn{transition:none}
-    #portalTicker .tk-track{animation-duration:120s!important}
-  }
-</style>
-</head>
-<body>
-<div class="orbs" aria-hidden="true"><span></span><span></span><span></span></div>
-<div id="portalTicker" aria-hidden="true"><div class="tk-track" id="tkTrack"></div></div>
-
+{% extends "award/portal_base.html" %}
+{# الصفحة الرئيسية: بطاقات الأنظمة بطول الشاشة دون تمرير #}
+{% block body_class %}fit{% endblock %}
+{% block foot_links %} · <a href="{% url 'portal_why' %}">{{ t.why }}</a>{% endblock %}
+{% block page %}
 <main class="page">
   <header class="hero">
     <div class="emblem" aria-hidden="true"><i class="fa-solid fa-grip"></i></div>
@@ -206,6 +10,7 @@
       <h1>{{ t.title }}</h1>
       <p>{{ t.subtitle }}</p>
     </div>
+    <a class="lang-btn why-btn" href="{% url 'portal_why' %}"><i class="fa-solid fa-circle-question" aria-hidden="true"></i><span>{{ t.why }}</span></a>
     <a class="lang-btn" href="?lang={{ t.switch_lang }}" lang="{{ t.switch_lang }}" hreflang="{{ t.switch_lang }}">
       <i class="fa-solid fa-globe" aria-hidden="true"></i><span>{{ t.switch }}</span></a>
   </header>
@@ -245,13 +50,10 @@
   </div>
 </dialog>
 {% endfor %}
-
-<footer class="foot">© <span id="yr"></span> · iajaward.org{% if portal.show_award_link %} · <a href="{% url 'home' %}">{{ t.award }}</a>{% endif %}</footer>
-
+{% endblock %}
+{% block js %}
 <script>
 (function () {
-  document.getElementById('yr').textContent = new Date().getFullYear();
-
   // ── نوافذ التفاصيل ──
   function openDlg(d) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
   function closeDlg(d) { if (d.close) d.close(); else d.removeAttribute('open'); }
@@ -266,72 +68,6 @@
     d.addEventListener('click', function (e) { if (e.target === d) closeDlg(d); });   // النقر خارج النافذة
     d.addEventListener('close', function () { if (d._opener) d._opener.focus(); });
   });
-
-  // ── الشريط الإخباري: محتوى شريط نظام القاعات وإعداداته ──
-  var LANG = document.documentElement.lang, RTL = document.documentElement.dir === 'rtl';
-  var bar = document.getElementById('portalTicker'), track = document.getElementById('tkTrack');
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); }
-  function segments(html) {
-    if (!html) return [];
-    var blocks;
-    try {
-      var doc = new DOMParser().parseFromString('<div id="_r">' + html + '</div>', 'text/html');
-      var kids = [].filter.call(doc.getElementById('_r').children, function (el) { return /^(P|DIV|H[1-6]|LI)$/.test(el.tagName); });
-      blocks = kids.length ? kids.map(function (el) { return el.innerHTML; }) : [html];
-    } catch (e) { blocks = [html]; }
-    return blocks.map(function (b) { return b.replace(/<br\s*\/?>/gi, '').replace(/[\r\n\t]+/g, ' ').trim(); })
-                 .filter(function (b) { return b && b.replace(/&nbsp;/gi, '').trim(); });
-  }
-  function build(data) {
-    if (!data || !data.enabled) return;
-    var html = LANG === 'en' ? (data.htmlEn || data.html) : (data.html || data.htmlEn);
-    var items = segments(html).map(function (s) { return '<span class="tk-item" dir="auto">' + s + '</span>'; });
-    var st = [];
-    if (data.rssColor) st.push('color:' + data.rssColor);
-    if (data.rssBold) st.push('font-weight:800');
-    if (data.rssFontSize) st.push('font-size:' + data.rssFontSize + 'px');
-    (data.rssItems || []).forEach(function (it) {
-      var title = esc(it.title);
-      var inner = it.link ? '<a href="' + esc(it.link) + '" target="_blank" rel="noopener">' + title + '</a>' : title;
-      items.push('<span class="tk-item" dir="auto"' + (st.length ? ' style="' + st.join(';') + '"' : '') + '>' + inner + '</span>');
-    });
-    if (!items.length) return;
-    var unit = items.join('<span class="tk-dot" aria-hidden="true"></span>') + '<span class="tk-dot" aria-hidden="true"></span>';
-
-    if (data.textShadow === 'strong') track.classList.add('shadow-strong');
-    else if (data.textShadow !== 'none') track.classList.add('shadow-light');
-    if (data.textColor) bar.style.setProperty('--ticker-text', data.textColor);
-    var tc = data.textColor ? parseInt(data.textColor.slice(1), 16) : 0xffffff;
-    var lum = (0.299 * (tc >> 16) + 0.587 * ((tc >> 8) & 255) + 0.114 * (tc & 255)) / 255;
-    bar.setAttribute('data-tone', lum > 0.6 ? 'light' : 'dark');
-    var alpha = Math.max(0, Math.min(100, Number(data.bgOpacity) || 0)) / 100;
-    if (data.bgColor && alpha > 0) {
-      var n = parseInt(data.bgColor.slice(1), 16), rgba = 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alpha + ')';
-      bar.style.backgroundImage = 'linear-gradient(' + rgba + ',' + rgba + ')';
-      bar.style.setProperty('--tk-bg', 'rgb(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ')');
-    }
-
-    bar.style.display = 'flex';
-    document.body.classList.add('has-ticker');
-    // نصف المسار يجب أن يغطي عرض الشاشة كاملاً حتى تكون الحركة متصلة بلا فراغ
-    track.innerHTML = '<span class="tk-seg">' + unit + '</span>';
-    var w = track.firstChild.getBoundingClientRect().width || 1, reps = Math.max(1, Math.ceil(Math.max(window.innerWidth, screen.width || 0) / w)) + 1;
-    var half = new Array(reps + 1).join(unit);
-    track.innerHTML = '<span class="tk-seg">' + half + '</span><span class="tk-seg" aria-hidden="true">' + half + '</span>';
-    var segW = track.firstChild.getBoundingClientRect().width;
-    var pxPerSecond = 900 / (data.speedSeconds || 25);
-    var dur = Math.max(3, segW / pxPerSecond);
-    track.classList.add(RTL ? 'dir-rtl' : 'dir-ltr');
-    if (data.pulse) { track.classList.add('pulse-on'); track.style.animationDuration = dur + 's, ' + (data.pulseSeconds || 1.6) + 's'; }
-    else track.style.animationDuration = dur + 's';
-  }
-  // يُبنى بعد تحميل الخط: القياس بخط بديل أعرض كان يعطي مساراً أقصر من الشاشة
-  var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  if ({{ portal.show_ticker|yesno:"true,false" }}) Promise.all([fetch('{% url "systems_ticker" %}', {headers: {'Accept': 'application/json'}})
-                 .then(function (r) { return r.ok ? r.json() : null; }), fontsReady])
-    .then(function (res) { build(res[0]); }).catch(function () {});
 })();
 </script>
-</body>
-</html>
+{% endblock %}

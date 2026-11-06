@@ -25,6 +25,7 @@ urlpatterns = [
     # الصفحة الرئيسية = بوابة أنظمة العمل؛ موقع الجائزة في /award/
     path('', sp.systems_portal, name='systems_portal'),
     path('award/', views.home, name='home'),
+    path('why/', sp.portal_why, name='portal_why'),
     path('systems/', RedirectView.as_view(url='/', permanent=True)),
     path('systems/ticker.json', sp.systems_ticker, name='systems_ticker'),
     path('favicon.ico', views.favicon),

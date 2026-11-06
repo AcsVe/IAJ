@@ -755,6 +755,12 @@ class WorkPortalSystemForm(forms.ModelForm):
             'name_en': forms.TextInput(attrs={'dir': 'ltr'}),
             'tagline_en': forms.TextInput(attrs={'dir': 'ltr', 'style': 'width:36em'}),
             'tagline_ar': forms.TextInput(attrs={'style': 'width:36em'}),
+            'why_title_ar': forms.TextInput(attrs={'style': 'width:36em'}),
+            'why_title_en': forms.TextInput(attrs={'dir': 'ltr', 'style': 'width:36em'}),
+            'why_points_ar': forms.Textarea(attrs={'rows': 4}),
+            'why_points_en': forms.Textarea(attrs={'rows': 4, 'dir': 'ltr'}),
+            'why_result_ar': forms.TextInput(attrs={'style': 'width:46em'}),
+            'why_result_en': forms.TextInput(attrs={'dir': 'ltr', 'style': 'width:46em'}),
             'about_ar': forms.Textarea(attrs={'rows': 3}),
             'about_en': forms.Textarea(attrs={'rows': 3, 'dir': 'ltr'}),
             'steps_ar': forms.Textarea(attrs={'rows': 5}),
@@ -780,6 +786,7 @@ class WorkPortalSystemAdmin(admin.ModelAdmin):
     fieldsets = (
         ('البطاقة', {'fields': (('name_ar', 'name_en'), 'url', ('icon', 'color'), 'tagline_ar', 'tagline_en', ('order', 'is_active'))}),
         ('نافذة التفاصيل', {'fields': ('about_ar', 'about_en', 'steps_ar', 'steps_en')}),
+        ('صفحة «لماذا أنظمتنا؟» (/why/)', {'fields': ('why_title_ar', 'why_title_en', 'why_points_ar', 'why_points_en', 'why_result_ar', 'why_result_en')}),
     )
     actions = ['make_active', 'make_inactive']
 

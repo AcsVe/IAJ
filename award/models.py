@@ -1963,6 +1963,16 @@ class WorkPortalSystem(models.Model):
     about_en = models.TextField(verbose_name="عن النظام (إنجليزي)")
     steps_ar = models.TextField(blank=True, default='', verbose_name="آلية العمل (عربي)", help_text="كل خطوة في سطر.")
     steps_en = models.TextField(blank=True, default='', verbose_name="آلية العمل (إنجليزي)", help_text="كل خطوة في سطر.")
+    # صفحة «لماذا أنظمتنا؟» (/why/): فائدة النظام بأسلوب «عنوان، نقاط، النتيجة»
+    why_title_ar = models.CharField(max_length=200, blank=True, default='', verbose_name="«لماذا»: العنوان (عربي)",
+                                    help_text="فارغ = السطر التعريفي")
+    why_title_en = models.CharField(max_length=200, blank=True, default='', verbose_name="«لماذا»: العنوان (إنجليزي)")
+    why_points_ar = models.TextField(blank=True, default='', verbose_name="«لماذا»: النقاط (عربي)",
+                                     help_text="كل نقطة في سطر. فارغ = آلية العمل")
+    why_points_en = models.TextField(blank=True, default='', verbose_name="«لماذا»: النقاط (إنجليزي)")
+    why_result_ar = models.CharField(max_length=300, blank=True, default='', verbose_name="«لماذا»: النتيجة (عربي)",
+                                     help_text="سطر واحد يظهر بخط عريض. فارغ = لا يظهر")
+    why_result_en = models.CharField(max_length=300, blank=True, default='', verbose_name="«لماذا»: النتيجة (إنجليزي)")
     order = models.IntegerField(default=0, verbose_name="الترتيب")
     is_active = models.BooleanField(default=True, verbose_name="ظاهر؟")
 
@@ -1977,3 +1987,11 @@ class WorkPortalSystem(models.Model):
     def steps(self, lang):
         text = self.steps_en if lang == 'en' else self.steps_ar
         return [s.strip() for s in (text or '').splitlines() if s.strip()]
+
+    def why(self, lang):
+        """عنوان ونقاط ونتيجة صفحة «لماذا» باللغة المطلوبة، مع الرجوع إلى السطر التعريفي وآلية العمل إن كانت فارغة"""
+        en = lang == 'en'
+        title = (self.why_title_en if en else self.why_title_ar) or (self.tagline_en if en else self.tagline_ar)
+        text = self.why_points_en if en else self.why_points_ar
+        points = [s.strip() for s in (text or '').splitlines() if s.strip()] or self.steps(lang)
+        return title, points, (self.why_result_en if en else self.why_result_ar)
