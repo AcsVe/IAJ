@@ -102,3 +102,10 @@ class SystemsPortalTest(TestCase):
                   '/admin/award/workportalsetting/', '/admin/'):
             self.assertEqual(self.client.get(u).status_code, 200, u)
         self.assertIn('بوابة أنظمة العمل', self.client.get('/admin/').content.decode())
+
+    def test_admin_named_for_the_whole_site(self):
+        self.client.logout()
+        html = self.client.get('/admin/login/').content.decode()
+        self.assertIn('لوحة تحكم الموقع الرئيسي', html)
+        self.assertNotIn('لوحة تحكم جائزة', html)
+        self.assertIn('award/portal-icon.svg', html)
