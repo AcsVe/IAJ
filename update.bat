@@ -8,17 +8,18 @@ call scripts\find_python.bat
 set DATABASE_URL=
 set PYTHONUTF8=1
 
+echo If a GitHub sign-in window opens, sign in with the AcsVe account - this is needed only once.
 if not exist .git (
   echo First time: linking this folder to GitHub...
   git init -q
   git remote add origin https://github.com/AcsVe/IAJ.git
-  git fetch -q origin main || (echo [X] Could not reach GitHub & pause & exit /b 1)
+  git fetch -q origin main || (echo [X] Could not reach GitHub. & echo     If GitHub asked you to sign in, sign in with the AcsVe account and run update.bat again. & pause & exit /b 1)
   git reset -q --hard origin/main
   git branch -q -M main
   git branch -q --set-upstream-to=origin/main main
 ) else (
   echo Downloading the latest version...
-  git fetch -q origin main || (echo [X] Could not reach GitHub & pause & exit /b 1)
+  git fetch -q origin main || (echo [X] Could not reach GitHub. & echo     If GitHub asked you to sign in, sign in with the AcsVe account and run update.bat again. & pause & exit /b 1)
   git reset -q --hard origin/main
 )
 echo Now at:
