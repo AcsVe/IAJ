@@ -134,7 +134,7 @@ pkg install -y git && git clone https://github.com/AcsVe/IAJ ~/iaj 2>/dev/null; 
 1. حمِّل `setup_new_pc.bat` على الجهاز الجديد (من المستودع، أو انسخه من هاتفك).
 2. شغّله بزر اليمين ← **Run as administrator**. سيقوم بـ:
    - تثبيت الأدوات عبر `winget`: **Git · Python 3.12 · cloudflared · Google Drive for desktop**. (إن ثبّت أدوات جديدة سيطلب إغلاق النافذة وإعادة تشغيله لإكمال الباقي.)
-   - طلب **رمز GitHub** مرة واحدة واستنساخ الأكواد إلى `C:\IAJ` و`C:\Att` و`C:\TKT` و`C:\Venue`.
+   - طلب **رمز GitHub** مرة واحدة واستنساخ الأكواد إلى `C:\IAJ` و`C:\Att` و`C:\RASTKT` و`C:\venues`.
    - تشغيل `1_setup.bat` ثم `3_autostart.bat` لكل نظام بالترتيب (IAJ أولاً).
 
 **ما يتطلب تدخّلك أثناء التشغيل:**

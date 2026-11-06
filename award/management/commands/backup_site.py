@@ -55,7 +55,8 @@ def pg_args(db):
 
 def _t(ar, en):
     """رسائل بالإنجليزية على الهاتف إن اختار المستخدم ذلك (Termux لا يعرض العربية جيداً)"""
-    return en if os.environ.get('IAJ_LANG') == 'en' else ar
+    # الكمبيوتر بالإنجليزية (نوافذ الأوامر لا تعرض العربية)، والهاتف بالعربية ما لم يُختر غير ذلك
+    return en if (os.environ.get('IAJ_LANG') or ('en' if os.name == 'nt' else 'ar')) == 'en' else ar
 
 
 class Command(BaseCommand):
