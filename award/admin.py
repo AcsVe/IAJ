@@ -675,9 +675,10 @@ def _grouped_app_list(self, request, app_label=None):
 
 
 admin.AdminSite.get_app_list = _grouped_app_list
-admin.site.site_header = 'لوحة تحكم جائزة انتصار عباس جردانة'
+# لوحة واحدة للموقع كله: الصفحة الرئيسية (بوابة أنظمة العمل) وموقع الجائزة
+admin.site.site_header = 'لوحة تحكم الموقع الرئيسي'
 admin.site.site_title = 'لوحة التحكم'
-admin.site.index_title = 'لوحة Django'
+admin.site.index_title = 'أقسام الموقع'
 
 
 @admin.register(Principle)
