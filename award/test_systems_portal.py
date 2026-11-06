@@ -33,6 +33,7 @@ class SystemsPortalTest(TestCase):
         self.assertIn('Trolley Reservation', html)
         self.assertNotRegex(self._visible_text(html), TECH)
         self.assertNotRegex(html, r'عربة|عربات|حواسيب')
+        self.assertIn('award/portal-icon.svg', html)   # أيقونة البوابة نفسها لا أيقونة الجائزة
 
     def test_english_page_and_cookie(self):
         r = self.client.get('/?lang=en')
