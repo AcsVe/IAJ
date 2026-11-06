@@ -43,6 +43,7 @@
 
 ### ب) النشر — Cloudflare
 - **نفق واحد `iajaward`** على كمبيوتر الخادم يخدم كل العناوين (`N.iajaward.org` ← `localhost:800N`). يجب أن يعمل على جهاز واحد فقط (وإلا ظهر الخطأ 1033 أو 502).
+- **التشغيل مع ويندوز:** لكل نظام مهمة `<النظام> Website`. ملف `<النظام>_off.bat` يوقف النظام ويعطّل المهمة؛ وتعطيل المهمة وحده (`schtasks /change /tn "<المهمة>" /disable`) يُبقي النظام يعمل الآن ويمنع بدءه مع ويندوز. `update.bat` يحترم الحالتين: يعيد تشغيل النظام العامل بالنسخة الجديدة ويُبقي مهمته معطّلة، ولا يشغّل النظام الموقوف.
 - لكل نظام **نفق احتياطي على الهاتف**: `rastkt-standby`، `venues-standby`، `attendance-standby`، `timetable-standby`، `bell-standby`، `clearance-standby`.
 - `ops/cf.py` يدير السجلات والتحويل عبر Cloudflare API (`CF_API_TOKEN` في ملف الإعدادات، ويُقرأ من الأنظمة الأخرى إن وُجد).
 - `protection_on.bat` / `protection_off.bat` (في الأنظمة القديمة) يشغّلان/يوقفان حاجز Cloudflare أمام الموقع.
