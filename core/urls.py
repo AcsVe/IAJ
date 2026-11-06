@@ -3,6 +3,7 @@ from django.contrib.auth import views as auth_views
 from award import admin_tools
 from django.urls import path
 from award import views, portal_views as pv, manage_views as mv, manage_tools as mt, program_views as prg
+from award import systems_portal as sp
 from award.portal_forms import SafePasswordResetForm
 
 _reset = dict(
@@ -21,6 +22,8 @@ urlpatterns = [
     path('search/', views.search, name='search'),
     path('tracks/<int:pk>/', views.track_detail, name='track_detail'),
     path('', views.home, name='home'),
+    path('systems/', sp.systems_portal, name='systems_portal'),
+    path('systems/ticker.json', sp.systems_ticker, name='systems_ticker'),
     path('favicon.ico', views.favicon),
     path('submit/', views.submit_project, name='submit_project'),
 
