@@ -103,6 +103,12 @@ class SystemsPortalTest(TestCase):
             self.assertEqual(self.client.get(u).status_code, 200, u)
         self.assertIn('بوابة أنظمة العمل', self.client.get('/admin/').content.decode())
 
+    def test_admin_logout_goes_home(self):
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_superuser('root2', 'r2@x.test', 'Pass-12345-x'))
+        r = self.client.post('/admin/logout/')
+        self.assertEqual((r.status_code, r['Location']), (302, '/'))
+
     def test_admin_named_for_the_whole_site(self):
         self.client.logout()
         html = self.client.get('/admin/login/').content.decode()
