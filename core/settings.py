@@ -146,6 +146,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = os.environ.get('TIME_ZONE', 'Asia/Amman')
+
+# بوابة أنظمة العمل (/systems/): مصدر الشريط الإخباري. فارغ = نظام القاعات على الجهاز نفسه ثم عنوانه العام.
+VENUES_TICKER_URL = os.environ.get('VENUES_TICKER_URL', '')
 USE_I18N = True
 USE_TZ = True
 
