@@ -134,12 +134,13 @@ pkg install -y git && git clone https://github.com/AcsVe/IAJ ~/iaj 2>/dev/null; 
 1. حمِّل `setup_new_pc.bat` على الجهاز الجديد (من المستودع، أو انسخه من هاتفك).
 2. شغّله بزر اليمين ← **Run as administrator**. سيقوم بـ:
    - تثبيت الأدوات عبر `winget`: **Git · Python 3.12 · cloudflared · Google Drive for desktop**. (إن ثبّت أدوات جديدة سيطلب إغلاق النافذة وإعادة تشغيله لإكمال الباقي.)
-   - طلب **رمز GitHub** مرة واحدة واستنساخ الأكواد إلى `C:\IAJ` و`C:\Att` و`C:\RASTKT` و`C:\venues`.
+   - استنساخ الأكواد إلى `C:\IAJ` و`C:\Att` و`C:\RASTKT` و`C:\venues`. المستودعات عامة، فـ**رمز GitHub اختياري** (Enter دون رمز)، ولا يلزم إلا إن صار أحدها خاصاً.
+   - نصوص النافذة بالإنجليزية (نافذة الأوامر لا تعرض العربية سليمة).
    - تشغيل `1_setup.bat` ثم `3_autostart.bat` لكل نظام بالترتيب (IAJ أولاً).
 
 **ما يتطلب تدخّلك أثناء التشغيل:**
 - **IAJ فقط:** يحتاج **PostgreSQL** مثبتاً وكلمة مرور `postgres` معروفة (ثبّته بـ `winget install -e --id PostgreSQL.PostgreSQL.16`). عند `1_setup` لـ IAJ يُستورد البيانات من Neon والوسائط من Cloudinary تلقائياً.
-- **إعدادات `.env` السرية لا تُحفظ في النسخة الاحتياطية** (رمز Cloudflare، بيانات بريد Graph في IAJ/TKT/Venue، مفتاح Neon). يطلبها كل `1_setup`/`setup_local` عند التشغيل — فاحتفظ بهذه الرموز لديك.
+- **إعدادات `.env` السرية لا تُحفظ في النسخة الاحتياطية** (رمز Cloudflare، بيانات بريد Graph في IAJ والتذاكر والقاعات، مفتاح Neon). يطلبها كل `1_setup`/`setup_local` عند التشغيل — فاحتفظ بهذه الرموز لديك.
 - **مجلد النسخ الاحتياطي:** سجّل الدخول في **Google Drive for desktop** ليعود مجلد `IAJ-backups` المتزامن، ووجّه `BACKUP_DIR` في كل `.env` إليه. (النسخ على ويندوز عبر هذا المجلد المتزامن، لا rclone.)
 - **استرجاع البيانات:** للأنظمة الثلاثة Flask استخدم `restore_backup.bat` (أحدث نسخة من مجلد Drive) أو الاسترجاع من Neon.
 
