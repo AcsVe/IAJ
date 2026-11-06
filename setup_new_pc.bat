@@ -14,8 +14,8 @@ net session >nul 2>nul || (echo [X] شغّل هذا الملف بزر اليمي
 REM ---- مجلدات التثبيت (عدّلها إن أردت) ----
 set "IAJ_DIR=C:\IAJ"
 set "ATT_DIR=C:\Att"
-set "TKT_DIR=C:\TKT"
-set "VEN_DIR=C:\Venue"
+set "TKT_DIR=C:\RASTKT"
+set "VEN_DIR=C:\venues"
 
 echo =====================================================
 echo   الخطوة 1: تثبيت الادوات المطلوبة (يتخطى المثبّت)

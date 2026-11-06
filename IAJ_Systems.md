@@ -11,8 +11,8 @@
 | # | النظام | المستودع | العنوان | المنفذ | المجلد على الكمبيوتر | التقنية | قاعدة البيانات | آخر commit |
 |---|---|---|---|---|---|---|---|---|
 | 0 | موقع الجائزة (IAJ) | `AcsVe/IAJ` | `https://iajaward.org` | `8000` | `C:\IAJ` | Django 5 + Waitress | **PostgreSQL** محلية (`iaj`) + مجلد `media` | `8cdd938` |
-| 1 | طلبات الدعم الفني (RASTKT) | `AcsVe/RASTKT` | `https://1.iajaward.org` | `8001` | `C:\TKT` | Flask + Waitress + تطبيق Android | SQLite `data\acs_tickets.db` | `0e25692` |
-| 2 | حجز القاعات (VENUES) | `AcsVe/venues` | `https://2.iajaward.org` | `8002` | `C:\Venue` | Flask + Waitress | SQLite `data\acs_booking.db` | `0a8b601` |
+| 1 | طلبات الدعم الفني (RASTKT) | `AcsVe/RASTKT` | `https://1.iajaward.org` | `8001` | `C:\RASTKT` | Flask + Waitress + تطبيق Android | SQLite `data\acs_tickets.db` | `0e25692` |
+| 2 | حجز القاعات (VENUES) | `AcsVe/venues` | `https://2.iajaward.org` | `8002` | `C:\venues` | Flask + Waitress | SQLite `data\acs_booking.db` | `0a8b601` |
 | 3 | الحضور والانصراف (ATT) | `AcsVe/Attendance` | `https://3.iajaward.org` | `8003` | `C:\Att` | Flask + Waitress + تطبيقا Android + أجهزة بصمة ZKTeco وDahua | SQLite `data\attendance_web.db` | `f624266` |
 | 4 | الجدول المدرسي (TIMETABLE) | `AcsVe/Timetable` | `https://4.iajaward.org` | `8004` | `C:\TT\Timetable` | Flask + Alembic + OR-Tools + Waitress | **PostgreSQL** محلية (`timetable`) | `8d6a7cf` |
 | 5 | جرس الحصص (BELL) | `AcsVe/Bell` | `https://5.iajaward.org` | `8005` | `C:\Bell` | Flask + Waitress + تطبيقات + BellPlayer.exe + ESP32 | SQLite `data\bell.db` | `0df3d11` |

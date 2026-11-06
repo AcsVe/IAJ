@@ -27,8 +27,8 @@ ROUNDS = 300_000
 # GitHub repository | usual folder on the computer | settings file | file on the phone (inside ~/<system>)
 SYSTEMS = {
     'iaj':        ('IAJ', r'C:\IAJ', '.env', '.env'),
-    'rastkt':     ('RASTKT|Ticketing', r'C:\TKT', '.env', '.env'),
-    'venues':     ('venues', r'C:\Venue', '.env', '.env'),
+    'rastkt':     ('RASTKT|Ticketing', r'C:\RASTKT', '.env', '.env'),
+    'venues':     ('venues', r'C:\venues', '.env', '.env'),
     'attendance': ('Attendance', r'C:\Att', '.env', '.env'),
     'timetable':  ('Timetable', r'C:\TT\Timetable', '.env', '.env'),
     'bell':       ('Bell', r'C:\Bell', '.env', '.env'),
