@@ -719,7 +719,7 @@
           <button type="button" class="soc-nav-btn" aria-label="تابعونا على وسائل التواصل" title="تابعونا"><i class="fas fa-share-nodes"></i></button>
           <div class="soc-pop">{% with portal_title_off=True %}<nav class="social-bar" aria-label="التواصل الاجتماعي">{% for s in social_links %}<a href="{{ s.href }}" target="_blank" rel="noopener" title="{{ s.get_platform_display }}" aria-label="{{ s.get_platform_display }}"{% if s.color %} style="--soc-c: {{ s.color }}"{% endif %}><i class="{{ s.icon_class }}"></i></a>{% endfor %}</nav>{% endwith %}</div>
         </li>{% endif %}
-        {% if reg_deadline and request.path == '/' %}
+        {% if reg_deadline and request.path == '/award/' %}
         <li class="nav-item dropdown {{ vis.countdown }}" id="countdownDropdown" style="position: relative;">
           <a class="nav-link countdown-toggle" href="#" aria-label="موعد استقبال الطلبات">
             <span class="countdown-pulse" id="countdownBadge">{{ portal.countdown_badge|default:"التسجيل مفتوح" }}</span>
@@ -744,7 +744,7 @@
       </ul>
       <div class="cyc-hover cyc-title-wrap d-none d-lg-flex {{ vis.award_title }}">
         <a href="{% url 'home' %}" class="nav-award-title nav-award-title-desktop">جائزة انتصار عباس جردانة</a>
-        {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">
+        {% if cycle_card and request.path == '/award/' %}<div class="cycle-card" role="tooltip">
           <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
           <div class="cyc-title">{{ cycle_card.title }}</div>
           <div class="cyc-dates"><i class="far fa-calendar ms-1"></i> التسجيل من {{ cycle_card.opens_at|date:"j/n/Y" }} إلى {{ cycle_card.closes_at|date:"j/n/Y" }}</div>
@@ -761,7 +761,7 @@
       {% if portal_role != 'judge' and portal_role != 'manager' and portal_role != 'staff' and not request.path|slice:':8' == '/portal/' and not request.path|slice:':8' == '/manage/' and not request.path|slice:':10' == '/accounts/' and reg_open and portal.show_register_btn is not False %}
       <span class="cyc-hover cyc-left {{ vis.register }}">
         <a href="{% url 'submit_project' %}" class="btn btn-gold nav-register">{{ content.btn_navbar|default:"سجل الآن" }}</a>
-        {% if cycle_card and request.path == '/' %}<div class="cycle-card" role="tooltip">
+        {% if cycle_card and request.path == '/award/' %}<div class="cycle-card" role="tooltip">
           <div class="countdown-panel-header"><i class="fas fa-award ms-1"></i> دورة الجائزة</div>
           <div class="cyc-title">{{ cycle_card.title }}</div>
           <div class="cyc-dates"><i class="far fa-calendar ms-1"></i> التسجيل من {{ cycle_card.opens_at|date:"j/n/Y" }} إلى {{ cycle_card.closes_at|date:"j/n/Y" }}</div>
@@ -1284,7 +1284,7 @@
     document.querySelectorAll('[data-open-search]').forEach(function (b) { b.addEventListener('click', function (e) { e.preventDefault(); open(); }); });
     box.querySelector('.ss-close').addEventListener('click', close);
     box.addEventListener('click', function (e) { if (e.target === box) close(); });
-    list.addEventListener('click', function (e) { var a = e.target.closest('a'); if (a && a.getAttribute('href').charAt(0) === '/' && a.getAttribute('href').indexOf('/#') === 0 && location.pathname === '/') close(); });
+    list.addEventListener('click', function (e) { var a = e.target.closest('a'); if (a && a.getAttribute('href').charAt(0) === '/' && a.getAttribute('href').indexOf('/award/#') === 0 && location.pathname === '/award/') close(); });
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !box.hidden) close();
         var tag = (e.target.tagName || '').toLowerCase();

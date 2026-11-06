@@ -200,7 +200,7 @@ def login_2fa(request):
             if not st['remember']:
                 request.session.set_expiry(0)
             audit(request, 'دخول (بخطوتين)', user.email)
-            return HttpResponseRedirect(st['next'] or '/')
+            return HttpResponseRedirect(st['next'] or '/award/')
         error = 'الرمز غير صحيح.'
     return render(request, 'award/portal/login_2fa.html', {'error': error})
 

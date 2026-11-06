@@ -78,28 +78,28 @@ def site_search(q, limit=60):
     for n in M.News.objects.filter(is_published=True):
         add('الأخبار', 'fa-newspaper', n.title, n.content, f'/news/{n.pk}/')
     for f in M.Field.objects.all():
-        add('مجالات العمل التطوعي', 'fa-layer-group', f.name_ar, f.name_en, '/#fields')
+        add('مجالات العمل التطوعي', 'fa-layer-group', f.name_ar, f.name_en, '/award/#fields')
     for t in M.Track.objects.filter(is_active=True).select_related('field').prefetch_related('details'):
         extra = ' '.join([t.field.name_ar if t.field else '', t.details_html or ''] +
                          [d.title + ' ' + d.content for d in t.details.all()])
         add('المسارات', 'fa-route', t.name_ar, t.description_ar or '', f'/tracks/{t.pk}/', extra)
     for p in M.Principle.objects.filter(is_active=True):
-        add('مبادئ الجائزة', 'fa-hand-holding-heart', p.title, p.description, '/#about')
+        add('مبادئ الجائزة', 'fa-hand-holding-heart', p.title, p.description, '/award/#about')
     hc = M.HomeContent.objects.first()
     if hc:
-        add('عن الجائزة', 'fa-circle-info', hc.title_about or 'عن الجائزة', hc.about_text, '/#about')
-        add('عن الجائزة', 'fa-eye', 'الرؤية', hc.vision_text, '/#about')
-        add('عن الجائزة', 'fa-bullseye', 'الرسالة', hc.mission_text, '/#about')
+        add('عن الجائزة', 'fa-circle-info', hc.title_about or 'عن الجائزة', hc.about_text, '/award/#about')
+        add('عن الجائزة', 'fa-eye', 'الرؤية', hc.vision_text, '/award/#about')
+        add('عن الجائزة', 'fa-bullseye', 'الرسالة', hc.mission_text, '/award/#about')
         conds = ' • '.join(getattr(hc, f'condition_{i}', '') for i in range(1, 6))
         steps = ' • '.join(getattr(hc, f'step_{i}', '') for i in range(1, 6))
-        add('طلب التقديم', 'fa-clipboard-list', 'شروط التقديم', conds, '/#apply')
-        add('طلب التقديم', 'fa-stairs', 'خطوات التقديم', steps, '/#apply')
+        add('طلب التقديم', 'fa-clipboard-list', 'شروط التقديم', conds, '/award/#apply')
+        add('طلب التقديم', 'fa-stairs', 'خطوات التقديم', steps, '/award/#apply')
         prizes = ' • '.join(getattr(hc, f'prize_{i}_desc', '') for i in range(1, 4))
-        add('الجوائز', 'fa-trophy', hc.title_prizes or 'قيمة الجوائز', prizes, '/#prizes')
+        add('الجوائز', 'fa-trophy', hc.title_prizes or 'قيمة الجوائز', prizes, '/award/#prizes')
     for e in M.TimelineEvent.objects.all():
-        add('الجدول الزمني', 'fa-calendar-days', e.title, e.description, '/#timeline', e.date_text)
+        add('الجدول الزمني', 'fa-calendar-days', e.title, e.description, '/award/#timeline', e.date_text)
     for j in M.Judge.objects.all():
-        add('لجنة التحكيم', 'fa-user-tie', j.name, j.description, '/#judges', j.title)
+        add('لجنة التحكيم', 'fa-user-tie', j.name, j.description, '/award/#judges', j.title)
     for w in M.Winner.objects.filter(is_active=True).exclude(cycle__is_simulation=True).exclude(submission__is_simulation=True):
         add('الفائزون', 'fa-medal', f'{w.school_name} — {w.project_title}', w.description or '', '/winners/', str(w.year))
     for s in M.SuccessStory.objects.filter(is_active=True):

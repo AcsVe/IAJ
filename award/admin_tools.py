@@ -179,8 +179,10 @@ def _target_path(obj):
         return f'/tracks/{obj.track_id}/'
     if name == 'Announcement':
         return f'/announcements/{pk}/'
+    if name in ('WorkPortalSystem', 'WorkPortalSetting'):
+        return '/'                                   # الصفحة الرئيسية = بوابة أنظمة العمل
     return {'Photo': '/photos/', 'MediaGallery': '/photos/', 'Video': '/videos/', 'SuccessStory': '/success-stories/',
-            'Winner': '/winners/', 'WinnerCategory': '/winners/'}.get(name, '/')
+            'Winner': '/winners/', 'WinnerCategory': '/winners/'}.get(name, '/award/')
 
 
 def _render_site_page(request, path):
@@ -244,10 +246,10 @@ def preview(request, app_label, model_name):
                     raise _Rollback(resp)
                 obj = (model.objects.filter(pk=object_id).first() if object_id
                        else model.objects.order_by('-pk').first())
-                path = _target_path(obj) if obj is not None else '/'
+                path = _target_path(obj) if obj is not None else '/award/'
                 page = _render_site_page(request, path)
-                if page.status_code == 404 and path != '/':
-                    page = _render_site_page(request, '/')
+                if page.status_code == 404 and path != '/award/':
+                    page = _render_site_page(request, '/award/')
                 raise _Rollback(page)
         except _Rollback as rb:
             resp = rb.response
