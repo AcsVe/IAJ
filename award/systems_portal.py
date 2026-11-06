@@ -30,6 +30,10 @@ TEXT = {
         'open': 'الدخول إلى النظام',
         'close': 'إغلاق',
         'award': 'موقع الجائزة',
+        'why': 'لماذا أنظمتنا؟',
+        'why_title': 'لماذا أنظمة العمل؟',
+        'why_sub': 'أنظمة تختصر الوقت وتضبط العمل اليومي في المدرسة',
+        'back': 'بوابة أنظمة العمل',
     },
     'en': {
         'switch': 'العربية', 'switch_lang': 'ar',
@@ -39,6 +43,10 @@ TEXT = {
         'open': 'Open the system',
         'close': 'Close',
         'award': 'Award website',
+        'why': 'Why our systems?',
+        'why_title': 'Why the work systems?',
+        'why_sub': 'Systems that save time and keep the school\'s daily work in order',
+        'back': 'Work Systems Portal',
     },
 }
 
@@ -67,6 +75,27 @@ def systems_portal(request):
              hint=st.hint_en if en else st.hint_ar)
     resp = render(request, 'award/systems_portal.html', {
         'lang': lang, 'dir': 'ltr' if en else 'rtl', 't': t, 'systems': systems, 'portal': st,
+    })
+    if request.GET.get('lang') in TEXT:
+        resp.set_cookie(LANG_COOKIE, lang, max_age=365 * 24 * 3600, samesite='Lax',
+                        secure=not settings.DEBUG and request.is_secure())
+    return resp
+
+
+def portal_why(request):
+    """صفحة «لماذا أنظمتنا؟»: بطاقة مرقّمة لكل نظام (عنوان، نقاط، النتيجة) ورابط الدخول إليه"""
+    from .models import WorkPortalSystem
+    lang = _lang(request)
+    st = portal_setting()
+    items = []
+    for x in WorkPortalSystem.objects.filter(is_active=True):
+        title, points, result = x.why(lang)
+        items.append({'url': x.url, 'host': urlparse(x.url).netloc or x.url, 'icon': x.icon,
+                      'color': x.color if _COLOR.match(x.color or '') else '#60a5fa',
+                      'name': x.name_en if lang == 'en' else x.name_ar,
+                      'title': title, 'points': points, 'result': result})
+    resp = render(request, 'award/portal_why.html', {
+        'lang': lang, 'dir': 'ltr' if lang == 'en' else 'rtl', 't': TEXT[lang], 'items': items, 'portal': st,
     })
     if request.GET.get('lang') in TEXT:
         resp.set_cookie(LANG_COOKIE, lang, max_age=365 * 24 * 3600, samesite='Lax',
