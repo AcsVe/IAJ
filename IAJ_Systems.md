@@ -85,10 +85,10 @@
 |---|---|
 | RASTKT | APK تطبيق الدعم الفني |
 | Attendance | تطبيقا Android (الموظف + لوحة الإدارة) |
-| Bell | تطبيقات Android / Desktop، و`BellPlayer.exe`، وبرنامج ESP32 (في `static/firmware`) — الإصدارات في `releases/tag/apps` |
+| Bell | تطبيقات Android / Desktop، و`BellPlayer.exe`، وبرنامج ESP32 (في `static/firmware`) — الإصدارات في `AcsVe/downloads` بالوسم `bell-apps` |
 | Pulse | `Pulse-Server.exe`، عميل ويندوز، تطبيقا Android |
-| Cheque | `ChequePrinterSetup.exe` (PyInstaller + Inno Setup) — الإصدار `latest` |
-| Manual | `ManualBuilderSetup.exe` (PyInstaller + Inno Setup) — الإصدار `latest` |
+| Cheque | `ChequePrinterSetup.exe` (PyInstaller + Inno Setup) — `AcsVe/downloads` بالوسم `cheque-latest` |
+| Manual | `ManualBuilderSetup.exe` (PyInstaller + Inno Setup) — `AcsVe/downloads` بالوسم `manual-latest` |
 
 ---
 
