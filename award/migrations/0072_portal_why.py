@@ -21,12 +21,12 @@ WHY = {'https://1.iajaward.org': {'why_title_ar': 'طلبات الدعم في م
  'https://2.iajaward.org': {'why_title_ar': 'حصص بالأجهزة المحمولة دون تعارض',
                             'why_title_en': 'Device-supported lessons without clashes',
                             'why_points_ar': 'روزنامة تُظهر المتاح والمحجوز لكل مرحلة دراسية.\n'
-                                             'قواعد تمنع التعارض وتكرار الحجز للشعبة في اليوم نفسه.\n'
+                                             'قواعد حجز ذكية تمنع التعارض وتوزّع الأجهزة بعدالة على الصفوف.\n'
                                              'اعتماد الطلب وتأكيده بالبريد.\n'
                                              'نموذج تسليم يوثّق الجهاز الذي استلمه كل طالب.',
                             'why_points_en': 'A calendar showing what is free and what is booked for every stage.\n'
-                                             'Rules that prevent clashes and repeated bookings for a section on the '
-                                             'same day.\n'
+                                             'Smart booking rules prevent clashes and share the devices fairly '
+                                             'across classes.\n'
                                              'Requests are approved and confirmed by e-mail.\n'
                                              'A handover form records which device each student received.',
                             'why_result_ar': 'النتيجة: استخدام منظّم للأجهزة، ومسؤولية واضحة عن كل جهاز.',
