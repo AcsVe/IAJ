@@ -117,7 +117,7 @@
   .card .more{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.88rem;color:color-mix(in srgb,var(--c) 70%,#fff)}
   html[dir=rtl] .card .more i{transform:scaleX(-1)}
   .card .top{flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-  .card .host{font-size:.72rem;font-weight:800;letter-spacing:.02em;direction:ltr;
+  .card .host{font-size:.8125rem;font-weight:800;letter-spacing:.02em;direction:ltr;
     padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:var(--muted)}
   /* بعد قواعد الإظهار حتى تغلبها */
   @container (max-height:178px){.card .tag{display:none}}
@@ -177,7 +177,7 @@
     .hero{padding:10px 12px;border-radius:18px;gap:10px}
     .emblem{width:42px;height:42px;font-size:1.1rem;border-radius:13px}
     .hero h1{font-size:1.15rem}
-    .hero p{font-size:.8rem}
+    .hero p{font-size:.8125rem}
     .lang-btn{height:34px;padding:0 11px;font-size:.85rem;gap:6px}
     .hint{margin:8px 2px 6px;font-size:.84rem}
     .grid{gap:10px;grid-auto-rows:minmax(96px,1fr);padding:4px 0 6px}
@@ -195,6 +195,9 @@
     #portalTicker .tk-track{animation-duration:120s!important}
   }
 {% block css %}{% endblock %}
+
+/* لا نص أصغر من 13px */
+small{font-size:max(.8125rem,80%)}
 </style>
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -204,7 +207,7 @@
 
 {% block page %}{% endblock %}
 
-<footer class="foot">© <span id="yr"></span> · iajaward.org{% block foot_links %}{% endblock %}{% if portal.show_award_link %} · <a href="{% url 'home' %}">{{ t.award }}</a>{% endif %}</footer>
+<footer class="foot">© <span id="yr"></span> · <bdi>iajaward.org</bdi>{% block foot_links %}{% endblock %}{% if portal.show_award_link %} · <a href="{% url 'home' %}">{{ t.award }}</a>{% endif %}</footer>
 
 <script>
 (function () {

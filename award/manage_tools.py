@@ -115,7 +115,7 @@ def tools(request):
                 r = cleanup.clear_simulation(keep_reports=bool(request.POST.get('keep')))
                 audit(request, 'مسح بيانات التجربة', '', str(r))
                 messages.success(request, f"مُسحت بيانات التجربة: {r['submissions']} طلب، {r['users']} حساب، {r['cycles']} دورة محاكاة. "
-                                          "نسخة احتياطية مما حُذف محفوظة في backups/deleted.")
+                                          "نسخة احتياطية مما حُذف محفوظة في مجلد النسخ الاحتياطية للمحذوفات.")
         elif act == 'cycle_clean':
             c = AwardCycle.objects.filter(pk=request.POST.get('cycle')).first()
             what = request.POST.get('what')

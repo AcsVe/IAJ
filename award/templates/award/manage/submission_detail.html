@@ -1,7 +1,7 @@
 {% extends 'award/manage/_base.html' %}
 {% block mg %}
 <div class="mg-h">
-  <div><h1>{{ sub.project_title }}</h1><div class="text-muted">{{ sub.ref }} · {{ sub.cycle|default:"" }} · أُرسل {{ sub.sent_at|date:"Y-m-d H:i"|default:"—" }}{% if sub.status == 'judging' %} · {{ sub.stage_label }}{% endif %}
+  <div><h1>{{ sub.project_title }}</h1><div class="text-muted"><bdi>{{ sub.ref }}</bdi> · {{ sub.cycle|default:"" }} · أُرسل {{ sub.sent_at|date:"Y-m-d الساعة H:i"|default:"—" }}{% if sub.status == 'judging' %} · {{ sub.stage_label }}{% endif %}
     {% if sub.is_simulation %}<span class="sim-tag">تجريبي</span>{% endif %}{% if sub.has_discrepancy %} <span class="disc-tag">تباين ± {{ sub.score_spread }}</span>{% endif %}
     {% if sub.sent_at %} · <a href="/portal/submissions/{{ sub.pk }}/receipt/" target="_blank">الإيصال</a>{% endif %}</div></div>
   <div class="d-flex gap-2 align-items-center"><span class="pt-status st-{{ sub.status }}" style="font-size:1rem">{{ sub.get_status_display }}</span>{% if sub.results_hidden %}<small title="لا تظهر للمدرسة قبل نشر النتائج">🔒 غير منشورة</small>{% endif %}
@@ -128,6 +128,6 @@
       <button name="act" value="delete_sub" class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف الطلب {{ sub.ref }} نهائياً مع ملفاته وتقييماته؟ (تُحفظ نسخة احتياطية JSON)')"><i class="fas fa-trash"></i> حذف الطلب</button>
     </form></div>
 
-  <div class="pt-card"><h2>سجل الطلب</h2><ul class="pt-timeline">{% for l in logs %}<li><b>{{ l.new_label }}</b> <small>{{ l.created_at|date:"Y-m-d H:i" }}{% if l.by %} — {{ l.by.get_full_name|default:l.by.email }}{% endif %}</small>{% if l.note %}<div class="pt-help">{{ l.note }}</div>{% endif %}</li>{% endfor %}</ul></div>
+  <div class="pt-card"><h2>سجل الطلب</h2><ul class="pt-timeline">{% for l in logs %}<li><b>{{ l.new_label }}</b> <small>{{ l.created_at|date:"Y-m-d الساعة H:i" }}{% if l.by %} — {{ l.by.get_full_name|default:l.by.email }}{% endif %}</small>{% if l.note %}<div class="pt-help">{{ l.note }}</div>{% endif %}</li>{% endfor %}</ul></div>
 </div></div>
 {% endblock %}

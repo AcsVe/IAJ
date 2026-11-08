@@ -7,7 +7,7 @@
   {% if sub.status == 'revision' and sub.school_note %}<div class="pt-note warn"><b>المطلوب تعديله:</b>
 {{ sub.school_note }}{% if sub.revision_deadline %}
 
-<b>آخر موعد: {{ sub.revision_deadline|date:"Y-m-d H:i" }}</b>{% endif %}</div>{% endif %}
+<b>آخر موعد: {{ sub.revision_deadline|date:"Y-m-d الساعة H:i" }}</b>{% endif %}</div>{% endif %}
   {% if form.errors %}<div class="pt-alert pt-alert-error"><i class="fas fa-circle-exclamation ms-1"></i> يرجى تصحيح الحقول المشار إليها.</div>{% endif %}
   {% for e in form.non_field_errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
 

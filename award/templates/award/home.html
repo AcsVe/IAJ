@@ -211,7 +211,7 @@ section#{{ sid }} .timeline-date {
 .yt-bar { display: flex; align-items: center; gap: 4px; }
 .yt-bar button { background: none; border: 0; color: #fff; width: 34px; height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 1px; font-size: .95rem; cursor: pointer; border-radius: 4px; opacity: .92; }
 .yt-bar button:hover { opacity: 1; background: rgba(255,255,255,.12); }
-.yt-bar button small { font-size: .55rem; font-weight: 700; }
+.yt-bar button small { font-size: .8125rem; font-weight: 700; }
 .yt-vol { display: inline-flex; align-items: center; }
 .yt-vol input { width: 0; opacity: 0; transition: width .2s, opacity .2s; accent-color: #fff; height: 4px; cursor: pointer; }
 .yt-vol:hover input, .yt-vol input:focus { width: 70px; opacity: 1; margin-left: 4px; }
@@ -337,8 +337,8 @@ section#{{ sid }} .timeline-date {
         border: 1px solid rgba(197,160,89,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
     .has-side .hero-stats .hst i { color: var(--gold); font-size: .85rem; }
     .has-side .hero-stats .hst b { font-size: 1.15rem; font-weight: 900; line-height: 1.15; }
-    .has-side .hero-stats .hst b:not([data-count]) { font-size: .78rem; color: #f3d899; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .has-side .hero-stats .hst span { font-size: .66rem; color: rgba(255,255,255,.85); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .has-side .hero-stats .hst b:not([data-count]) { font-size: .8125rem; color: #f3d899; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .has-side .hero-stats .hst span { font-size: .8125rem; color: rgba(255,255,255,.85); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .has-side .hero-stats .hst-cycle span { white-space: normal; }
 }
 @media (max-width: 767.98px) {
@@ -395,7 +395,7 @@ section#{{ sid }} .timeline-date {
 .hc-nav { position: absolute; right: 14px; bottom: 10px; display: flex; align-items: center; gap: 8px; direction: rtl; }
 .hc-nav[hidden] { display: none; }
 .hc-nav button { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.1);
-    color: inherit; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; cursor: pointer; transition: background .2s, transform .2s; }
+    color: inherit; display: inline-flex; align-items: center; justify-content: center; font-size: .8125rem; cursor: pointer; transition: background .2s, transform .2s; }
 .hc-nav button:hover { background: var(--gold); color: var(--primary); transform: scale(1.08); }
 .hc-count { font: 600 .78rem/1 Roboto, Arial, sans-serif; opacity: .75; direction: ltr; min-width: 34px; text-align: center; }
 .hc-progress { position: absolute; left: 64px; right: 120px; bottom: 23px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.18); overflow: hidden; direction: rtl; }
@@ -1176,11 +1176,11 @@ section#{{ sid }} .timeline-date {
                 <div class="p-4 h-100 glass-light" style="border-right: 4px solid var(--primary) !important;">
                     <h4 class="fw-bold mb-4" style="color: var(--primary);"><i class="fas fa-stairs ms-2" style="color: var(--gold);"></i> خطوات الترشح</h4>
                     <ul class="list-unstyled text-dark" style="line-height: 2.2;">
-                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">1</span> {{ content.step_1 }}</li>
-                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">2</span> {{ content.step_2 }}</li>
-                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">3</span> {{ content.step_3 }}</li>
-                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">4</span> {{ content.step_4 }}</li>
-                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:#fff;">5</span> {{ content.step_5 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:var(--on-gold, #1f1a10);">1</span> {{ content.step_1 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:var(--on-gold, #1f1a10);">2</span> {{ content.step_2 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:var(--on-gold, #1f1a10);">3</span> {{ content.step_3 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:var(--on-gold, #1f1a10);">4</span> {{ content.step_4 }}</li>
+                        <li><span class="badge rounded-circle ms-2" style="background-color: var(--gold); color:var(--on-gold, #1f1a10);">5</span> {{ content.step_5 }}</li>
                     </ul>
                 </div>
             </div>
@@ -1287,7 +1287,7 @@ section#{{ sid }} .timeline-date {
 .timeline-h-content { text-align:center;padding:10px 6px;width:140px;cursor:pointer; }
 .timeline-h-item:nth-child(odd)  .timeline-h-content { margin-top:12px; }
 .timeline-h-item:nth-child(even) .timeline-h-content { margin-bottom:12px;order:-2; }
-.timeline-date  { color:#b5916a;font-weight:700;font-size:0.75rem;margin-bottom:4px; }
+.timeline-date  { color:#b5916a;font-weight:700;font-size:.8125rem;margin-bottom:4px; }
 .timeline-title { font-weight:700;color:var(--primary);font-size:0.9rem;line-height:1.5;margin:0; }
 .timeline-desc  { display:none; }
 
@@ -1444,9 +1444,9 @@ section#timeline .timeline-h-node i { color: var(--gold); }
 <div class="modal fade" id="judgeModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="border: 2px solid var(--gold); border-radius: 0; background-color: #fff;">
-      <div class="modal-header" style="background-color: var(--primary); border-bottom: 2px solid var(--gold);"><h5 class="modal-title fw-bold" style="color: var(--gold);">عضو اللجنة</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-header" style="background-color: var(--primary); border-bottom: 2px solid var(--gold);"><h5 class="modal-title fw-bold" style="color: var(--gold);">عضو اللجنة</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="إغلاق"></button></div>
       <div class="modal-body text-center p-4">
-        <img id="modalJudgeImg" src="" alt="Judge" class="rounded-circle mb-4 shadow" width="150" height="150" style="object-fit: contain; border: 4px solid var(--gold);">
+        <img id="modalJudgeImg" src="" alt="صورة المحكّم" class="rounded-circle mb-4 shadow" width="150" height="150" style="object-fit: contain; border: 4px solid var(--gold);">
         <h4 id="modalJudgeTitle" class="fw-bold mb-3" style="color: var(--primary);"></h4>
         <hr style="border-color: var(--gold); opacity: 0.3; width: 50px; margin: 0 auto 20px auto;">
         <p id="modalJudgeDesc" class="text-dark" style="line-height: 2; font-size: 1.05rem; text-align: right;"></p>
@@ -1591,7 +1591,7 @@ section#timeline .timeline-h-node i { color: var(--gold); }
 <div class="modal fade" id="timelineModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="border: 2px solid var(--gold); border-radius: 0; background-color: #fff;">
-      <div class="modal-header" style="background-color: var(--primary); border-bottom: 2px solid var(--gold);"><h5 class="modal-title fw-bold" id="timelineModalLabel" style="color: var(--gold);"></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-header" style="background-color: var(--primary); border-bottom: 2px solid var(--gold);"><h5 class="modal-title fw-bold" id="timelineModalLabel" style="color: var(--gold);"></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="إغلاق"></button></div>
       <div class="modal-body p-4" style="text-align: right;">
         <div id="timelineModalImgContainer" style="display: none; text-align: center; margin-bottom: 20px;"><img id="timelineModalImg" src="" alt="" class="img-fluid" style="border: 2px solid var(--gold); border-radius: 8px; max-height: 300px; object-fit: cover;"></div>
         <p id="timelineModalDesc" class="text-dark" style="line-height: 2; font-size: 1.1rem;"></p>

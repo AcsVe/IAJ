@@ -30,7 +30,7 @@
   <div class="pt-card" style="padding:0;overflow:auto"><table class="mg-table" id="sTable">
     <thead><tr><th><input type="checkbox" data-checkall="#sTable tbody" title="تحديد الكل"></th><th>المدرسة</th><th>ضابط الارتباط</th><th>الهاتف</th><th>المحافظة / المديرية</th><th>الطلبات</th><th>التسجيل</th></tr></thead>
     <tbody>{% for p in items %}<tr><td><input type="checkbox" name="ids" value="{{ p.pk }}"></td>
-      <td><b>{{ p.school_name|default:"—" }}</b>{% if p.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}{% if not p.user.is_active %} <span class="pt-status st-withdrawn" style="font-size:.7rem">غير مفعّل</span>{% endif %}<br><small class="text-muted" dir="ltr">{{ p.user.email }}</small></td>
+      <td><b>{{ p.school_name|default:"—" }}</b>{% if p.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}{% if not p.user.is_active %} <span class="pt-status st-withdrawn" style="font-size:.8125rem">غير مفعّل</span>{% endif %}<br><small class="text-muted" dir="ltr">{{ p.user.email }}</small></td>
       <td>{{ p.contact_person }}</td><td dir="ltr">{{ p.phone }}</td>
       <td><small>{{ p.governorate|default:"—" }}<br>{{ p.directorate|default:"" }}</small></td>
       <td>{% if p.n %}<a href="/manage/submissions/?q={{ p.user.email|urlencode }}">{{ p.n }}</a>{% else %}0{% endif %}{% if p.n_all > p.n %} <small class="text-muted">+ مسودات</small>{% endif %}</td>

@@ -7,7 +7,7 @@
   </div>
   {% for n in items %}
     <a class="pt-n{% if not n.is_read %} unread{% endif %}" href="{% url 'notification_go' n.pk %}">
-      <b>{{ n.title }}</b> <small class="text-muted me-2">{{ n.created_at|date:"Y-m-d H:i" }}</small>
+      <b>{{ n.title }}</b> <small class="text-muted me-2">{{ n.created_at|date:"Y-m-d الساعة H:i" }}</small>
       {% if n.body %}<p>{{ n.body }}</p>{% endif %}
     </a>
   {% empty %}<div class="pt-empty"><i class="fas fa-bell-slash"></i>لا توجد إشعارات بعد.</div>{% endfor %}

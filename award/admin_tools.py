@@ -127,7 +127,7 @@ def _status_items():
     rows = []
     backend = getattr(settings, 'EMAIL_BACKEND', '')
     if not getattr(settings, 'EMAIL_ENABLED', True):
-        rows.append(('off', 'البريد الإلكتروني', 'متوقف (EMAIL_ENABLED=0) — لا تُرسل رسائل', ''))
+        rows.append(('off', 'البريد الإلكتروني', 'متوقف (لم تُضبط إعدادات البريد) — لا تُرسل رسائل', ''))
     elif 'filebased' in backend or 'console' in backend:
         rows.append(('off', 'البريد الإلكتروني', 'لا يُرسل فعلياً — يُحفظ في logs/emails (إعدادات SMTP ناقصة في .env)', ''))
     else:

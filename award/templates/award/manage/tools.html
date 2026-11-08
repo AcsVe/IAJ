@@ -18,12 +18,12 @@
       <label class="form-check mb-2"><input type="checkbox" name="keep" value="1" class="form-check-input"> إبقاء التقارير</label>
       <button class="btn-act danger"><i class="fas fa-eraser"></i> مسح بيانات التجربة</button></form>
   </div>
-  <p class="pt-help mt-2">«مسح بيانات التجربة» يحذف: دورات المحاكاة، وكل طلب أو حساب معلّم «تجريبي» (من المحاكاة الآلية أو من وضع التجربة أو ما علّمتموه يدوياً) مع الملفات والتقييمات والشهادات والدعوات. تُحفظ قبلها نسخة JSON في <code>backups/deleted</code>.</p>
+  <p class="pt-help mt-2">«مسح بيانات التجربة» يحذف: دورات المحاكاة، وكل طلب أو حساب معلّم «تجريبي» (من المحاكاة الآلية أو من وضع التجربة أو ما علّمتموه يدوياً) مع الملفات والتقييمات والشهادات والدعوات. تُحفظ قبلها نسخة احتياطية في مجلد النسخ الاحتياطية للمحذوفات.</p>
   {% if run %}<div class="mg-sec">
-    <div class="d-flex flex-wrap gap-2 align-items-center mb-2"><b>تقرير {{ run.created_at|date:"Y-m-d H:i" }}:</b>
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-2"><b>تقرير {{ run.created_at|date:"Y-m-d الساعة H:i" }}:</b>
       <span class="pt-status st-accepted">{{ run.passed }} نجح</span>{% if run.failed %}<span class="pt-status st-rejected">{{ run.failed }} فشل</span>{% endif %}
       {% if run.cycle %}<a href="/manage/submissions/?cycle={{ run.cycle.pk }}">فتح طلبات دورة المحاكاة</a> · <a href="/manage/results/?cycle={{ run.cycle.pk }}">نتائجها</a>{% endif %}
-      {% if runs|length > 1 %}<select class="form-select form-select-sm" style="width:auto" onchange="location='?run='+this.value+'#sim'">{% for r in runs %}<option value="{{ r.pk }}"{% if r.pk == run.pk %} selected{% endif %}>{{ r.created_at|date:"Y-m-d H:i" }} — {{ r.passed }}/{{ r.passed|add:r.failed }}</option>{% endfor %}</select>{% endif %}</div>
+      {% if runs|length > 1 %}<select class="form-select form-select-sm" style="width:auto" onchange="location='?run='+this.value+'#sim'">{% for r in runs %}<option value="{{ r.pk }}"{% if r.pk == run.pk %} selected{% endif %}>{{ r.created_at|date:"Y-m-d الساعة H:i" }} — {{ r.passed }}/{{ r.passed|add:r.failed }}</option>{% endfor %}</select>{% endif %}</div>
     {% if run.password %}<div class="pt-note">للدخول بحسابات المحاكاة (لتروا ما تراه المدرسة والمحكّم): البريد يظهر في التقرير، وكلمة المرور: <b dir="ltr">{{ run.password }}</b> — استخدموا نافذة خاصة (Incognito) حتى لا يُغلق حسابكم.</div>{% endif %}
     <div class="mg-report">{{ run.report }}</div></div>{% endif %}
 </div>
@@ -40,7 +40,7 @@
 
 <div class="pt-card" id="clean">
   <h2><i class="fas fa-broom ms-1" style="color:var(--gold)"></i> تنظيف المشاركين والطلبات</h2>
-  <p class="text-muted">كل حذف هنا يحفظ قبله نسخة JSON مما سيُحذف (للاسترجاع عند الخطأ: <code dir="ltr">python manage.py loaddata backups/deleted/FILE.json</code>) ويُسجَّل في سجل العمليات. حذف مدارس أو محكّمين محددين: من صفحتي «المدارس» و«المحكّمون» (التحديد ثم الحذف).</p>
+  <p class="text-muted">كل حذف هنا يحفظ قبله نسخة JSON مما سيُحذف (في مجلد النسخ الاحتياطية للمحذوفات، ويسترجعها المدير التقني عند الخطأ) ويُسجَّل في سجل العمليات. حذف مدارس أو محكّمين محددين: من صفحتي «المدارس» و«المحكّمون» (التحديد ثم الحذف).</p>
   <h3 style="font-size:1.02rem;font-weight:900">تنظيف دورة</h3>
   <form method="post" class="row g-2 align-items-end">{% csrf_token %}<input type="hidden" name="act" value="cycle_clean">
     <div class="col-md-4"><label class="form-label">الدورة</label><select name="cycle" class="form-select">{% for c in all_cycles %}<option value="{{ c.pk }}"{% if cur_cycle and cur_cycle.pk == c.pk %} selected{% endif %}>{{ c.short_name|default:c.name }} — {{ c.n }} طلب ({{ c.n_draft }} مسودة، {{ c.n_wd }} مسحوب){% if c.is_simulation %} [محاكاة]{% endif %}</option>{% endfor %}</select></div>
@@ -54,7 +54,7 @@
     <div class="col-md-3"><label class="form-label">أقدم من (يوم)</label><input type="number" name="days" value="{{ stale_days }}" min="1" class="form-control"></div>
     <div class="col-md-5 d-flex gap-2"><button class="btn btn-light">عدّ الحسابات</button>
       {% if stale_n is not None %}<button name="do" value="1" class="btn-act danger" onclick="return confirm('حذف {{ stale_n }} حساب نهائياً؟')">حذف {{ stale_n }} حساب</button>{% endif %}</div></form>
-  {% if backups %}<div class="mg-sec"><b>آخر النسخ الاحتياطية للمحذوفات:</b><ul class="mb-0">{% for f, kb in backups %}<li><small dir="ltr">{{ f }} ({{ kb }} KB)</small></li>{% endfor %}</ul></div>{% endif %}
+  {% if backups %}<div class="mg-sec"><b>آخر النسخ الاحتياطية للمحذوفات:</b><ul class="mb-0">{% for f, kb in backups %}<li><small dir="ltr" data-raw>{{ f }} ({{ kb }} KB)</small></li>{% endfor %}</ul></div>{% endif %}
 </div>
 
 <div class="pt-card" id="tpl">

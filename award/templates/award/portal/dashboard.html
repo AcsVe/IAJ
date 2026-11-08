@@ -12,7 +12,7 @@
     <div><b>{{ cycle.name }} — {{ cycle.year }}</b></div>
     <div class="mt-1">
       {% if cycle.phase == 'upcoming' %}يبدأ التسجيل في {{ cycle.opens_at|date:"Y-m-d" }}
-      {% elif cycle.phase == 'open' %}التسجيل مفتوح حتى <b style="font-size:1rem">{{ cycle.closes_at|date:"Y-m-d H:i" }}</b>
+      {% elif cycle.phase == 'open' %}التسجيل مفتوح حتى <b style="font-size:1rem">{{ cycle.closes_at|date:"Y-m-d الساعة H:i" }}</b>
       {% elif cycle.phase == 'results' %}تم إعلان النتائج
       {% else %}انتهى التسجيل — الطلبات في مرحلة التدقيق والتحكيم{% endif %}
     </div>
@@ -39,7 +39,7 @@
         <li class="pt-item">
           <div>
             <a class="t" href="{{ s.get_absolute_url }}">{{ s.project_title }}</a>
-            <div class="m">{{ s.ref }} · {{ s.track|default:"—" }}{% if s.cycle %} · {{ s.cycle.name }}{% endif %}
+            <div class="m"><bdi>{{ s.ref }}</bdi> · {{ s.track|default:"—" }}{% if s.cycle %} · {{ s.cycle.name }}{% endif %}
               {% if s.status == 'revision' and s.revision_deadline %} · <b style="color:#e8710a">عدّلوا قبل {{ s.revision_deadline|date:"Y-m-d" }}</b>{% endif %}</div>
           </div>
           <div class="d-flex align-items-center gap-2">
@@ -59,7 +59,7 @@
     <div class="pt-card pt-notes">
       <h2><i class="fas fa-bell ms-1" style="color:var(--gold)"></i> آخر الإشعارات</h2>
       {% for n in notes %}
-        <a class="pt-n{% if not n.is_read %} unread{% endif %}" href="{% url 'notification_go' n.pk %}"><b>{{ n.title }}</b><br><small class="text-muted">{{ n.created_at|date:"Y-m-d H:i" }}</small></a>
+        <a class="pt-n{% if not n.is_read %} unread{% endif %}" href="{% url 'notification_go' n.pk %}"><b>{{ n.title }}</b><br><small class="text-muted">{{ n.created_at|date:"Y-m-d الساعة H:i" }}</small></a>
       {% empty %}<p class="text-muted">لا توجد إشعارات.</p>{% endfor %}
       {% if notes %}<div class="mt-2"><a href="{% url 'notifications' %}">كل الإشعارات ←</a></div>{% endif %}
     </div>

@@ -1,0 +1,38 @@
+# الفحص الآلي مع كل رفع: ترجمة كل ملفات Python، ثم اختبارات Django، ثم فحص المظهر واللغة في متصفح حقيقي (الصفحات
+# العامة وبوابة المدرسة وصفحة المحكّم ولوحة الإدارة على الحاسوب والهاتف، ببيانات تجريبية ودورة محاكاة في قاعدة مؤقتة).
+# يُشغَّل على Python 3.10 لأن كمبيوتر المدرسة قد يكون أقدم من 3.12؛ وإن فشل وصل إشعار بالبريد إلى صاحب المستودع.
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      E2E_CHANNEL: chromium
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+      - name: Compile
+        run: python -m compileall -q -x '(\.git|venv|\.venv|staticfiles|backups)' .
+      - name: Install
+        run: |
+          pip install -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+      - name: Tests
+        run: python manage.py test
+      - name: UI audit
+        run: python tests/ui_audit.py
