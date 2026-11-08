@@ -17,7 +17,7 @@ table{width:100%;border-collapse:collapse;margin:8px 0}td,th{border:1px solid #e
     <div class="qr">{{ qr|safe }}</div></div>
   <table>
     <tr><th>رقم الطلب</th><td><b dir="ltr">{{ sub.ref }}</b></td></tr>
-    <tr><th>تاريخ الإرسال</th><td>{{ sub.sent_at|date:"Y-m-d H:i" }}</td></tr>
+    <tr><th>تاريخ الإرسال</th><td>{{ sub.sent_at|date:"Y-m-d الساعة H:i" }}</td></tr>
     <tr><th>المدرسة</th><td>{{ sub.school_name }}</td></tr>
     <tr><th>ضابط الارتباط</th><td>{{ sub.contact_person }} — <span dir="ltr">{{ sub.phone }}</span> — <span dir="ltr">{{ sub.email }}</span></td></tr>
     <tr><th>المجال / المسار</th><td>{{ sub.field|default:"—" }} / {{ sub.track|default:"—" }}</td></tr>
@@ -25,9 +25,9 @@ table{width:100%;border-collapse:collapse;margin:8px 0}td,th{border:1px solid #e
     <tr><th>المعلم المشرف</th><td>{{ sub.supervisor|default:"—" }}</td></tr>
     <tr><th>الطلبة</th><td style="white-space:pre-line">{{ sub.team_members|default:"—" }}</td></tr>
     <tr><th>الملفات</th><td>{% if sub.document %}ملف البحث ✓{% endif %}{% if sub.attachment %} · مرفق ✓{% endif %}{% if files %} · {{ files|length }} ملف إضافي{% endif %}</td></tr>
-    <tr><th>الإقرارات</th><td>{% if sub.declared_at %}<span class="ok">✓ صحة المعلومات · ✓ أصالة العمل · ✓ موافقة أولياء الأمور على النشر</span><br><small class="muted">{{ sub.declared_at|date:"Y-m-d H:i" }}</small>{% else %}—{% endif %}</td></tr>
+    <tr><th>الإقرارات</th><td>{% if sub.declared_at %}<span class="ok">✓ صحة المعلومات · ✓ أصالة العمل · ✓ موافقة أولياء الأمور على النشر</span><br><small class="muted">{{ sub.declared_at|date:"Y-m-d الساعة H:i" }}</small>{% else %}—{% endif %}</td></tr>
     <tr><th>الحالة الحالية</th><td>{{ sub.public_status_label }}</td></tr>
   </table>
-  <p class="muted" style="font-size:.9rem">هذا الإيصال يثبت استلام الطلب إلكترونياً ولا يعني قبوله. تابعوا حالة الطلب من حسابكم في الموقع. طُبع في {{ now|date:"Y-m-d H:i" }}.</p>
+  <p class="muted" style="font-size:.9rem">هذا الإيصال يثبت استلام الطلب إلكترونياً ولا يعني قبوله. تابعوا حالة الطلب من حسابكم في الموقع. طُبع في {{ now|date:"Y-m-d الساعة H:i" }}.</p>
 </div>
 </body></html>

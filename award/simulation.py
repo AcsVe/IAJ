@@ -40,7 +40,7 @@ class Sim:
         self.lines = []
         self.passed = self.failed = 0
         self.password = 'Sim-' + secrets.token_hex(4)
-        self.stamp = timezone.localtime().strftime('%Y-%m-%d %H:%M')
+        self.stamp = timezone.localtime().strftime('%Y-%m-%d الساعة %H:%M')
         self.cycle = None
 
     # ---------- أدوات ----------
@@ -121,7 +121,7 @@ class Sim:
         self.log('')
         self.log(f'النتيجة: {self.passed} نجح · {self.failed} فشل')
         self.log(f'حسابات المحاكاة: كلمة المرور {self.password}  (أمثلة: {getattr(self, "example_school", "")} · {getattr(self, "example_judge", "")})')
-        self.log('لمسح كل بيانات المحاكاة: /manage/tools/ ← «مسح بيانات التجربة»  أو  simulate_clear.bat')
+        self.log('لمسح كل بيانات المحاكاة: صفحة «أدوات الإدارة» ← «مسح بيانات التجربة».')
         run = SimulationRun.objects.create(by=self.by if self.by and self.by.is_authenticated else None, cycle=self.cycle,
                                            passed=self.passed, failed=self.failed, report='\n'.join(self.lines),
                                            password=self.password)
@@ -189,9 +189,9 @@ class Sim:
         self.check('إشعار «تم استلام طلبك» لكل مدرسة',
                    Notification.objects.filter(user__in=[x.owner for x in sent], title__contains='تم استلام').count() == len(sent))
         r = self.get(self.schools[0], f'/portal/submissions/{sent[0].pk}/receipt/')
-        self.check('إيصال الاستلام يُفتح للمدرسة', r.status_code == 200 and sent[0].ref in r.content.decode(), f'HTTP {r.status_code}')
+        self.check('إيصال الاستلام يُفتح للمدرسة', r.status_code == 200 and sent[0].ref in r.content.decode(), f'استجابة الخادم {r.status_code}')
         r = self.get(self.schools[1], f'/portal/submissions/{sent[0].pk}/receipt/')
-        self.check('مدرسة أخرى لا ترى إيصال غيرها', r.status_code == 404, f'HTTP {r.status_code}')
+        self.check('مدرسة أخرى لا ترى إيصال غيرها', r.status_code == 404, f'استجابة الخادم {r.status_code}')
 
     def s_reminders_school(self):
         n = reminders.draft_reminders(self.cycle, force=True)
@@ -295,7 +295,7 @@ class Sim:
                 if first:
                     r = self._score(a, vals, rec, via_web=True)
                     a.refresh_from_db()
-                    self.check('المحكّم يقيّم من صفحة التقييم (الموقع)', a.is_done, f'HTTP {r.status_code} — {a.total}/100')
+                    self.check('المحكّم يقيّم من صفحة التقييم (الموقع)', a.is_done, f'استجابة الخادم {r.status_code} — {a.total}/100')
                     first = False
                 else:
                     self._score(a, vals, rec)
@@ -427,12 +427,12 @@ class Sim:
         self.check('الاعتراض متاح ضمن المهلة', workflow.can_appeal(rej), f'حتى {timezone.localtime(self.cycle.appeal_until):%Y-%m-%d}')
         r = self.post(rej.owner, f'/portal/submissions/{rej.pk}/appeal/', {'body': 'نرجو إعادة النظر في درجة الأثر لأن المشروع طُبّق فعلاً في المدرسة.'})
         ap = Appeal.objects.filter(submission=rej).first()
-        self.check('المدرسة قدّمت اعتراضاً', ap is not None, f'HTTP {r.status_code}')
+        self.check('المدرسة قدّمت اعتراضاً', ap is not None, f'استجابة الخادم {r.status_code}')
         self.check('اعتراض واحد فقط', not workflow.can_appeal(rej))
         r = self.post(self.manager, '/manage/appeals/', {'aid': ap.pk, 'status': 'rejected', 'response': 'درست اللجنة الاعتراض والنتيجة ثابتة.'})
         ap.refresh_from_db()
         self.check('رد اللجنة ووصل للمدرسة', ap.status == 'rejected' and Notification.objects.filter(
-            user=rej.owner, title__contains='اعتراض').exists(), f'HTTP {r.status_code}')
+            user=rej.owner, title__contains='اعتراض').exists(), f'استجابة الخادم {r.status_code}')
 
     def s_certificates(self):
         n = workflow.issue_certificates(self.cycle)
@@ -484,9 +484,9 @@ class Sim:
                     '/manage/judges/', '/manage/schools/', '/manage/appeals/', f'/manage/post/?cycle={c}', '/manage/tools/',
                     '/manage/audit/'):
             r = self.get(self.manager, url)
-            self.check(f'صفحة {url.split("?")[0]}', r.status_code == 200, f'HTTP {r.status_code}')
+            self.check(f'صفحة {url.split("?")[0]}', r.status_code == 200, f'استجابة الخادم {r.status_code}')
         r = self.get(self.schools[0], '/manage/')
-        self.check('المدرسة لا تدخل لوحة الإدارة', r.status_code == 404, f'HTTP {r.status_code}')
+        self.check('المدرسة لا تدخل لوحة الإدارة', r.status_code == 404, f'استجابة الخادم {r.status_code}')
 
     def s_privacy(self):
         host = self.client(self.manager).defaults['HTTP_HOST']
@@ -495,6 +495,6 @@ class Sim:
             r = anon.get(url, secure=True)
             html = r.content.decode()
             self.check(f'{url} لا يعرض بيانات المحاكاة', r.status_code == 200 and 'مدرسة المحاكاة' not in html and 'محاكاة ' + self.stamp not in html,
-                       f'HTTP {r.status_code}')
+                       f'استجابة الخادم {r.status_code}')
         sent = EmailLog.objects.filter(pk__gt=0).count() - self.emails_before
         self.check('لم يُرسل أي بريد أثناء المحاكاة', sent == 0, f'{sent} رسالة')

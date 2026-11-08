@@ -2,7 +2,7 @@
 {% block portal %}
 <div class="pt-card">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0">{{ sub.ref }}{% if sub.cycle %} · {{ sub.cycle.name }} {{ sub.cycle.year }}{% endif %}</p></div>
+    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0"><bdi>{{ sub.ref }}</bdi>{% if sub.cycle %} · {{ sub.cycle.name }} {{ sub.cycle.year }}{% endif %}</p></div>
     <span class="pt-status st-{{ sub.public_status }}" style="font-size:1rem">{{ sub.public_status_label }}</span>
   </div>
   {% if sub.status != 'withdrawn' %}
@@ -13,7 +13,7 @@
   {% if sub.status == 'revision' %}<div class="pt-note warn"><b>مطلوب تعديل:</b>
 {{ sub.school_note|default:"يرجى مراجعة الطلب وإعادة إرساله." }}{% if sub.revision_deadline %}
 
-<b>آخر موعد: {{ sub.revision_deadline|date:"Y-m-d H:i" }}</b>{% endif %}</div>
+<b>آخر موعد: {{ sub.revision_deadline|date:"Y-m-d الساعة H:i" }}</b>{% endif %}</div>
   {% elif sub.status == 'on_hold' %}<div class="pt-note warn"><b>الطلب معلّق مؤقتاً.</b>
 {{ sub.school_note }}</div>
   {% elif sub.school_note and not sub.results_hidden and sub.status in 'accepted rejected winner' %}<div class="pt-note"><b>ملاحظة فريق الجائزة:</b>
@@ -33,7 +33,7 @@
 <div class="pt-card" id="results" style="border-top-color:var(--gold)">
   <h2><i class="fas fa-award ms-1" style="color:var(--gold)"></i> النتيجة وما بعدها</h2>
   {% if certificates %}<div class="d-flex flex-wrap gap-2 mb-3">{% for c in certificates %}<a href="{{ c.get_absolute_url }}" target="_blank" class="pt-btn pt-btn-gold"><i class="fas fa-certificate"></i> {{ c.get_kind_display }}</a>{% endfor %}</div>{% endif %}
-  {% if invitation %}<div class="pt-note"><b><i class="fas fa-envelope-open-text"></i> أنتم مدعوون لحفل التكريم</b>{% if sub.cycle.ceremony_date %} — {{ sub.cycle.ceremony_date|date:"Y-m-d H:i" }}{% endif %}{% if sub.cycle.ceremony_place %} — {{ sub.cycle.ceremony_place }}{% endif %}
+  {% if invitation %}<div class="pt-note"><b><i class="fas fa-envelope-open-text"></i> أنتم مدعوون لحفل التكريم</b>{% if sub.cycle.ceremony_date %} — {{ sub.cycle.ceremony_date|date:"Y-m-d الساعة H:i" }}{% endif %}{% if sub.cycle.ceremony_place %} — {{ sub.cycle.ceremony_place }}{% endif %}
     · ردّكم: <b>{{ invitation.get_rsvp_display }}</b> · <a href="/rsvp/{{ invitation.code }}/">{% if invitation.rsvp == 'pending' %}تأكيد الحضور{% else %}تعديل الرد{% endif %}</a></div>{% endif %}
   {% if feedback and feedback.rows %}
   <h3 style="font-size:1.05rem;font-weight:900;color:var(--primary)">تقرير التغذية الراجعة <small class="text-muted">(متوسط {{ feedback.n }} محكّم — بدون أسماء)</small></h3>
@@ -99,13 +99,13 @@
       <dt>ضابط الارتباط</dt><dd>{{ sub.contact_person }} — <span dir="ltr">{{ sub.phone }}</span></dd>
       <dt>ملف البحث</dt><dd>{% if sub.document %}<a href="{{ sub.document.url }}" target="_blank"><i class="fas fa-file-pdf"></i> فتح الملف</a>{% else %}<span style="color:#c62828">لم يُرفع بعد</span>{% endif %}</dd>
       <dt>المرفق</dt><dd>{% if sub.attachment %}<a href="{{ sub.attachment.url }}" target="_blank"><i class="fas fa-paperclip"></i> فتح المرفق</a>{% else %}—{% endif %}</dd>
-      <dt>تاريخ الإرسال</dt><dd>{{ sub.sent_at|date:"Y-m-d H:i"|default:"—" }}</dd>
+      <dt>تاريخ الإرسال</dt><dd>{{ sub.sent_at|date:"Y-m-d الساعة H:i"|default:"—" }}</dd>
     </dl>
   </div></div>
   <div class="col-lg-4"><div class="pt-card">
     <h2>سجل الطلب</h2>
     <ul class="pt-timeline">
-      {% for l in logs %}<li><b>{{ l.new_label }}</b><br><small>{{ l.created_at|date:"Y-m-d H:i" }}</small>{% if l.note and l.new_status == 'revision' %}<div class="pt-help" style="white-space:pre-line">{{ l.note }}</div>{% endif %}</li>
+      {% for l in logs %}<li><b>{{ l.new_label }}</b><br><small>{{ l.created_at|date:"Y-m-d الساعة H:i" }}</small>{% if l.note and l.new_status == 'revision' %}<div class="pt-help" style="white-space:pre-line">{{ l.note }}</div>{% endif %}</li>
       {% empty %}<li><small>—</small></li>{% endfor %}
     </ul>
   </div></div>

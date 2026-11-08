@@ -2,7 +2,7 @@
 {% block portal %}
 <div class="pt-card">
   <div class="d-flex justify-content-between flex-wrap gap-2">
-    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0">{{ sub.ref }} · {{ sub.field|default:"" }} / {{ sub.track|default:"" }} · {{ a.get_stage_display }}</p></div>
+    <div><h1>{{ sub.project_title }}</h1><p class="pt-sub mb-0"><bdi>{{ sub.ref }}</bdi> · {{ sub.field|default:"" }} / {{ sub.track|default:"" }} · {{ a.get_stage_display }}</p></div>
     <div class="text-center"><div class="pt-total" id="liveTotal">{{ a.total }}</div><small class="text-muted">من 100</small></div>
   </div>
   <dl class="pt-kv mt-3">
@@ -33,9 +33,9 @@
 <div class="pt-card">
   <h2>التقييم {% if a.is_done %}<span class="pt-status st-accepted" style="font-size:.85rem">منتهٍ {{ a.completed_at|date:"Y-m-d" }}</span>{% endif %}</h2>
   {% for e in errors %}<div class="pt-alert pt-alert-error">{{ e }}</div>{% endfor %}
-  {% if deadline_passed %}<div class="pt-note warn">انتهى موعد التحكيم ({{ sub.cycle.judging_closes_at|date:"Y-m-d H:i" }}) — الدرجات مقفلة. للتمديد تواصل مع إدارة الجائزة.</div>
+  {% if deadline_passed %}<div class="pt-note warn">انتهى موعد التحكيم ({{ sub.cycle.judging_closes_at|date:"Y-m-d الساعة H:i" }}) — الدرجات مقفلة. للتمديد تواصل مع إدارة الجائزة.</div>
   {% elif locked %}<div class="pt-note">انتهت مرحلة التحكيم لهذا الطلب — التقييم للعرض فقط.</div>
-  {% elif sub.cycle.judging_closes_at %}<div class="pt-note">آخر موعد للتحكيم: <b>{{ sub.cycle.judging_closes_at|date:"Y-m-d H:i" }}</b></div>{% endif %}
+  {% elif sub.cycle.judging_closes_at %}<div class="pt-note">آخر موعد للتحكيم: <b>{{ sub.cycle.judging_closes_at|date:"Y-m-d الساعة H:i" }}</b></div>{% endif %}
   {% if not rows %}<div class="pt-note warn">لم تُضَف معايير تحكيم بعد. تواصل مع إدارة الجائزة.</div>{% endif %}
   <form method="post" id="scoreForm">{% csrf_token %}
     {% for r in rows %}

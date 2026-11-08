@@ -9,7 +9,7 @@
   <form method="post" class="d-flex flex-wrap gap-2 align-items-center">{% csrf_token %}<input type="hidden" name="act" value="certs">
     <label class="form-check m-0"><input type="checkbox" name="judges" value="1" checked class="form-check-input"> مع شهادات شكر للمحكّمين</label>
     <button class="btn-act gold"><i class="fas fa-wand-magic-sparkles"></i> إصدار الشهادات (للطلبات ذات النتيجة النهائية)</button></form>
-  <p class="pt-help mt-2">كل شهادة لها رمز تحقق و QR يفتح صفحة <a href="/verify/" target="_blank">/verify/</a>. الإصدار مرة ثانية يضيف الجديد فقط. المدرسة تجد شهادتها في صفحة طلبها بعد النشر.</p>
+  <p class="pt-help mt-2">كل شهادة لها رمز تحقق و QR يفتح صفحة <a href="/verify/" target="_blank"><bdi dir="ltr">/verify/</bdi></a>. الإصدار مرة ثانية يضيف الجديد فقط. المدرسة تجد شهادتها في صفحة طلبها بعد النشر.</p>
   {% if certs %}<input type="search" class="form-control form-control-sm mb-2" style="max-width:260px" placeholder="بحث في الشهادات…" data-live="#cTable tbody tr" data-shown="#cShown">
   <div style="overflow:auto;max-height:420px"><table class="mg-table" id="cTable"><thead><tr><th>النوع</th><th>باسم</th><th>عن</th><th>الرمز</th><th></th></tr></thead><tbody>
   {% for c in certs %}<tr{% if c.revoked %} style="opacity:.45"{% endif %}><td>{{ c.get_kind_display }}{% if c.rank %} ({{ c.rank }}){% endif %}</td><td><b>{{ c.recipient }}</b></td><td><small>{{ c.title|truncatechars:50 }}</small></td><td dir="ltr"><small>{{ c.code }}</small></td>

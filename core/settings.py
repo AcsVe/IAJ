@@ -144,7 +144,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
+# الموقع عربي: رسائل Django الجاهزة (نماذج كلمة المرور وقواعدها ولوحة الإدارة) بالعربية، بتنسيقات core/formats/ar
+LANGUAGE_CODE = 'ar'
+FORMAT_MODULE_PATH = ['core.formats']
 TIME_ZONE = os.environ.get('TIME_ZONE', 'Asia/Amman')
 
 # بوابة أنظمة العمل (/systems/): مصدر الشريط الإخباري. فارغ = نظام القاعات على الجهاز نفسه ثم عنوانه العام.

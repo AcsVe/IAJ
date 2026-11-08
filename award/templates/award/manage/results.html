@@ -19,10 +19,10 @@
       {% if disc %} · <a href="/manage/submissions/?status=judging&flag=disc">معالجة التباين ({{ disc }})</a>{% endif %}</li>
     <li>تحديد الفائزين بالجدول أدناه {% if n_winners %}<span style="color:#188038">✓ {{ n_winners }}</span>{% endif %} — والباقي «قبول/رفض» من صفحة الطلبات</li>
     <li>اعتماد لجنة الجائزة
-      {% if cur_cycle.results_approved_at %}<span style="color:#188038">✓ {{ cur_cycle.results_approved_at|date:"Y-m-d H:i" }} {% if cur_cycle.results_approved_by %}— {{ cur_cycle.results_approved_by.get_full_name|default:cur_cycle.results_approved_by.email }}{% endif %}</span>
+      {% if cur_cycle.results_approved_at %}<span style="color:#188038">✓ {{ cur_cycle.results_approved_at|date:"Y-m-d الساعة H:i" }} {% if cur_cycle.results_approved_by %}— {{ cur_cycle.results_approved_by.get_full_name|default:cur_cycle.results_approved_by.email }}{% endif %}</span>
         {% if cur_cycle.results_approval_note %}<div class="pt-help">{{ cur_cycle.results_approval_note }}</div>{% endif %}
       {% elif not cur_cycle.require_approval %}<small class="text-muted">(غير مطلوب في إعدادات هذه الدورة)</small>{% endif %}</li>
-    <li>النشر وإبلاغ المدارس {% if cur_cycle.results_published %}<span style="color:#188038">✓ {{ cur_cycle.results_published_at|date:"Y-m-d H:i" }}</span>{% endif %}
+    <li>النشر وإبلاغ المدارس {% if cur_cycle.results_published %}<span style="color:#188038">✓ {{ cur_cycle.results_published_at|date:"Y-m-d الساعة H:i" }}</span>{% endif %}
       {% if cur_cycle.appeal_until %} · الاعتراض متاح حتى {{ cur_cycle.appeal_until|date:"Y-m-d" }}{% endif %}</li>
   </ol>
   {% if not cur_cycle.results_published %}
@@ -49,7 +49,7 @@
     <tbody>{% for r in rows %}<tr>
       <td><input type="checkbox" name="ids" value="{{ r.s.pk }}"{% if r.winner %} checked{% endif %}></td>
       <td><b>{{ r.suggest }}</b>{% if r.tie %} <span title="تعادل حُسم بقاعدة كسر التعادل">⚖</span>{% endif %}</td>
-      <td><a class="t" href="/manage/submissions/{{ r.s.pk }}/">{{ r.s.project_title|truncatechars:50 }}</a><br><small class="text-muted">{{ r.s.ref }} · {{ r.s.school_name }} · {{ r.s.stage_label }}</small>{% if r.s.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}</td>
+      <td><a class="t" href="/manage/submissions/{{ r.s.pk }}/">{{ r.s.project_title|truncatechars:50 }}</a><br><small class="text-muted"><bdi>{{ r.s.ref }}</bdi> · {{ r.s.school_name }} · {{ r.s.stage_label }}</small>{% if r.s.is_simulation %} <span class="sim-tag">تجريبي</span>{% endif %}</td>
       <td><b style="font-size:1.1rem">{{ r.avg|default_if_none:"—" }}</b>{% if r.disc %}<br><span class="disc-tag">± {{ r.spread }}</span>{% endif %}</td><td>{{ r.prog }}</td>
       <td><small>بشدة {{ r.strong }} · أوصي {{ r.yes }} · لا {{ r.no }}</small></td>
       <td><input type="number" name="rank_{{ r.s.pk }}" value="{% if r.winner %}{{ r.winner.rank }}{% else %}{{ r.suggest }}{% endif %}" min="1" class="form-control form-control-sm" style="width:70px"></td>

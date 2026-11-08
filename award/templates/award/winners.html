@@ -42,9 +42,9 @@
                     <div style="padding: 22px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
                         <h4 style="color: var(--primary); font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">{{ winner.school_name }}</h4>
                         {% if winner.project_title %}
-                        <p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;"><i class="fas fa-project-diagram ms-1" style="color: var(--gold); font-size: 0.75rem;"></i> {{ winner.project_title }}</p>
+                        <p style="color: #888; font-size: 0.85rem; margin-bottom: 8px;"><i class="fas fa-project-diagram ms-1" style="color: var(--gold); font-size: .8125rem;"></i> {{ winner.project_title }}</p>
                         {% endif %}
-                        <span style="display: inline-block; background: var(--primary); color: var(--gold); padding: 3px 12px; font-size: 0.75rem; font-weight: 700; width: fit-content;">{{ winner.year }}</span>
+                        <span style="display: inline-block; background: var(--primary); color: var(--gold); padding: 3px 12px; font-size: .8125rem; font-weight: 700; width: fit-content;">{{ winner.year }}</span>
                         {% if winner.description %}
                         <p style="color: #666; font-size: 0.82rem; line-height: 1.6; margin-top: 8px;">{{ winner.description|truncatewords:15 }}</p>
                         {% endif %}
@@ -62,7 +62,7 @@
 <section class="py-5" style="background-color: var(--bg-gray);">
     <div class="container text-center py-5">
         <i class="fas fa-trophy" style="font-size: 3rem; color: #ddd; margin-bottom: 15px;"></i>
-        <p style="color: #999; font-size: 1.1rem;">منصة التتويج بانتظار أصحابها — {% if results_date %}يُعلن الفائزون في <b style="color:var(--gold)">{{ results_date|ar_date }}</b>{% else %}موعد إعلان الفائزين يُحدَّد قريباً{% endif %}</p>
+        <p style="color: #5f6371; font-size: 1.1rem;">منصة التتويج بانتظار أصحابها — {% if results_date %}يُعلن الفائزون في <b style="color:var(--gold)">{{ results_date|ar_date }}</b>{% else %}موعد إعلان الفائزين يُحدَّد قريباً{% endif %}</p>
     </div>
 </section>
 {% endif %}

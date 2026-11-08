@@ -20,7 +20,7 @@
     .nd-text img:first-child { margin-right: 0; }
     .nd-back-section { text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee; }
     .nd-back-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 35px; background-color: var(--primary); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem; transition: all 0.3s; }
-    .nd-back-btn:hover { background-color: var(--gold); color: #fff; }
+    .nd-back-btn:hover { background-color: var(--gold); color: var(--on-gold, #1f1a10); }
     @media (max-width: 768px) {
         .nd-inner-header { padding: 35px 0 25px; }
         .nd-inner-header h1 { font-size: 1.3rem; }
@@ -33,7 +33,7 @@
     <div class="nd-inner-header">
         <div class="container">
             <h1>{{ article.title }}</h1>
-            <nav aria-label="breadcrumb">
+            <nav aria-label="مسار التنقل">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{% url 'home' %}">الرئيسية</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'news_list' %}">الأخبار</a></li>

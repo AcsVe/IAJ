@@ -28,7 +28,10 @@
         .fa-flip-horizontal { transform: scaleX(-1); } .fa-flip-vertical { transform: scaleY(-1); } .fa-flip-both { transform: scale(-1); }
         .fa-ul { list-style: none; margin-inline-start: 2.5em; padding: 0; } .fa-li { position: absolute; inset-inline-start: -2em; width: 2em; text-align: center; line-height: inherit; }
         @media (prefers-reduced-motion: reduce) { .fa-spin, .fa-pulse, .fa-spin-pulse { animation: none; } }
-    </style>
+    
+/* لا نص أصغر من 13px */
+small{font-size:max(.8125rem,80%)}
+</style>
     <script src="{% static 'award/js/icons.js' %}" defer></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
@@ -215,7 +218,7 @@
         .cd-boxes { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; direction: rtl; }
         .cd-box { padding: 10px 4px 8px; border-radius: 12px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
         .cd-box b { display: block; color: #fff; font-size: 1.6rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
-        .cd-box span { display: block; color: rgba(255,255,255,.65); font-size: .72rem; margin-top: 4px; }
+        .cd-box span { display: block; color: rgba(255,255,255,.65); font-size: .8125rem; margin-top: 4px; }
         .cd-box:first-child { background: linear-gradient(160deg, rgba(197,160,89,.45), rgba(197,160,89,.15)); border-color: rgba(197,160,89,.6); }
         .cd-cta { display: block; margin-top: 14px; padding: 9px; border-radius: 10px; font-weight: 800; font-size: .92rem; text-decoration: none;
             color: var(--primary) !important; background: linear-gradient(135deg, #f1d188, var(--gold)); box-shadow: 0 6px 16px rgba(197,160,89,.35); transition: transform .2s; }
@@ -223,7 +226,7 @@
         .countdown-panel-label { display: none; }
         #countdownDropdown.show .countdown-panel { display: block; }
 
-        .btn-gold { background-color: var(--gold); color: #fff; font-weight: 700; border-radius: 0; padding: 10px 30px; transition: all 0.3s; border: none; box-shadow: 0 4px 10px rgba(197, 160, 89, 0.5); }
+        .btn-gold { background-color: var(--gold); color: var(--on-gold, #1f1a10); font-weight: 700; border-radius: 0; padding: 10px 30px; transition: all 0.3s; border: none; box-shadow: 0 4px 10px rgba(197, 160, 89, 0.5); }
         .btn-gold:hover { background-color: var(--primary); color: #fff; }
         /* ===== شريط ملاحظة المسار (متحرك) ===== */
         .trk-notice { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding: 0 0 0 4px; height: 44px; border-radius: 999px; overflow: hidden;
@@ -239,7 +242,7 @@
         .trk-notice-run { display: flex; width: max-content; will-change: transform; }
         .trk-notice-item { flex-shrink: 0; padding: 0 40px; white-space: nowrap; direction: rtl; unicode-bidi: plaintext;
             color: #fff; font-weight: 800; font-size: 1rem; text-shadow: 0 1px 4px rgba(0,0,0,.35); }
-        .trk-notice-item::before { content: '\2726'; color: var(--gold); margin-left: 12px; font-size: .75rem; }
+        .trk-notice-item::before { content: '\2726'; color: var(--gold); margin-left: 12px; font-size: .8125rem; }
         .trk-notice:hover .trk-notice-run { animation-play-state: paused !important; }
         @keyframes trkNoticeSlide { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         @media (prefers-reduced-motion: reduce) { .trk-notice-run { animation: none !important; } .trk-notice-icon i { animation: none; } }
@@ -260,7 +263,7 @@
         .countdown-panel .cd-head { color: #fff; font-size: 1.2rem; font-weight: 800; margin: 2px 22px 14px; }
         .countdown-panel .cd-close { position: absolute; top: 10px; left: 10px; width: 24px; height: 24px; border-radius: 50%; border: 0;
             background: rgba(255,255,255,.9); color: var(--primary); font-weight: 900; line-height: 1; font-size: 1rem; cursor: pointer; }
-        .countdown-panel .cd-close:hover { background: var(--gold); color: #fff; }
+        .countdown-panel .cd-close:hover { background: var(--gold); color: var(--on-gold, #1f1a10); }
         .countdown-panel .cd-end { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.45); color: #fff; font-size: 1.15rem; font-weight: 800; }
         /* البطاقات المنبثقة (العداد، بطاقة الدورة، التواصل): تظهر وتختفي بتلاشٍ سريع */
         @media (min-width: 992px) {
@@ -278,7 +281,7 @@
         .soc-nav { position: relative; }
         .soc-nav-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.55); background: rgba(255,255,255,.08); color: #fff;
             display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; transition: background .2s, color .2s; }
-        .soc-nav-btn:hover, .soc-nav:focus-within .soc-nav-btn { background: var(--gold); color: #fff; border-color: var(--gold); }
+        .soc-nav-btn:hover, .soc-nav:focus-within .soc-nav-btn { background: var(--gold); color: var(--on-gold, #1f1a10); border-color: var(--gold); }
         .soc-pop { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 12px; z-index: 9999; white-space: nowrap; }
         .soc-pop .social-bar { box-shadow: 0 18px 40px rgba(0,0,0,.35); }
         .soc-pop::before { content: ''; position: absolute; top: -7px; left: 50%; margin-left: -7px; width: 14px; height: 14px; transform: rotate(45deg); background: #fff; }
@@ -290,7 +293,7 @@
         .media-badge .mb-logo { width: {{ portal.wm_size|default:46 }}px; height: {{ portal.wm_size|default:46 }}px; object-fit: contain; border-radius: 50%;
             background: #fff; padding: 3px; border: 2px solid var(--gold); opacity: {{ portal.wm_opacity|default:"0.95"|stringformat:"s" }};
             box-shadow: 0 3px 10px rgba(0,0,0,.35); flex-shrink: 0; }
-        .media-badge .mb-cap { color: #fff; font-weight: 800; font-size: 1rem; line-height: 1.4;
+        .media-badge .mb-cap { color: #fff; background: rgba(10,22,50,.92); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 1rem; line-height: 1.4;
             text-shadow: 0 2px 4px rgba(0,0,0,.85), 0 0 12px rgba(0,0,0,.6); overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
             -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         @media (max-width: 767px) { .media-badge .mb-logo { width: 36px; height: 36px; } .media-badge .mb-cap { font-size: .9rem; } }
@@ -298,9 +301,9 @@
         .cyc-tabs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 0 0 26px; }
         .cyc-tabs a { padding: 8px 16px; border-radius: 30px; background: #fff; color: var(--primary); font-weight: 800; text-decoration: none;
             border: 1px solid rgba(0,0,0,.08); box-shadow: 0 2px 8px rgba(0,0,0,.05); font-size: .95rem; }
-        .cyc-tabs a b { background: rgba(197,160,89,.18); color: var(--primary); border-radius: 20px; padding: 1px 8px; margin-right: 4px; font-size: .8rem; }
+        .cyc-tabs a b { background: rgba(197,160,89,.18); color: var(--primary); border-radius: 20px; padding: 1px 8px; margin-right: 4px; font-size: .8125rem; }
         .cyc-tabs a.on { background: var(--primary); background-image: var(--menu-glass); color: #fff; border-color: transparent; }
-        .cyc-tabs a.on b { background: var(--gold); color: #fff; }
+        .cyc-tabs a.on b { background: var(--gold); color: var(--on-gold, #1f1a10); }
         .cyc-tabs a.cyc-arch { background: transparent; box-shadow: none; border-style: dashed; }
         /* بطاقة الدورة: تظهر عند المرور على اسم الجائزة أو زر التسجيل — بنفس تصميم بطاقة «الوقت المتبقي» */
         .cyc-hover { position: relative; }
@@ -324,9 +327,9 @@
         .cycle-card .cd-cta { margin-top: 12px; }
         @media (max-width: 991.98px) { .cycle-card { display: none !important; } }
         /* أيقونة الدخول: دائرة ذهبية وبداخلها شخص أبيض */
-        .navbar-royal .nav-account .acc-ico { width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: #fff; display: inline-flex;
+        .navbar-royal .nav-account .acc-ico { width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--on-gold, #1f1a10); display: inline-flex;
             align-items: center; justify-content: center; font-size: .82rem; box-shadow: 0 2px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.4); flex-shrink: 0; }
-        .navbar-royal .nav-account .acc-ico i { color: #fff !important; font-size: .8rem; }
+        .navbar-royal .nav-account .acc-ico i { color: #fff !important; font-size: .8125rem; }
         .navbar-royal .nav-account:hover .acc-ico { background: #fff; }
         .navbar-royal .nav-account:hover .acc-ico i { color: var(--gold) !important; }
         /* شريط التواصل الاجتماعي */
@@ -334,7 +337,7 @@
             border-right: 3px solid var(--gold); border-left: 3px solid var(--gold); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
         .social-bar a { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
             color: var(--soc-c, var(--primary)); font-size: 1.15rem; text-decoration: none; transition: background .2s, color .2s, transform .2s; }
-        .social-bar a:hover { background: var(--gold); color: #fff; transform: translateY(-2px); }
+        .social-bar a:hover { background: var(--gold); color: var(--on-gold, #1f1a10); transform: translateY(-2px); }
         .social-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
         .social-wrap .social-title { color: var(--gold); font-weight: 800; font-size: .95rem; }
         /* زر «دخول / حسابي»: زجاجي بإطار ذهبي ونبض خفيف حتى ينتبه له الزائر */
@@ -360,7 +363,7 @@
         @media (min-width: 992px) and (max-width: 1299.98px) { .cyc-title-wrap { display: none !important; } .navbar-royal .navbar-nav { margin-left: auto; } .navbar-royal .nav-register { padding: 8px 14px !important; font-size: .88rem; } }
         .navbar-royal .nav-bell { position:relative; color:#fff; font-size:1.15rem; flex-shrink:0; margin:0 6px; text-decoration:none; }
         .navbar-royal .nav-bell:hover { color: var(--gold); }
-        .navbar-royal .nav-bell-n { position:absolute; top:-8px; left:-10px; background:#d93025; color:#fff; border-radius:12px; font-size:.7rem; font-weight:800; padding:1px 6px; line-height:1.4; }
+        .navbar-royal .nav-bell-n { position:absolute; top:-8px; left:-10px; background:#d93025; color:#fff; border-radius:12px; font-size:.8125rem; font-weight:800; padding:1px 6px; line-height:1.4; }
         @media (max-width: 991.98px) { .navbar-royal .nav-bell { display:flex; padding:12px 4px; margin:0; border-bottom:1px solid rgba(255,255,255,0.08); } .navbar-royal .nav-bell-n { position:static; margin-right:8px; }
             .navbar-royal .nav-account { display:flex; justify-content:center; margin:12px 0 0; padding:11px 18px; } }
         .navbar-royal .nav-register {
@@ -452,7 +455,7 @@
         .scroll-arrow {
             position: relative; width: 48px; height: 48px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            background-color: var(--gold); color: #fff; border: none; font-size: 1.1rem;
+            background-color: var(--gold); color: var(--on-gold, #1f1a10); border: none; font-size: 1.1rem;
             box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer;
             transition: opacity .3s ease, visibility .3s ease, transform .3s ease, background-color .3s;
         }
@@ -474,7 +477,7 @@
             top: auto !important; bottom: auto !important; margin: 0 !important;
             width: 48px !important; height: 48px !important; border-radius: 50% !important;
             display: flex !important; padding: 0 !important; animation: none !important;
-            background-color: var(--gold) !important; border: none !important; color: #fff !important;
+            background-color: var(--gold) !important; border: none !important; color: var(--on-gold, #1f1a10) !important;
         }
         .scroll-nav #scrollUp.scroll-arrow:not(.is-hidden), .scroll-nav #scrollDown.scroll-arrow:not(.is-hidden) { transform: none !important; }
         .scroll-nav .scroll-arrow:hover { background-color: var(--primary) !important; }
@@ -482,7 +485,7 @@
         .scroll-top { width: 40px; height: 40px; margin: 0 auto 2px; border-radius: 50%; border: 2px solid var(--gold); background: var(--primary);
             color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: .95rem; cursor: pointer;
             box-shadow: 0 4px 14px rgba(0,0,0,.25); transition: opacity .3s, visibility .3s, transform .3s, background .2s, color .2s; }
-        .scroll-top:hover { background: var(--gold); color: #fff; }
+        .scroll-top:hover { background: var(--gold); color: var(--on-gold, #1f1a10); }
         .scroll-top.is-hidden { opacity: 0; visibility: hidden; transform: scale(.6); pointer-events: none; }
         @media (max-width: 767px) { .scroll-top { width: 36px; height: 36px; } }
         @keyframes arrowPulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.7); opacity: 0; } }
@@ -519,7 +522,7 @@
         .ticker-text a:hover { text-decoration: underline; }
         .ticker-text p { display: inline; margin: 0; }
         .ticker-sep { flex-shrink: 0; min-width: 25px; display: flex; align-items: center; justify-content: center; height: var(--tk-h, 38px); padding: 0 6px; }
-        .ticker-sep::before { content: '\2726'; font-size: 0.6rem; color: var(--ticker-color, var(--gold)); opacity: 0.4; }
+        .ticker-sep::before { content: '\2726'; font-size: .8125rem; color: var(--ticker-color, var(--gold)); opacity: 0.4; }
         .ticker-sep.has-img::before { display: none; }
         .ticker-sep img { display: block; height: var(--tk-logo, 24px); width: auto; max-width: calc(var(--tk-logo, 24px) * 2.3); object-fit: contain; }
         /* نبض وتلاشي الصورة الفاصلة (وصور الأخبار عند التفعيل) */
@@ -557,7 +560,7 @@
         .flip-card-front i { font-size: 2.8rem; color: var(--gold); margin-bottom: 15px; }
         .flip-card-front h4 { color: var(--gold); font-weight: 800; font-size: 1.2rem; margin-bottom: 5px; }
         .flip-card-front small { color: rgba(255,255,255,0.6); font-size: 0.85rem; }
-        .flip-card-front .flip-hint { margin-top: 14px; font-size: .75rem; color: rgba(255,255,255,.5); }
+        .flip-card-front .flip-hint { margin-top: 14px; font-size: .8125rem; color: rgba(255,255,255,.5); }
         .flip-card-back {
             background: radial-gradient(120% 90% at 15% 0%, rgba(255,255,255,.18) 0%, transparent 50%),
                         linear-gradient(145deg, rgba(197,160,89,.95) 0%, rgba(160,122,52,.92) 45%, rgba(var(--deep-1,18,36,80),.95) 100%);
@@ -678,7 +681,7 @@
 <nav class="navbar navbar-expand-lg navbar-royal navbar-dark fixed-top" id="mainNavbar">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
-        {% if settings and settings.site_logo %}<img class="site-logo" src="{{ settings.site_logo.url }}" alt="Logo" width="{{ settings.logo_size|default:50 }}" height="{{ settings.logo_size|default:50 }}">{% else %}<span style="color: var(--gold); font-weight: 800; font-size: 1rem;">جائزة جردانة</span>{% endif %}
+        {% if settings and settings.site_logo %}<img class="site-logo" src="{{ settings.site_logo.url }}" alt="شعار الجائزة" width="{{ settings.logo_size|default:50 }}" height="{{ settings.logo_size|default:50 }}">{% else %}<span style="color: var(--gold); font-weight: 800; font-size: 1rem;">جائزة جردانة</span>{% endif %}
     </a>
     <a href="{% url 'home' %}" class="nav-award-title nav-award-title-mobile d-lg-none {{ vis.award_title }}">جائزة انتصار عباس جردانة</a>
     <button type="button" class="nav-search-btn d-lg-none ms-2 {{ vis.search }}" data-open-search aria-label="بحث في الموقع"><i class="fas fa-magnifying-glass"></i></button>
@@ -688,7 +691,7 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">الرئيسية</a></li>
         <li class="nav-item dropdown nav-main-dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="awardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            الجائزة <i class="fas fa-chevron-down" style="font-size: 0.65rem; margin-right: 5px;"></i>
+            الجائزة <i class="fas fa-chevron-down" style="font-size: .8125rem; margin-right: 5px;"></i>
           </a>
           <ul class="dropdown-menu" aria-labelledby="awardDropdown">
             <li><a class="dropdown-item" href="{% url 'home' %}#about"><i class="fas fa-circle-info ms-2" style="color: var(--gold);"></i> عن الجائزة</a></li>
@@ -703,7 +706,7 @@
         <li class="nav-item"><a class="nav-link" href="{% url 'winners_page' %}">الفائزون</a></li>
         <li class="nav-item dropdown nav-main-dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="mediaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            المركز الإعلامي <i class="fas fa-chevron-down" style="font-size: 0.65rem; margin-right: 5px;"></i>
+            المركز الإعلامي <i class="fas fa-chevron-down" style="font-size: .8125rem; margin-right: 5px;"></i>
           </a>
           <ul class="dropdown-menu" aria-labelledby="mediaDropdown">
             <li><a class="dropdown-item" href="{% url 'announcements' %}"><i class="fas fa-bullhorn ms-2" style="color: var(--gold);"></i> الإعلانات</a></li>
@@ -788,7 +791,7 @@
 <footer id="siteFooter"{% if section_bgs.footer and section_bgs.footer.bg_color %} style="{{ section_bgs.footer.bg_css }}"{% endif %}>
     <div class="container">
         <div class="row ft-head align-items-center">
-            <div class="col-auto mb-3">{% if settings and settings.site_logo %}<img src="{{ settings.site_logo.url }}" alt="Logo" class="footer-logo-img">{% endif %}</div>
+            <div class="col-auto mb-3">{% if settings and settings.site_logo %}<img src="{{ settings.site_logo.url }}" alt="شعار الجائزة" class="footer-logo-img">{% endif %}</div>
             <div class="col mb-3"><h4 class="footer-title mb-1">جائزة انتصار عباس جردانة للثقافة والتعليم</h4><p style="color: #aaa; font-size: 0.9rem; margin: 0;">Intisar Abbas Jardaneh Award</p></div>
         </div>
         <div class="row">
@@ -1230,13 +1233,13 @@
   .ss-item i { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center;
       background: rgba(197,160,89,.22); color: var(--gold); }
   .ss-item b { display: block; font-size: 1rem; }
-  .ss-item small { display: block; color: rgba(255,255,255,.55); font-size: .75rem; margin-bottom: 2px; }
+  .ss-item small { display: block; color: rgba(255,255,255,.55); font-size: .8125rem; margin-bottom: 2px; }
   .ss-item span { display: block; color: rgba(255,255,255,.78); font-size: .88rem; line-height: 1.7; }
   .ss-item mark, .search-page mark { background: rgba(197,160,89,.55); color: #fff; padding: 0 2px; border-radius: 3px; }
   .ss-empty { padding: 22px; text-align: center; color: rgba(255,255,255,.7); }
   .ss-all { display: block; padding: 12px; text-align: center; font-weight: 800; color: var(--primary); text-decoration: none;
       background: linear-gradient(135deg, #f1d188, var(--gold)); }
-  .ss-hint { padding: 8px; text-align: center; font-size: .75rem; color: rgba(255,255,255,.45); }
+  .ss-hint { padding: 8px; text-align: center; font-size: .8125rem; color: rgba(255,255,255,.45); }
   @media (max-width: 767px) { .site-search { padding-top: 70px; } .ss-hint { display: none; } }
 </style>
 <script>
